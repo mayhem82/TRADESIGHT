@@ -1,0 +1,29 @@
+{
+  "project": "TRADESIGHT",
+  "repository": "mayhem82/TRADESIGHT",
+  "current_step": 1,
+  "last_completed": null,
+  "next_task": "foundation",
+  "status": "ready",
+  "last_commit": null,
+  "blocker": null,
+  "rules": [
+    "Use the repository as memory.",
+    "Inspect existing files before building.",
+    "Build only the next missing operational component.",
+    "Commit working increments.",
+    "Update this state file after each completed step.",
+    "Stop only for a genuine blocker."
+  ],
+  "build_order": [
+    "01-foundation",
+    "02-core-data-models",
+    "03-assessment-pipeline",
+    "04-evidence-pipeline",
+    "05-report-generator",
+    "06-project-storage",
+    "07-module-framework",
+    "08-compliance-engine",
+    "09-ui-refinement"
+  ]
+}
