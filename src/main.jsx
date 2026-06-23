@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createAssessmentFromInput } from './lib/create-assessment.js';
+import { createEvidenceRegister, appendEvidence, evidenceSummary } from './lib/evidence-register.js';
 import './styles.css';
 
 const MODULES = {
@@ -31,6 +32,9 @@ function complianceState(type, input) {
 
 function App() {
   const [input, setInput] = useState('');
+  const [evidence, setEvidence] = useState(() => createEvidenceRegister());
+  const [evidenceNote, setEvidenceNote] = useState('');
+
   const assessment = useMemo(() => {
     const baseAssessment = createAssessmentFromInput(input);
     const risk = riskLevel(baseAssessment.type, input);
@@ -43,6 +47,18 @@ function App() {
       state
     };
   }, [input]);
+
+  const summary = useMemo(() => evidenceSummary(evidence), [evidence]);
+
+  function addEvidenceNote() {
+    if (!evidenceNote.trim()) return;
+    setEvidence((current) => appendEvidence(current, {
+      source: 'user-note',
+      description: evidenceNote.trim(),
+      status: 'unverified'
+    }));
+    setEvidenceNote('');
+  }
 
   return (
     <main className="shell">
@@ -87,8 +103,19 @@ function App() {
         </article>
 
         <article>
-          <h2>Audit Position</h2>
-          <p>TRADESIGHT does not invent law, standards, or approvals. Unknown items remain unknown until validated. Restricted work is routed away from unsafe instruction.</p>
+          <h2>Evidence Register</h2>
+          <p><strong>Total:</strong> {summary.total}</p>
+          <p><strong>Verified:</strong> {summary.verified}</p>
+          <p><strong>Unverified:</strong> {summary.unverified}</p>
+          <textarea
+            value={evidenceNote}
+            onChange={(event) => setEvidenceNote(event.target.value)}
+            placeholder="Add evidence note, source, observation, or document reference."
+          />
+          <div className="actions">
+            <button type="button" onClick={addEvidenceNote}>Add Evidence Note</button>
+          </div>
+          <ul>{evidence.map((item) => <li key={item.id}>{item.id}: {item.description} ({item.status})</li>)}</ul>
         </article>
       </section>
 
