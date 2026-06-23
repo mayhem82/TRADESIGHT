@@ -1,11 +1,11 @@
 {
   "project": "TRADESIGHT",
   "repository": "mayhem82/TRADESIGHT",
-  "current_step": 2,
-  "last_completed": "01-foundation",
-  "next_task": "02-core-data-models",
+  "current_step": 3,
+  "last_completed": "02-core-data-models",
+  "next_task": "03-assessment-pipeline",
   "status": "ready",
-  "last_commit": "Completed foundation documentation: README, system overview, and operational principles.",
+  "last_commit": "Added assessment, evidence, project, report, and state models.",
   "blocker": null,
   "rules": [
     "Use the repository as memory.",
