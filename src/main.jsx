@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createAssessmentFromInput } from './lib/create-assessment.js';
 import { createEvidenceRegister, appendEvidence, evidenceSummary } from './lib/evidence-register.js';
+import { generateReport, reportToText } from './lib/generate-report.js';
 import './styles.css';
 
 const MODULES = {
@@ -49,6 +50,7 @@ function App() {
   }, [input]);
 
   const summary = useMemo(() => evidenceSummary(evidence), [evidence]);
+  const report = useMemo(() => generateReport({ assessment, evidence }), [assessment, evidence]);
 
   function addEvidenceNote() {
     if (!evidenceNote.trim()) return;
@@ -116,6 +118,11 @@ function App() {
             <button type="button" onClick={addEvidenceNote}>Add Evidence Note</button>
           </div>
           <ul>{evidence.map((item) => <li key={item.id}>{item.id}: {item.description} ({item.status})</li>)}</ul>
+        </article>
+
+        <article className="wide-card">
+          <h2>Report Preview</h2>
+          <pre>{reportToText(report)}</pre>
         </article>
       </section>
 
