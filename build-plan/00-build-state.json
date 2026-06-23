@@ -1,11 +1,11 @@
 {
   "project": "TRADESIGHT",
   "repository": "mayhem82/TRADESIGHT",
-  "current_step": 4,
-  "last_completed": "03-assessment-pipeline",
-  "next_task": "04-evidence-pipeline",
+  "current_step": 5,
+  "last_completed": "04-evidence-pipeline",
+  "next_task": "05-report-generator",
   "status": "ready",
-  "last_commit": "Added task classification, required information mapping, assessment creation pipeline, and connected UI to pipeline functions.",
+  "last_commit": "Added evidence record creation, append-only register helpers, evidence summary, and connected UI evidence notes to the register.",
   "blocker": null,
   "rules": [
     "Use the repository as memory.",
