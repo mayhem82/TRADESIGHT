@@ -1,11 +1,11 @@
 {
   "project": "TRADESIGHT",
   "repository": "mayhem82/TRADESIGHT",
-  "current_step": 5,
-  "last_completed": "04-evidence-pipeline",
-  "next_task": "05-report-generator",
+  "current_step": 6,
+  "last_completed": "05-report-generator",
+  "next_task": "06-project-storage",
   "status": "ready",
-  "last_commit": "Added evidence record creation, append-only register helpers, evidence summary, and connected UI evidence notes to the register.",
+  "last_commit": "Added report generator, report text renderer, report preview component, UI report preview, and report styling.",
   "blocker": null,
   "rules": [
     "Use the repository as memory.",
