@@ -1,11 +1,11 @@
 {
   "project": "TRADESIGHT",
   "repository": "mayhem82/TRADESIGHT",
-  "current_step": 6,
-  "last_completed": "05-report-generator",
-  "next_task": "06-project-storage",
+  "current_step": 7,
+  "last_completed": "06-project-storage",
+  "next_task": "07-module-framework",
   "status": "ready",
-  "last_commit": "Added report generator, report text renderer, report preview component, UI report preview, and report styling.",
+  "last_commit": "Added local project storage, project panel, save and clear project controls, and connected current assessment and evidence to the project record.",
   "blocker": null,
   "rules": [
     "Use the repository as memory.",
