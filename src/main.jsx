@@ -2,9 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { createAssessmentFromInput } from './lib/create-assessment.js';
 import { createEvidenceRegister, appendEvidence, evidenceSummary } from './lib/evidence-register.js';
-import { generateReport, reportToText } from './lib/generate-report.js';
+import { generateReport } from './lib/generate-report.js';
 import { loadProject, saveProject, clearProject } from './lib/project-storage.js';
+import { AgentIntake } from './components/AgentIntake.jsx';
+import { AssessmentPanel } from './components/AssessmentPanel.jsx';
+import { EvidencePanel } from './components/EvidencePanel.jsx';
 import { ProjectPanel } from './components/ProjectPanel.jsx';
+import { ReportPreview } from './components/ReportPreview.jsx';
 import { getModulesForTask } from './modules/registry.js';
 import './styles.css';
 
@@ -61,34 +65,11 @@ function App() {
         <p>Construction compliance, defect intelligence, project advocacy, and government-ready assessment infrastructure for NSW.</p>
       </section>
 
-      <section className="agent-card">
-        <label htmlFor="prompt">What do you want TRADESIGHT to investigate?</label>
-        <textarea
-          id="prompt"
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          placeholder="Example: I want to assess a leaking balcony defect, prepare evidence, and understand the compliant next step."
-        />
-        <div className="actions">
-          <button type="button">Upload Photos</button>
-          <button type="button">Upload Plans</button>
-          <button type="button">Start Assessment</button>
-        </div>
-      </section>
+      <AgentIntake input={input} onInputChange={setInput} />
 
       <section className="grid">
         <ProjectPanel project={currentProject} onSave={handleSaveProject} onClear={handleClearProject} />
-
-        <article>
-          <h2>Assessment Object</h2>
-          <p><strong>Assessment ID:</strong> {assessment.id}</p>
-          <p><strong>Detected type:</strong> {assessment.type}</p>
-          <p><strong>Compliance state:</strong> {assessment.stateLabel}</p>
-          <p><strong>State reason:</strong> {assessment.stateReason}</p>
-          <p><strong>Risk classification:</strong> {assessment.riskLabel}</p>
-          <p><strong>Boundary:</strong> {assessment.boundary}</p>
-          <p><strong>Final conclusion:</strong> {assessment.finalConclusionAllowed ? 'Available' : 'Not asserted'}</p>
-        </article>
+        <AssessmentPanel assessment={assessment} />
 
         <article>
           <h2>Module Routing</h2>
@@ -100,26 +81,15 @@ function App() {
           <ul>{assessment.missingInformation.map((question) => <li key={question}>{question}</li>)}</ul>
         </article>
 
-        <article>
-          <h2>Evidence Register</h2>
-          <p><strong>Total:</strong> {summary.total}</p>
-          <p><strong>Verified:</strong> {summary.verified}</p>
-          <p><strong>Unverified:</strong> {summary.unverified}</p>
-          <textarea
-            value={evidenceNote}
-            onChange={(event) => setEvidenceNote(event.target.value)}
-            placeholder="Add evidence note, source, observation, or document reference."
-          />
-          <div className="actions">
-            <button type="button" onClick={addEvidenceNote}>Add Evidence Note</button>
-          </div>
-          <ul>{evidence.map((item) => <li key={item.id}>{item.id}: {item.description} ({item.status})</li>)}</ul>
-        </article>
+        <EvidencePanel
+          evidence={evidence}
+          evidenceNote={evidenceNote}
+          onEvidenceNoteChange={setEvidenceNote}
+          onAddEvidenceNote={addEvidenceNote}
+          summary={summary}
+        />
 
-        <article className="wide-card">
-          <h2>Report Preview</h2>
-          <pre>{reportToText(report)}</pre>
-        </article>
+        <ReportPreview report={report} assessment={assessment} />
       </section>
 
       <section className="pathway">
