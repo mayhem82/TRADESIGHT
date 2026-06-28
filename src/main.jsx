@@ -3,6 +3,8 @@ import { createRoot } from 'react-dom/client';
 import { createAssessmentFromInput } from './lib/create-assessment.js';
 import { createEvidenceRegister, appendEvidence, evidenceSummary } from './lib/evidence-register.js';
 import { generateReport, reportToText } from './lib/generate-report.js';
+import { loadProject, saveProject, clearProject } from './lib/project-storage.js';
+import { ProjectPanel } from './components/ProjectPanel.jsx';
 import './styles.css';
 
 const MODULES = {
@@ -33,7 +35,8 @@ function complianceState(type, input) {
 
 function App() {
   const [input, setInput] = useState('');
-  const [evidence, setEvidence] = useState(() => createEvidenceRegister());
+  const [project, setProject] = useState(() => loadProject());
+  const [evidence, setEvidence] = useState(() => createEvidenceRegister(project.evidence));
   const [evidenceNote, setEvidenceNote] = useState('');
 
   const assessment = useMemo(() => {
@@ -51,6 +54,11 @@ function App() {
 
   const summary = useMemo(() => evidenceSummary(evidence), [evidence]);
   const report = useMemo(() => generateReport({ assessment, evidence }), [assessment, evidence]);
+  const currentProject = useMemo(() => ({
+    ...project,
+    assessments: input.trim() ? [assessment] : project.assessments,
+    evidence
+  }), [project, input, assessment, evidence]);
 
   function addEvidenceNote() {
     if (!evidenceNote.trim()) return;
@@ -60,6 +68,18 @@ function App() {
       status: 'unverified'
     }));
     setEvidenceNote('');
+  }
+
+  function handleSaveProject() {
+    const saved = saveProject(currentProject);
+    setProject(saved);
+  }
+
+  function handleClearProject() {
+    const cleared = clearProject();
+    setProject(cleared);
+    setEvidence(createEvidenceRegister());
+    setInput('');
   }
 
   return (
@@ -86,6 +106,8 @@ function App() {
       </section>
 
       <section className="grid">
+        <ProjectPanel project={currentProject} onSave={handleSaveProject} onClear={handleClearProject} />
+
         <article>
           <h2>Assessment Object</h2>
           <p><strong>Assessment ID:</strong> {assessment.id}</p>
