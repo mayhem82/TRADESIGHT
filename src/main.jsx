@@ -5,18 +5,8 @@ import { createEvidenceRegister, appendEvidence, evidenceSummary } from './lib/e
 import { generateReport, reportToText } from './lib/generate-report.js';
 import { loadProject, saveProject, clearProject } from './lib/project-storage.js';
 import { ProjectPanel } from './components/ProjectPanel.jsx';
+import { getModulesForTask } from './modules/registry.js';
 import './styles.css';
-
-const MODULES = {
-  compliance: ['Compliance Engine', 'Compliance Summary Generator'],
-  defect: ['Image DNA / As-Built Scanner', "Builder's Advocate", 'Compliance Engine', 'Evidence Pack Builder'],
-  plan: ['Plan Correction Engine', 'Compliance Engine', "Engineer's Advocate"],
-  dispute: ["Builder's Advocate", 'Evidence Pack Builder', 'Compliance Summary Generator'],
-  materials: ['Materials & Specification Engine', 'Compliance Engine'],
-  safety: ['Hazard Prediction Engine', 'Compliance Engine'],
-  government: ['Governance Assessment Layer', 'Evidence Pack Builder', 'Compliance Summary Generator'],
-  unknown: ['TRADESIGHT Agent', 'Clarification Intake']
-};
 
 function riskLevel(type, input) {
   const text = input.toLowerCase();
@@ -46,7 +36,7 @@ function App() {
 
     return {
       ...baseAssessment,
-      modules: MODULES[baseAssessment.type] || MODULES.unknown,
+      modules: getModulesForTask(baseAssessment.type),
       risk,
       state
     };
@@ -118,7 +108,7 @@ function App() {
 
         <article>
           <h2>Module Routing</h2>
-          <ul>{assessment.modules.map((module) => <li key={module}>{module}</li>)}</ul>
+          <ul>{assessment.modules.map((module) => <li key={module.id}>{module.name} — {module.status}</li>)}</ul>
         </article>
 
         <article>
