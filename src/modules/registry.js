@@ -3,7 +3,7 @@ export const MODULE_REGISTRY = {
     id: 'compliance',
     name: 'Compliance Engine',
     scope: 'State classification and conservative boundary checks',
-    status: 'scaffolded'
+    status: 'active'
   },
   builder: {
     id: 'builder',
