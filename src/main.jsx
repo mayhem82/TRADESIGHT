@@ -8,21 +8,6 @@ import { ProjectPanel } from './components/ProjectPanel.jsx';
 import { getModulesForTask } from './modules/registry.js';
 import './styles.css';
 
-function riskLevel(type, input) {
-  const text = input.toLowerCase();
-  if (/licensed|certified|structural|asbestos|fire|collapse|load bearing/.test(text)) return 'High';
-  if (['defect', 'safety', 'dispute'].includes(type)) return 'Medium';
-  if (type === 'unknown') return 'Unclassified';
-  return 'Low to Medium';
-}
-
-function complianceState(type, input) {
-  const text = input.toLowerCase();
-  if (/licensed|certified|restricted|load bearing/.test(text)) return 'CS2 — Requires Licensed Practitioner Only likely';
-  if (type === 'unknown') return 'CS7 — Unknown / Cannot Assume Under NSW Law';
-  return 'CS7 — Pending validation';
-}
-
 function App() {
   const [input, setInput] = useState('');
   const [project, setProject] = useState(() => loadProject());
@@ -31,14 +16,10 @@ function App() {
 
   const assessment = useMemo(() => {
     const baseAssessment = createAssessmentFromInput(input);
-    const risk = riskLevel(baseAssessment.type, input);
-    const state = complianceState(baseAssessment.type, input);
 
     return {
       ...baseAssessment,
-      modules: getModulesForTask(baseAssessment.type),
-      risk,
-      state
+      modules: getModulesForTask(baseAssessment.type)
     };
   }, [input]);
 
@@ -102,13 +83,16 @@ function App() {
           <h2>Assessment Object</h2>
           <p><strong>Assessment ID:</strong> {assessment.id}</p>
           <p><strong>Detected type:</strong> {assessment.type}</p>
-          <p><strong>Compliance state:</strong> {assessment.state}</p>
-          <p><strong>Risk classification:</strong> {assessment.risk}</p>
+          <p><strong>Compliance state:</strong> {assessment.stateLabel}</p>
+          <p><strong>State reason:</strong> {assessment.stateReason}</p>
+          <p><strong>Risk classification:</strong> {assessment.riskLabel}</p>
+          <p><strong>Boundary:</strong> {assessment.boundary}</p>
+          <p><strong>Final conclusion:</strong> {assessment.finalConclusionAllowed ? 'Available' : 'Not asserted'}</p>
         </article>
 
         <article>
           <h2>Module Routing</h2>
-          <ul>{assessment.modules.map((module) => <li key={module.id}>{module.name} — {module.status}</li>)}</ul>
+          <ul>{assessment.modules.map((module) => <li key={module.id}>{module.name} - {module.status}</li>)}</ul>
         </article>
 
         <article>
