@@ -1,11 +1,11 @@
 {
   "project": "TRADESIGHT",
   "repository": "mayhem82/TRADESIGHT",
-  "current_step": 7,
-  "last_completed": "06-project-storage",
-  "next_task": "07-module-framework",
+  "current_step": 8,
+  "last_completed": "07-module-framework",
+  "next_task": "08-compliance-engine",
   "status": "ready",
-  "last_commit": "Added local project storage, project panel, save and clear project controls, and connected current assessment and evidence to the project record.",
+  "last_commit": "Added module registry, module scaffolds, task-to-module mapping, and connected UI module routing to the registry.",
   "blocker": null,
   "rules": [
     "Use the repository as memory.",
