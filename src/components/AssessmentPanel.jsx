@@ -24,12 +24,30 @@ export function AssessmentPanel({ assessment }) {
           <dd>{assessment.riskLabel}</dd>
         </div>
         <div>
-          <dt>Final conclusion</dt>
+          <dt>Priority</dt>
+          <dd>{assessment.priority?.label} ({assessment.priority?.score})</dd>
+        </div>
+        <div>
+          <dt>Evidence completeness</dt>
+          <dd>{assessment.evidenceCompleteness?.label} ({assessment.evidenceCompleteness?.score})</dd>
+        </div>
+        <div>
+          <dt>Conclusion status</dt>
           <dd>{assessment.finalConclusionAllowed ? 'Available' : 'Not asserted'}</dd>
         </div>
       </dl>
       <p><strong>State reason:</strong> {assessment.stateReason}</p>
       <p><strong>Boundary:</strong> {assessment.boundary}</p>
+      {assessment.riskScore?.reasons?.length > 0 && (
+        <section className="subsection">
+          <h3>Assessment intelligence</h3>
+          <ul>
+            {assessment.riskScore.reasons.map((reason) => <li key={reason}>{reason}</li>)}
+            {assessment.evidenceCompleteness?.reasons?.map((reason) => <li key={reason}>{reason}</li>)}
+            {assessment.priority?.reasons?.map((reason) => <li key={reason}>{reason}</li>)}
+          </ul>
+        </section>
+      )}
       {assessment.riskReasons?.length > 0 && (
         <ul>{assessment.riskReasons.map((reason) => <li key={reason}>{reason}</li>)}</ul>
       )}
