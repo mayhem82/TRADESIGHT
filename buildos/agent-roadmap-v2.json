@@ -1,0 +1,36 @@
+{
+  "plan": "agent-mode-v2",
+  "status": "active",
+  "steps": [
+    {
+      "step": 27,
+      "id": "27-runtime-hardening",
+      "status": "ready",
+      "objective": "Harden runtime handling for blank intake, report type selection, event consistency, and safe fallback states."
+    },
+    {
+      "step": 28,
+      "id": "28-demo-case-expansion",
+      "status": "queued",
+      "objective": "Add more NSW demonstration cases covering plans, materials, safety, and insurance workflows."
+    },
+    {
+      "step": 29,
+      "id": "29-report-template-controls",
+      "status": "queued",
+      "objective": "Expose report audience selection and template controls in the UI."
+    },
+    {
+      "step": 30,
+      "id": "30-project-search-ui",
+      "status": "queued",
+      "objective": "Add simple search across current project assessment and evidence records."
+    },
+    {
+      "step": 31,
+      "id": "31-basic-ci-workflow",
+      "status": "queued",
+      "objective": "Add a basic GitHub Actions build workflow for Vite build verification."
+    }
+  ]
+}
