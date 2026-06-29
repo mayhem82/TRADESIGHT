@@ -1,0 +1,8 @@
+{
+  "blockers": [],
+  "rules": [
+    "Record only genuine blockers.",
+    "A blocker must include affected task, exact cause, and required user action if any.",
+    "Do not treat normal implementation work as a blocker."
+  ]
+}
