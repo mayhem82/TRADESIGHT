@@ -2,7 +2,7 @@
   "changes": [
     {
       "id": "CHANGE-001",
-      "summary": "Introduced BuildOS as the repository-level operating layer for future autonomous build runs.",
+      "summary": "Introduced BuildOS as the repository-level operating layer for future build runs.",
       "status": "committed"
     },
     {
@@ -48,6 +48,11 @@
     {
       "id": "CHANGE-010",
       "summary": "Added TRADESIGHT Runtime connecting evidence, assessment, report, project status, runtime events, and UI execution through one local workflow.",
+      "status": "committed"
+    },
+    {
+      "id": "CHANGE-011",
+      "summary": "Added Production Readiness foundation with app config, runtime self-check, deployment notes, testing notes, and README build-state update.",
       "status": "committed"
     }
   ]
