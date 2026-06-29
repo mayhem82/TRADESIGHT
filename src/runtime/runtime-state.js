@@ -3,6 +3,7 @@ export function createRuntimeState(data = {}) {
     id: data.id || `RUN-${Date.now()}`,
     status: data.status || 'idle',
     input: data.input || '',
+    intakeRoute: data.intakeRoute || null,
     assessment: data.assessment || null,
     evidence: data.evidence || [],
     evidenceSummary: data.evidenceSummary || null,
