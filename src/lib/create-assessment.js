@@ -6,6 +6,7 @@ import { getRequiredInformation } from './required-information.js';
 import { scoreAssessmentRisk } from '../assessment/score-risk.js';
 import { scoreEvidenceCompleteness } from '../assessment/evidence-completeness.js';
 import { calculateAssessmentPriority } from '../assessment/priority.js';
+import { runAgentPipeline } from '../agents/run-agent-pipeline.js';
 
 export function createAssessmentFromInput(input = '', context = {}) {
   const type = classifyTask(input);
@@ -28,7 +29,7 @@ export function createAssessmentFromInput(input = '', context = {}) {
     restricted: complianceState.restricted
   });
 
-  return {
+  const assessment = {
     ...createAssessment({
       type,
       summary: input,
@@ -49,5 +50,14 @@ export function createAssessmentFromInput(input = '', context = {}) {
     evidenceCompleteness,
     priority,
     missingInformation
+  };
+
+  return {
+    ...assessment,
+    agentPipeline: runAgentPipeline({
+      assessment,
+      evidenceSummary: context.evidenceSummary,
+      report: context.report
+    })
   };
 }
