@@ -29,6 +29,11 @@
       "id": "CHANGE-006",
       "summary": "Added Assessment Intelligence with risk scoring, evidence completeness scoring, priority calculation, evidence-aware assessment creation, and UI score display.",
       "status": "committed"
+    },
+    {
+      "id": "CHANGE-007",
+      "summary": "Added Report Studio with report types, audience profiles, section builder, expanded report model, report generation, and report preview metadata.",
+      "status": "committed"
     }
   ]
 }
