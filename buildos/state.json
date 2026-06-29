@@ -2,10 +2,10 @@
   "project": "TRADESIGHT",
   "mode": "BuildOS Controller",
   "current_plan": "agent-mode-v1",
-  "current_step": 26,
-  "next_task": "26-demo-polish",
-  "status": "ready",
-  "last_completed": "25-evidence-attachment-foundation",
-  "last_commit_summary": "Added evidence attachment foundation with local attachment metadata records, attachment summaries, evidence model support, and UI metadata display.",
+  "current_step": 27,
+  "next_task": "complete",
+  "status": "complete",
+  "last_completed": "26-demo-polish",
+  "last_commit_summary": "Added demo polish with walkthrough guide, clearer demo loader, guided UI placement, and presentation styling.",
   "blocker": null
 }
