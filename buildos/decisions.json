@@ -1,0 +1,18 @@
+{
+  "decisions": [
+    {
+      "id": "DEC-001",
+      "title": "Repository as memory",
+      "decision": "TRADESIGHT build continuity is stored in repository files.",
+      "reason": "Scheduled build runs can continue from committed state.",
+      "status": "accepted"
+    },
+    {
+      "id": "DEC-002",
+      "title": "BuildOS over loose build plan",
+      "decision": "Create BuildOS files for state, roadmap, gates, decisions, blockers, backlog, and changelog.",
+      "reason": "A broader operating layer is needed before capability work grows larger.",
+      "status": "accepted"
+    }
+  ]
+}
