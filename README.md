@@ -2,39 +2,59 @@
 
 TRADESIGHT is an agent-first universal application for construction compliance, defect intelligence, project advocacy, and structured assessment workflows in New South Wales.
 
-The user interacts with the TRADESIGHT Agent. The agent classifies the task, identifies the required assessment pathway, captures missing information, links evidence, and prepares a structured report.
+The user interacts with the TRADESIGHT Agent. The runtime classifies the task, identifies the assessment pathway, links evidence, runs agent orchestration, prepares a report, and updates the project record.
 
 ## Current Build State
 
-Foundation phase.
+Capability Build v2 is active under BuildOS.
 
-Existing foundation:
+Current completed capability:
 
-- React and Vite app scaffold
-- Agent intake interface
-- Task classification preview
-- Module routing preview
-- Compliance state placeholder
-- Self-advancing build queue in build-plan/
+- 18-tradesight-runtime
+
+Current next capability:
+
+- 19-production-readiness
+
+## Active Runtime
+
+TRADESIGHT now includes:
+
+- BuildOS repository memory
+- Compliance Knowledge Engine
+- Evidence Intelligence
+- Image DNA Engine
+- Plan Review Engine
+- Assessment Intelligence
+- Report Studio
+- Project Intelligence
+- Agent Orchestration
+- TRADESIGHT Runtime
 
 ## Core Workflow
 
 1. Intake
-2. Classification
-3. Assessment Object
-4. Evidence Object
-5. Compliance State
-6. Report Generator
-7. Project Record
+2. Runtime execution
+3. Task classification
+4. Evidence register
+5. Assessment object
+6. Compliance rule pathway
+7. Agent orchestration
+8. Report Studio
+9. Project record update
 
 ## Build Memory
 
 The repository carries build memory through:
 
-- build-plan/00-build-state.json
-- build-plan/01-foundation.md through build-plan/09-ui-refinement.md
+- buildos/state.json
+- buildos/roadmap.json
+- buildos/quality-gates.json
+- buildos/changelog.json
+- build-plan-v2/
+- build-plan/
 
-Future build runs should read the build state file, complete one step, commit, update state, and stop.
+Future build runs should read BuildOS state, complete one operational increment, commit, update BuildOS, and stop.
 
 ## Boundary
 
