@@ -17,6 +17,14 @@ export function EvidencePanel({ evidence, evidenceNote, onEvidenceNoteChange, on
           <dt>Unverified</dt>
           <dd>{summary.unverified}</dd>
         </div>
+        <div>
+          <dt>Duplicates</dt>
+          <dd>{summary.duplicates}</dd>
+        </div>
+        <div>
+          <dt>Avg quality</dt>
+          <dd>{summary.averageQuality}%</dd>
+        </div>
       </dl>
       <textarea
         value={evidenceNote}
@@ -27,7 +35,15 @@ export function EvidencePanel({ evidence, evidenceNote, onEvidenceNoteChange, on
         <button type="button" onClick={onAddEvidenceNote} disabled={!evidenceNote.trim()}>Add Evidence Note</button>
       </div>
       {evidence.length > 0 ? (
-        <ul>{evidence.map((item) => <li key={item.id}>{item.id}: {item.description} ({item.status})</li>)}</ul>
+        <ul>
+          {evidence.map((item) => (
+            <li key={item.id}>
+              {item.id}: {item.description} ({item.status}) - {item.type} - {item.quality?.label || 'quality not scored'}
+              {item.tags?.length ? ` - tags: ${item.tags.join(', ')}` : ''}
+              {item.duplicateOf ? ` - possible duplicate of ${item.duplicateOf}` : ''}
+            </li>
+          ))}
+        </ul>
       ) : (
         <p className="muted">No evidence records have been added yet.</p>
       )}
