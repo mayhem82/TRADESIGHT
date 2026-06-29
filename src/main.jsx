@@ -5,6 +5,7 @@ import { loadProject, saveProject, clearProject } from './lib/project-storage.js
 import { runTradesight } from './runtime/run-tradesight.js';
 import { AgentIntake } from './components/AgentIntake.jsx';
 import { AssessmentPanel } from './components/AssessmentPanel.jsx';
+import { DemoGuide } from './components/DemoGuide.jsx';
 import { DemoLoader } from './components/DemoLoader.jsx';
 import { EvidencePanel } from './components/EvidencePanel.jsx';
 import { ProjectPanel } from './components/ProjectPanel.jsx';
@@ -65,10 +66,11 @@ function App() {
       <section className="hero">
         <div className="badge">Universal operational model</div>
         <h1>TRADESIGHT</h1>
-        <p>Construction compliance, defect intelligence, project advocacy, and government-ready assessment infrastructure for NSW.</p>
+        <p>Project intelligence, defect workflows, evidence handling, and NSW-ready reporting infrastructure.</p>
       </section>
 
       <DemoLoader onLoadDemo={handleLoadDemo} />
+      <DemoGuide loadedDemo={loadedDemo} runtime={runtime} />
 
       {loadedDemo && (
         <article>
@@ -99,14 +101,7 @@ function App() {
           <ul>{assessment.missingInformation.map((question) => <li key={question}>{question}</li>)}</ul>
         </article>
 
-        <EvidencePanel
-          evidence={evidence}
-          evidenceNote={evidenceNote}
-          onEvidenceNoteChange={setEvidenceNote}
-          onAddEvidenceNote={addEvidenceNote}
-          summary={summary}
-        />
-
+        <EvidencePanel evidence={evidence} evidenceNote={evidenceNote} onEvidenceNoteChange={setEvidenceNote} onAddEvidenceNote={addEvidenceNote} summary={summary} />
         <ReportPreview report={report} assessment={assessment} />
       </section>
 
