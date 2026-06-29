@@ -17,6 +17,9 @@ export const complianceModule = {
       label: result.label,
       restricted: result.restricted,
       finalConclusionAllowed: result.finalConclusionAllowed,
+      jurisdiction: result.jurisdiction,
+      matchedRules: result.matchedRules,
+      unresolvedItems: result.unresolvedItems,
       notes: [result.reason, result.boundary]
     };
   }
