@@ -54,6 +54,11 @@
       "id": "CHANGE-011",
       "summary": "Added Production Readiness foundation with app config, runtime self-check, deployment notes, testing notes, and README build-state update.",
       "status": "committed"
+    },
+    {
+      "id": "CHANGE-012",
+      "summary": "Added NSW Demonstration Platform with demo cases, demo script, presentation mode, demo documentation, and README completion update.",
+      "status": "committed"
     }
   ]
 }
