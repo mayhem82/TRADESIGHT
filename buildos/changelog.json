@@ -44,6 +44,11 @@
       "id": "CHANGE-009",
       "summary": "Added Agent Orchestration with agent registry, task-agent routing, auditable pipeline events, assessment integration, and UI pipeline display.",
       "status": "committed"
+    },
+    {
+      "id": "CHANGE-010",
+      "summary": "Added TRADESIGHT Runtime connecting evidence, assessment, report, project status, runtime events, and UI execution through one local workflow.",
+      "status": "committed"
     }
   ]
 }
