@@ -5,8 +5,6 @@ import { loadProject, saveProject, clearProject } from './lib/project-storage.js
 import { runTradesight } from './runtime/run-tradesight.js';
 import { AgentIntake } from './components/AgentIntake.jsx';
 import { AssessmentPanel } from './components/AssessmentPanel.jsx';
-import { DemoGuide } from './components/DemoGuide.jsx';
-import { DemoLoader } from './components/DemoLoader.jsx';
 import { EvidencePanel } from './components/EvidencePanel.jsx';
 import { ProjectPanel } from './components/ProjectPanel.jsx';
 import { ReportPreview } from './components/ReportPreview.jsx';
@@ -18,8 +16,7 @@ function App() {
   const [project, setProject] = useState(() => loadProject());
   const [evidence, setEvidence] = useState(() => createEvidenceRegister(project.evidence));
   const [evidenceNote, setEvidenceNote] = useState('');
-  const [reportType, setReportType] = useState('homeowner');
-  const [loadedDemo, setLoadedDemo] = useState(null);
+  const [reportType] = useState('homeowner');
 
   const runtime = useMemo(() => runTradesight({ input, evidence, project, reportType }), [input, evidence, project, reportType]);
   const assessment = useMemo(() => ({
@@ -40,13 +37,6 @@ function App() {
     setEvidenceNote('');
   }
 
-  function handleLoadDemo(demoCase) {
-    setLoadedDemo(demoCase);
-    setInput(demoCase.input);
-    setEvidence(createEvidenceRegister(demoCase.evidence));
-    setReportType(demoCase.audience);
-  }
-
   function handleSaveProject() {
     const saved = saveProject(currentProject);
     setProject(saved);
@@ -57,28 +47,34 @@ function App() {
     setProject(cleared);
     setEvidence(createEvidenceRegister());
     setInput('');
-    setReportType('homeowner');
-    setLoadedDemo(null);
   }
 
   return (
     <main className="shell">
       <section className="hero">
-        <div className="badge">Universal operational model</div>
+        <div className="badge">Live operational app</div>
         <h1>TRADESIGHT</h1>
-        <p>Project intelligence, defect workflows, evidence handling, and NSW-ready reporting infrastructure.</p>
+        <p>Ask a construction question, start an assessment, capture evidence, and generate a structured report.</p>
       </section>
 
-      <DemoLoader onLoadDemo={handleLoadDemo} />
-      <DemoGuide loadedDemo={loadedDemo} runtime={runtime} />
-
-      {loadedDemo && (
+      <section className="entry-grid">
         <article>
-          <h2>Loaded Demo</h2>
-          <p><strong>{loadedDemo.title}</strong></p>
-          <p>{loadedDemo.purpose}</p>
+          <h2>Ask a Question</h2>
+          <p>Use TRADESIGHT without creating a project first. If the issue grows, save it as a project.</p>
         </article>
-      )}
+        <article>
+          <h2>Upload Plans</h2>
+          <p>Plan upload handling is the next operational capability to build.</p>
+        </article>
+        <article>
+          <h2>Upload Photos</h2>
+          <p>Photo evidence handling is the next operational capability to build.</p>
+        </article>
+        <article>
+          <h2>Look Up Standards</h2>
+          <p>Standards lookup must be evidence-linked and source-controlled before conclusions are asserted.</p>
+        </article>
+      </section>
 
       <AgentIntake input={input} onInputChange={setInput} />
 
@@ -106,13 +102,13 @@ function App() {
       </section>
 
       <section className="pathway">
-        <h2>Universal Pathway</h2>
+        <h2>Operational Pathway</h2>
         <div className="steps">
-          <span>Intake</span>
+          <span>Question</span>
           <span>Runtime</span>
-          <span>Assess</span>
+          <span>Assessment</span>
           <span>Evidence</span>
-          <span>Agents</span>
+          <span>Standards</span>
           <span>Report</span>
           <span>Project</span>
         </div>
