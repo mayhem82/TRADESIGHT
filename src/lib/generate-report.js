@@ -1,30 +1,36 @@
 import { createReport } from '../models/report.js';
-import { evidenceSummary } from './evidence-register.js';
+import { resolveReportType } from '../reports/report-types.js';
+import { getAudienceProfile } from '../reports/audience-profiles.js';
+import { buildReportSections } from '../reports/build-report-sections.js';
 
-export function generateReport({ assessment, evidence = [] } = {}) {
-  const summary = evidenceSummary(evidence);
-  const finalConclusion = assessment?.finalConclusionAllowed
-    ? 'Validated final conclusion available.'
-    : 'No final compliance conclusion is asserted by TRADESIGHT.';
+export function generateReport({ assessment, evidence = [], type = 'homeowner' } = {}) {
+  const reportType = resolveReportType(type);
+  const audienceProfile = getAudienceProfile(reportType.audience);
+  const sections = buildReportSections({ reportType, audienceProfile, assessment, evidence });
+  const findings = sections.flatMap((section) => section.lines.map((line) => `${section.title}: ${line}`));
 
   return createReport({
-    title: 'TRADESIGHT Assessment Report',
+    title: `TRADESIGHT ${reportType.label}`,
+    type: reportType.id,
+    audience: reportType.audience,
+    purpose: reportType.purpose,
     summary: assessment?.summary || 'No assessment summary supplied.',
-    findings: [
-      `Assessment type: ${assessment?.type || 'unknown'}`,
-      `State: ${assessment?.stateLabel || assessment?.state || 'CS7'}`,
-      `State reason: ${assessment?.stateReason || 'Unknown until validated.'}`,
-      `Boundary: ${assessment?.boundary || 'Evidence and rule validation required.'}`,
-      `Risk: ${assessment?.riskLabel || assessment?.risk || 'Unclassified'}`,
-      `Evidence records: ${summary.total}`,
-      `Verified evidence: ${summary.verified}`,
-      `Unverified evidence: ${summary.unverified}`,
-      finalConclusion
-    ]
+    sections,
+    findings,
+    unsupportedItems: assessment?.unresolvedItems || []
   });
 }
 
 export function reportToText(report) {
+  const sections = (report.sections || []).map((section) => {
+    const lines = (section.lines || []).map((item) => `- ${item}`).join('\n');
+    return `${section.title}\n${lines}`;
+  }).join('\n\n');
+
+  if (sections) {
+    return `${report.title}\n\n${report.summary}\n\n${sections}`;
+  }
+
   const findings = (report.findings || []).map((item) => `- ${item}`).join('\n');
   return `${report.title}\n\n${report.summary}\n\nFindings\n${findings}`;
 }
