@@ -57,7 +57,7 @@ export function createAssessmentFromInput(input = '', context = {}) {
     agentPipeline: runAgentPipeline({
       assessment,
       evidenceSummary: context.evidenceSummary,
-      report: context.report
+      report: context.report || { type: context.reportType || 'homeowner' }
     })
   };
 }
