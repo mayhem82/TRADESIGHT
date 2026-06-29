@@ -1,3 +1,4 @@
+import { routeIntake } from '../agents/intake-router.js';
 import { createAssessmentFromInput } from '../lib/create-assessment.js';
 import { createEvidenceRegister, evidenceSummary } from '../lib/evidence-register.js';
 import { generateReport } from '../lib/generate-report.js';
@@ -6,9 +7,16 @@ import { summariseProjectStatus } from '../project/project-status.js';
 import { createRuntimeState, completeRuntimeState } from './runtime-state.js';
 import { appendRuntimeEvent } from './runtime-events.js';
 
-export function runTradesight({ input = '', evidence = [], project = null, reportType = 'homeowner' } = {}) {
+export function runTradesight({ input = '', evidence = [], project = null, reportType = 'homeowner', attachments = [] } = {}) {
   let events = [];
-  const runtime = createRuntimeState({ input, evidence, project, status: 'running' });
+  const intakeRoute = routeIntake(input, { attachments });
+  const runtime = createRuntimeState({ input, evidence, project, intakeRoute, status: 'running' });
+
+  events = appendRuntimeEvent(events, {
+    stage: 'routing',
+    detail: `Intake routed as ${intakeRoute.routeType} through ${intakeRoute.primaryAgent}.`,
+    data: intakeRoute
+  });
 
   const evidenceRegister = createEvidenceRegister(evidence);
   const summary = evidenceSummary(evidenceRegister);
@@ -18,7 +26,7 @@ export function runTradesight({ input = '', evidence = [], project = null, repor
     data: summary
   });
 
-  const assessment = createAssessmentFromInput(input, { evidenceSummary: summary, reportType });
+  const assessment = createAssessmentFromInput(input, { evidenceSummary: summary, reportType, intakeRoute });
   events = appendRuntimeEvent(events, {
     stage: 'assessment',
     detail: `Assessment created as ${assessment.type} with state ${assessment.state}.`,
@@ -48,6 +56,7 @@ export function runTradesight({ input = '', evidence = [], project = null, repor
   });
 
   return completeRuntimeState(runtime, {
+    intakeRoute,
     assessment,
     evidence: evidenceRegister,
     evidenceSummary: summary,
