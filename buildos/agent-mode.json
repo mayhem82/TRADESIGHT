@@ -1,0 +1,16 @@
+{
+  "project": "TRADESIGHT",
+  "mode": "Agent Mode",
+  "status": "enabled",
+  "purpose": "Continue repository development after Capability Build v2 using one audited build increment per run.",
+  "rules": [
+    "Read buildos/state.json before acting.",
+    "Inspect relevant source files before editing.",
+    "Build one operational increment only.",
+    "Keep unsupported compliance outcomes unresolved.",
+    "Commit code and documentation changes.",
+    "Update buildos/changelog.json and buildos/state.json before stopping."
+  ],
+  "default_next_task": "22-repository-health-audit",
+  "createdAt": "2026-06-29T00:00:00.000Z"
+}
