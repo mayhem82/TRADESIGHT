@@ -1,0 +1,13 @@
+{
+  "quality_gates": {
+    "build_must_compile": true,
+    "no_dead_code": true,
+    "replace_scaffolds_when_real_code_exists": true,
+    "maintain_backward_compatibility": true,
+    "record_design_decisions": true,
+    "one_operational_increment_per_run": true,
+    "unknown_items_remain_unknown": true,
+    "no_unverified_final_conclusions": true
+  },
+  "commit_rule": "Every commit must leave TRADESIGHT in a more operational state than before."
+}
