@@ -74,6 +74,11 @@
       "id": "CHANGE-015",
       "summary": "Added UI demo loader for NSW demo cases and wired demo case loading into the TRADESIGHT runtime interface.",
       "status": "committed"
+    },
+    {
+      "id": "CHANGE-016",
+      "summary": "Added report export foundation with TXT export generation, copy action, download action, and export metadata display.",
+      "status": "committed"
     }
   ]
 }
