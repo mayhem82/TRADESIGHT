@@ -4,6 +4,11 @@
       "id": "CHANGE-001",
       "summary": "Introduced BuildOS as the repository-level operating layer for future autonomous build runs.",
       "status": "committed"
+    },
+    {
+      "id": "CHANGE-002",
+      "summary": "Added Compliance Knowledge Engine rule registry, rule source tracking, jurisdiction resolver, rule evaluator, and UI provenance display.",
+      "status": "committed"
     }
   ]
 }
