@@ -18,16 +18,17 @@ function App() {
   const [evidence, setEvidence] = useState(() => createEvidenceRegister(project.evidence));
   const [evidenceNote, setEvidenceNote] = useState('');
 
+  const summary = useMemo(() => evidenceSummary(evidence), [evidence]);
+
   const assessment = useMemo(() => {
-    const baseAssessment = createAssessmentFromInput(input);
+    const baseAssessment = createAssessmentFromInput(input, { evidenceSummary: summary });
 
     return {
       ...baseAssessment,
       modules: getModulesForTask(baseAssessment.type)
     };
-  }, [input]);
+  }, [input, summary]);
 
-  const summary = useMemo(() => evidenceSummary(evidence), [evidence]);
   const report = useMemo(() => generateReport({ assessment, evidence }), [assessment, evidence]);
   const currentProject = useMemo(() => ({
     ...project,
