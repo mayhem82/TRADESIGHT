@@ -18,7 +18,7 @@ export function runTradesight({ input = '', evidence = [], project = null, repor
     data: summary
   });
 
-  const assessment = createAssessmentFromInput(input, { evidenceSummary: summary });
+  const assessment = createAssessmentFromInput(input, { evidenceSummary: summary, reportType });
   events = appendRuntimeEvent(events, {
     stage: 'assessment',
     detail: `Assessment created as ${assessment.type} with state ${assessment.state}.`,
