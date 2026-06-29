@@ -39,6 +39,11 @@
       "id": "CHANGE-008",
       "summary": "Added Project Intelligence with status summaries, version history, search helper, audit trail, expanded project model, save enrichment, and project panel status display.",
       "status": "committed"
+    },
+    {
+      "id": "CHANGE-009",
+      "summary": "Added Agent Orchestration with agent registry, task-agent routing, auditable pipeline events, assessment integration, and UI pipeline display.",
+      "status": "committed"
     }
   ]
 }
