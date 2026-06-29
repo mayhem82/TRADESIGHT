@@ -1,11 +1,11 @@
 {
   "project": "TRADESIGHT",
   "mode": "BuildOS Controller",
-  "current_plan": "agent-mode-v1",
+  "current_plan": "agent-mode-v2",
   "current_step": 27,
-  "next_task": "complete",
-  "status": "complete",
-  "last_completed": "26-demo-polish",
-  "last_commit_summary": "Added demo polish with walkthrough guide, clearer demo loader, guided UI placement, and presentation styling.",
+  "next_task": "27-runtime-hardening",
+  "status": "ready",
+  "last_completed": "agent-mode-v2-controller",
+  "last_commit_summary": "Started Agent Mode v2 with a controller file and roadmap for the next build cycle.",
   "blocker": null
 }
