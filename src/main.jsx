@@ -5,6 +5,7 @@ import { loadProject, saveProject, clearProject } from './lib/project-storage.js
 import { runTradesight } from './runtime/run-tradesight.js';
 import { AgentIntake } from './components/AgentIntake.jsx';
 import { AssessmentPanel } from './components/AssessmentPanel.jsx';
+import { DemoLoader } from './components/DemoLoader.jsx';
 import { EvidencePanel } from './components/EvidencePanel.jsx';
 import { ProjectPanel } from './components/ProjectPanel.jsx';
 import { ReportPreview } from './components/ReportPreview.jsx';
@@ -16,8 +17,10 @@ function App() {
   const [project, setProject] = useState(() => loadProject());
   const [evidence, setEvidence] = useState(() => createEvidenceRegister(project.evidence));
   const [evidenceNote, setEvidenceNote] = useState('');
+  const [reportType, setReportType] = useState('homeowner');
+  const [loadedDemo, setLoadedDemo] = useState(null);
 
-  const runtime = useMemo(() => runTradesight({ input, evidence, project }), [input, evidence, project]);
+  const runtime = useMemo(() => runTradesight({ input, evidence, project, reportType }), [input, evidence, project, reportType]);
   const assessment = useMemo(() => ({
     ...runtime.assessment,
     modules: getModulesForTask(runtime.assessment?.type)
@@ -36,6 +39,13 @@ function App() {
     setEvidenceNote('');
   }
 
+  function handleLoadDemo(demoCase) {
+    setLoadedDemo(demoCase);
+    setInput(demoCase.input);
+    setEvidence(createEvidenceRegister(demoCase.evidence));
+    setReportType(demoCase.audience);
+  }
+
   function handleSaveProject() {
     const saved = saveProject(currentProject);
     setProject(saved);
@@ -46,6 +56,8 @@ function App() {
     setProject(cleared);
     setEvidence(createEvidenceRegister());
     setInput('');
+    setReportType('homeowner');
+    setLoadedDemo(null);
   }
 
   return (
@@ -55,6 +67,16 @@ function App() {
         <h1>TRADESIGHT</h1>
         <p>Construction compliance, defect intelligence, project advocacy, and government-ready assessment infrastructure for NSW.</p>
       </section>
+
+      <DemoLoader onLoadDemo={handleLoadDemo} />
+
+      {loadedDemo && (
+        <article>
+          <h2>Loaded Demo</h2>
+          <p><strong>{loadedDemo.title}</strong></p>
+          <p>{loadedDemo.purpose}</p>
+        </article>
+      )}
 
       <AgentIntake input={input} onInputChange={setInput} />
 
