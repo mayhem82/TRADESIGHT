@@ -33,6 +33,22 @@ export function AssessmentPanel({ assessment }) {
       {assessment.riskReasons?.length > 0 && (
         <ul>{assessment.riskReasons.map((reason) => <li key={reason}>{reason}</li>)}</ul>
       )}
+      {assessment.matchedRules?.length > 0 && (
+        <section className="subsection">
+          <h3>Rule provenance</h3>
+          <ul>
+            {assessment.matchedRules.map((rule) => (
+              <li key={rule.id}>{rule.id}: {rule.source.label} - confidence {Math.round(rule.confidence * 100)}%</li>
+            ))}
+          </ul>
+        </section>
+      )}
+      {assessment.unresolvedItems?.length > 0 && (
+        <section className="subsection">
+          <h3>Unresolved items</h3>
+          <ul>{assessment.unresolvedItems.map((item) => <li key={item}>{item}</li>)}</ul>
+        </section>
+      )}
     </article>
   );
 }
