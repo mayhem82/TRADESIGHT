@@ -2,10 +2,10 @@
   "project": "TRADESIGHT",
   "mode": "BuildOS Controller",
   "current_plan": "agent-mode-v2",
-  "current_step": 28,
-  "next_task": "28-demo-case-expansion",
+  "current_step": 29,
+  "next_task": "29-agent-intake-router",
   "status": "ready",
-  "last_completed": "27-runtime-hardening",
-  "last_commit_summary": "Fixed runtime report context so Agent orchestration receives the selected report type.",
+  "last_completed": "28-remove-demo-remnants",
+  "last_commit_summary": "Removed demo-first components, sample case data, and presentation mode from the live application path; redirected roadmap to agent-first operational build.",
   "blocker": null
 }
