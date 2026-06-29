@@ -1,0 +1,16 @@
+{
+  "project": "TRADESIGHT",
+  "mode": "Agent Mode v2",
+  "status": "enabled",
+  "purpose": "Continue after Agent Mode v1 by hardening the runtime and expanding the demonstration platform into a more usable product shell.",
+  "rules": [
+    "Read buildos/state.json before acting.",
+    "Inspect relevant source files before editing.",
+    "Build one operational increment per run.",
+    "Keep unsupported outcomes unresolved.",
+    "Prefer working product improvements over abstract architecture.",
+    "Update buildos/changelog.json and buildos/state.json before stopping."
+  ],
+  "default_next_task": "27-runtime-hardening",
+  "createdAt": "2026-06-30T00:00:00.000Z"
+}
