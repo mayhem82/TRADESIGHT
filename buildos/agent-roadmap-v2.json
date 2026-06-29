@@ -1,36 +1,43 @@
 {
   "plan": "agent-mode-v2",
   "status": "active",
+  "principle": "The working app is the demonstration. Agents perform routing and specialist work behind one user-facing intake.",
   "steps": [
     {
       "step": 27,
       "id": "27-runtime-hardening",
-      "status": "ready",
-      "objective": "Harden runtime handling for blank intake, report type selection, event consistency, and safe fallback states."
+      "status": "completed",
+      "objective": "Harden runtime report context and preserve selected pathway state."
     },
     {
       "step": 28,
-      "id": "28-demo-case-expansion",
-      "status": "queued",
-      "objective": "Add more NSW demonstration cases covering plans, materials, safety, and insurance workflows."
+      "id": "28-remove-demo-remnants",
+      "status": "completed",
+      "objective": "Remove demo-first components, sample case data, and presentation mode from the live application path."
     },
     {
       "step": 29,
-      "id": "29-report-template-controls",
-      "status": "queued",
-      "objective": "Expose report audience selection and template controls in the UI."
+      "id": "29-agent-intake-router",
+      "status": "ready",
+      "objective": "Make the single intake route user questions, plans, photos, standards lookup, evidence, assessment, and report pathways through agents."
     },
     {
       "step": 30,
-      "id": "30-project-search-ui",
+      "id": "30-upload-photos-foundation",
       "status": "queued",
-      "objective": "Add simple search across current project assessment and evidence records."
+      "objective": "Make photo upload create evidence records with metadata and route through the Image DNA Agent."
     },
     {
       "step": 31,
-      "id": "31-basic-ci-workflow",
+      "id": "31-upload-plans-foundation",
       "status": "queued",
-      "objective": "Add a basic GitHub Actions build workflow for Vite build verification."
+      "objective": "Make plan upload create plan records and route through the Plan Review Agent."
+    },
+    {
+      "step": 32,
+      "id": "32-standards-lookup-foundation",
+      "status": "queued",
+      "objective": "Add source-controlled standards lookup that returns references without unsupported conclusions."
     }
   ]
 }
