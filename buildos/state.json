@@ -2,10 +2,10 @@
   "project": "TRADESIGHT",
   "mode": "BuildOS Controller",
   "current_plan": "agent-mode-v2",
-  "current_step": 27,
-  "next_task": "27-runtime-hardening",
+  "current_step": 28,
+  "next_task": "28-demo-case-expansion",
   "status": "ready",
-  "last_completed": "agent-mode-v2-controller",
-  "last_commit_summary": "Started Agent Mode v2 with a controller file and roadmap for the next build cycle.",
+  "last_completed": "27-runtime-hardening",
+  "last_commit_summary": "Fixed runtime report context so Agent orchestration receives the selected report type.",
   "blocker": null
 }
