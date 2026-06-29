@@ -1,0 +1,15 @@
+{
+  "roadmap": [
+    { "step": 10, "id": "compliance-knowledge-engine", "status": "ready" },
+    { "step": 11, "id": "evidence-intelligence", "status": "queued" },
+    { "step": 12, "id": "image-dna-engine", "status": "queued" },
+    { "step": 13, "id": "plan-review-engine", "status": "queued" },
+    { "step": 14, "id": "assessment-intelligence", "status": "queued" },
+    { "step": 15, "id": "report-studio", "status": "queued" },
+    { "step": 16, "id": "project-intelligence", "status": "queued" },
+    { "step": 17, "id": "agent-orchestration", "status": "queued" },
+    { "step": 18, "id": "tradesight-runtime", "status": "queued" },
+    { "step": 19, "id": "production-readiness", "status": "queued" },
+    { "step": 20, "id": "nsw-demonstration-platform", "status": "queued" }
+  ]
+}
