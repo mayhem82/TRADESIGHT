@@ -4,6 +4,7 @@ import { appendEvidence, createEvidenceRegister } from './lib/evidence-register.
 import { loadProject, saveProject, clearProject } from './lib/project-storage.js';
 import { runTradesight } from './runtime/run-tradesight.js';
 import { AgentIntake } from './components/AgentIntake.jsx';
+import { AgentRouterPanel } from './components/AgentRouterPanel.jsx';
 import { AssessmentPanel } from './components/AssessmentPanel.jsx';
 import { EvidencePanel } from './components/EvidencePanel.jsx';
 import { ProjectPanel } from './components/ProjectPanel.jsx';
@@ -52,33 +53,15 @@ function App() {
   return (
     <main className="shell">
       <section className="hero">
-        <div className="badge">Live operational app</div>
+        <div className="badge">Agent-first live app</div>
         <h1>TRADESIGHT</h1>
-        <p>Ask a construction question, start an assessment, capture evidence, and generate a structured report.</p>
-      </section>
-
-      <section className="entry-grid">
-        <article>
-          <h2>Ask a Question</h2>
-          <p>Use TRADESIGHT without creating a project first. If the issue grows, save it as a project.</p>
-        </article>
-        <article>
-          <h2>Upload Plans</h2>
-          <p>Plan upload handling is the next operational capability to build.</p>
-        </article>
-        <article>
-          <h2>Upload Photos</h2>
-          <p>Photo evidence handling is the next operational capability to build.</p>
-        </article>
-        <article>
-          <h2>Look Up Standards</h2>
-          <p>Standards lookup must be evidence-linked and source-controlled before conclusions are asserted.</p>
-        </article>
+        <p>Ask once. TRADESIGHT routes the work through agents for questions, plans, photos, standards, evidence, assessment, report, or project record.</p>
       </section>
 
       <AgentIntake input={input} onInputChange={setInput} />
 
       <section className="grid">
+        <AgentRouterPanel route={runtime.intakeRoute} />
         <ProjectPanel project={currentProject} onSave={handleSaveProject} onClear={handleClearProject} />
         <AssessmentPanel assessment={assessment} />
 
@@ -102,15 +85,15 @@ function App() {
       </section>
 
       <section className="pathway">
-        <h2>Operational Pathway</h2>
+        <h2>Agent-Controlled Pathway</h2>
         <div className="steps">
-          <span>Question</span>
-          <span>Runtime</span>
-          <span>Assessment</span>
+          <span>User input</span>
+          <span>Agent router</span>
+          <span>Specialist agents</span>
+          <span>Required questions</span>
           <span>Evidence</span>
           <span>Standards</span>
-          <span>Report</span>
-          <span>Project</span>
+          <span>Report or project</span>
         </div>
       </section>
     </main>
