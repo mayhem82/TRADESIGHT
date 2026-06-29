@@ -1,40 +1,27 @@
 <!doctype html>
 <html lang="en-AU">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TRADESIGHT</title>
-    <meta name="description" content="TRADESIGHT project intelligence and evidence workflow platform for NSW." />
-    <style>
-      body { margin: 0; min-height: 100vh; font-family: Arial, sans-serif; color: #e7edf5; background: #0b1118; }
-      .fallback { max-width: 920px; margin: 0 auto; padding: 42px 20px; }
-      .badge { display: inline-block; border: 1px solid #334155; border-radius: 999px; padding: 8px 12px; color: #a9bad0; margin-bottom: 18px; }
-      h1 { font-size: clamp(3rem, 12vw, 6rem); line-height: 0.95; margin: 0 0 18px; }
-      p, li { color: #bdc8d7; line-height: 1.6; }
-      .panel { border: 1px solid #334155; border-radius: 10px; padding: 20px; background: #111827; margin: 18px 0; }
-    </style>
-  </head>
-  <body>
-    <div id="root">
-      <main class="fallback">
-        <div class="badge">TRADESIGHT recovery shell</div>
-        <h1>TRADESIGHT</h1>
-        <p>The previous deployed page loaded as a blank screen. This recovery shell is now visible while the React deployment is corrected.</p>
-        <section class="panel">
-          <h2>Current capability</h2>
-          <ul>
-            <li>NSW demo workflow</li>
-            <li>Evidence register foundation</li>
-            <li>Assessment and report pathway</li>
-            <li>Report text export foundation</li>
-          </ul>
-        </section>
-        <section class="panel">
-          <h2>Status</h2>
-          <p>If this page is visible, the blank screen is removed. The next repair is the production React bundle path.</p>
-        </section>
-      </main>
-    </div>
-    <script type="module" src="/TRADESIGHT/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TRADESIGHT</title>
+  <style>
+    body{margin:0;font-family:Arial,sans-serif;color:#e7edf5;background:#0b1118}main{max-width:1100px;margin:auto;padding:28px 14px}h1{font-size:clamp(3rem,12vw,6rem);margin:0 0 12px}.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.wide{grid-column:1/-1}.panel{border:1px solid #334155;border-radius:10px;padding:18px;background:#111827}p,li,label{color:#bdc8d7;line-height:1.55}textarea{width:100%;min-height:130px;border:1px solid #334155;border-radius:8px;padding:12px;color:#eef5ff;background:#020617}button{border:1px solid #475569;border-radius:999px;padding:10px 14px;color:#0b1118;background:#e7edf5;font-weight:800;margin:6px 6px 6px 0}.muted{color:#91a2b8}pre{white-space:pre-wrap;background:#020617;border:1px solid #334155;border-radius:8px;padding:14px;color:#dbeafe}.demo{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}@media(max-width:800px){.grid,.demo{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<main>
+  <section class="wide"><p class="muted">TRADESIGHT working site</p><h1>TRADESIGHT</h1><p>Project intelligence, defect workflow, evidence register, and draft report shell for NSW construction pathways.</p></section>
+  <section class="panel wide"><h2>Demo Loader</h2><div class="demo"><button onclick="loadDemo(0)">Leaking balcony</button><button onclick="loadDemo(1)">Builder dispute</button><button onclick="loadDemo(2)">Council pathway</button></div></section>
+  <section class="grid">
+    <article class="panel"><h2>Agent Intake</h2><label>Describe the issue</label><textarea id="intake"></textarea><button onclick="run()">Run TRADESIGHT</button><button onclick="clearAll()">Clear</button></article>
+    <article class="panel"><h2>Assessment</h2><p><b>Type:</b> <span id="type">waiting</span></p><p><b>Priority:</b> <span id="priority">waiting</span></p><p><b>Conclusion:</b> not asserted</p><p id="summary" class="muted">Load a demo or enter a case.</p></article>
+    <article class="panel"><h2>Evidence Register</h2><ul id="evidence"></ul></article>
+    <article class="panel"><h2>Runtime Events</h2><ul id="events"></ul></article>
+    <article class="panel wide"><h2>Report Studio</h2><pre id="report">No report generated yet.</pre></article>
+  </section>
+</main>
+<script>
+const demos=[['Homeowner reports leaking balcony, water stains, mould, and possible waterproofing defect with photos but no verified report yet.','Photo note: water staining under balcony edge and damp wall lining.'],['Builder dispute over variation invoice, incomplete rectification, cracked plaster, and warranty communication.','Email summary: variation invoice dispute and incomplete rectification date.'],['Resident asks whether council-approved work near boundary is compliant under NSW rules and wants an authority-ready record.','Resident note: boundary concern, council reference, and missing approval documents.']];let ev=[];function loadDemo(i){document.getElementById('intake').value=demos[i][0];ev=[demos[i][1]];run()}function classify(t){t=t.toLowerCase();if(t.includes('leak')||t.includes('mould'))return['building defect','high'];if(t.includes('council')||t.includes('boundary'))return['compliance pathway','review'];if(t.includes('invoice')||t.includes('variation'))return['project dispute','medium'];return['general assessment','triage']}function run(){const input=document.getElementById('intake').value.trim();const c=classify(input);const evidence=ev.length?ev:['User intake statement recorded as unverified evidence.'];document.getElementById('type').textContent=c[0];document.getElementById('priority').textContent=c[1];document.getElementById('summary').textContent=input||'No intake text supplied.';document.getElementById('evidence').innerHTML=evidence.map(x=>'<li>'+x+'</li>').join('');document.getElementById('events').innerHTML=['intake captured','assessment created','evidence registered','report drafted','outcome boundary preserved'].map(x=>'<li>'+x+'</li>').join('');document.getElementById('report').textContent='TRADESIGHT Draft Report\n\nAssessment type: '+c[0]+'\nPriority: '+c[1]+'\nConclusion: not asserted\n\nSummary\n'+(input||'No intake text supplied.')+'\n\nEvidence\n- '+evidence.join('\n- ')+'\n\nBoundary\n- Structured draft only. Unsupported outcomes remain unresolved until verified.'}function clearAll(){ev=[];document.getElementById('intake').value='';document.getElementById('type').textContent='waiting';document.getElementById('priority').textContent='waiting';document.getElementById('summary').textContent='Load a demo or enter a case.';document.getElementById('evidence').innerHTML='';document.getElementById('events').innerHTML='';document.getElementById('report').textContent='No report generated yet.'}
+</script>
+</body>
 </html>
