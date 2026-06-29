@@ -1,9 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createAssessmentFromInput } from './lib/create-assessment.js';
-import { createEvidenceRegister, appendEvidence, evidenceSummary } from './lib/evidence-register.js';
-import { generateReport } from './lib/generate-report.js';
+import { appendEvidence, createEvidenceRegister } from './lib/evidence-register.js';
 import { loadProject, saveProject, clearProject } from './lib/project-storage.js';
+import { runTradesight } from './runtime/run-tradesight.js';
 import { AgentIntake } from './components/AgentIntake.jsx';
 import { AssessmentPanel } from './components/AssessmentPanel.jsx';
 import { EvidencePanel } from './components/EvidencePanel.jsx';
@@ -18,23 +17,14 @@ function App() {
   const [evidence, setEvidence] = useState(() => createEvidenceRegister(project.evidence));
   const [evidenceNote, setEvidenceNote] = useState('');
 
-  const summary = useMemo(() => evidenceSummary(evidence), [evidence]);
-
-  const assessment = useMemo(() => {
-    const baseAssessment = createAssessmentFromInput(input, { evidenceSummary: summary });
-
-    return {
-      ...baseAssessment,
-      modules: getModulesForTask(baseAssessment.type)
-    };
-  }, [input, summary]);
-
-  const report = useMemo(() => generateReport({ assessment, evidence }), [assessment, evidence]);
-  const currentProject = useMemo(() => ({
-    ...project,
-    assessments: input.trim() ? [assessment] : project.assessments,
-    evidence
-  }), [project, input, assessment, evidence]);
+  const runtime = useMemo(() => runTradesight({ input, evidence, project }), [input, evidence, project]);
+  const assessment = useMemo(() => ({
+    ...runtime.assessment,
+    modules: getModulesForTask(runtime.assessment?.type)
+  }), [runtime.assessment]);
+  const summary = runtime.evidenceSummary;
+  const report = runtime.report;
+  const currentProject = runtime.project;
 
   function addEvidenceNote() {
     if (!evidenceNote.trim()) return;
@@ -73,6 +63,11 @@ function App() {
         <AssessmentPanel assessment={assessment} />
 
         <article>
+          <h2>Runtime Events</h2>
+          <ul>{runtime.events.map((event) => <li key={event.id}>{event.stage}: {event.detail}</li>)}</ul>
+        </article>
+
+        <article>
           <h2>Module Routing</h2>
           <ul>{assessment.modules.map((module) => <li key={module.id}>{module.name} - {module.status}</li>)}</ul>
         </article>
@@ -97,11 +92,12 @@ function App() {
         <h2>Universal Pathway</h2>
         <div className="steps">
           <span>Intake</span>
-          <span>Classify</span>
-          <span>Route</span>
+          <span>Runtime</span>
           <span>Assess</span>
           <span>Evidence</span>
+          <span>Agents</span>
           <span>Report</span>
+          <span>Project</span>
         </div>
       </section>
     </main>
