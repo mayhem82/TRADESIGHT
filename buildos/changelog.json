@@ -1,89 +1,22 @@
 {
   "changes": [
-    {
-      "id": "CHANGE-001",
-      "summary": "Introduced BuildOS as the repository-level operating layer for future build runs.",
-      "status": "committed"
-    },
-    {
-      "id": "CHANGE-002",
-      "summary": "Added Compliance Knowledge Engine rule registry, rule source tracking, jurisdiction resolver, rule evaluator, and UI provenance display.",
-      "status": "committed"
-    },
-    {
-      "id": "CHANGE-003",
-      "summary": "Added Evidence Intelligence with evidence type inference, tagging, quality scoring, timeline summary, possible duplicate detection, and UI evidence quality display.",
-      "status": "committed"
-    },
-    {
-      "id": "CHANGE-004",
-      "summary": "Added Image DNA Engine records, visual observation typing, image confidence scoring, image analysis helper, and active image module output.",
-      "status": "committed"
-    },
-    {
-      "id": "CHANGE-005",
-      "summary": "Added Plan Review Engine with plan records, drawing type inference, missing-detail checks, plan review helper, and active engineering pathway output.",
-      "status": "committed"
-    },
-    {
-      "id": "CHANGE-006",
-      "summary": "Added Assessment Intelligence with risk scoring, evidence completeness scoring, priority calculation, evidence-aware assessment creation, and UI score display.",
-      "status": "committed"
-    },
-    {
-      "id": "CHANGE-007",
-      "summary": "Added Report Studio with report types, audience profiles, section builder, expanded report model, report generation, and report preview metadata.",
-      "status": "committed"
-    },
-    {
-      "id": "CHANGE-008",
-      "summary": "Added Project Intelligence with status summaries, version history, search helper, audit trail, expanded project model, save enrichment, and project panel status display.",
-      "status": "committed"
-    },
-    {
-      "id": "CHANGE-009",
-      "summary": "Added Agent Orchestration with agent registry, task-agent routing, auditable pipeline events, assessment integration, and UI pipeline display.",
-      "status": "committed"
-    },
-    {
-      "id": "CHANGE-010",
-      "summary": "Added TRADESIGHT Runtime connecting evidence, assessment, report, project status, runtime events, and UI execution through one local workflow.",
-      "status": "committed"
-    },
-    {
-      "id": "CHANGE-011",
-      "summary": "Added Production Readiness foundation with app config, runtime self-check, deployment notes, testing notes, and README build-state update.",
-      "status": "committed"
-    },
-    {
-      "id": "CHANGE-012",
-      "summary": "Added NSW Demonstration Platform with demo cases, demo script, presentation mode, demo documentation, and README completion update.",
-      "status": "committed"
-    },
-    {
-      "id": "CHANGE-013",
-      "summary": "Started BuildOS Agent Mode with an agent-mode controller and roadmap for continued post-v2 build increments.",
-      "status": "committed"
-    },
-    {
-      "id": "CHANGE-014",
-      "summary": "Added repository health diagnostics and repository health documentation for Agent Mode step 22.",
-      "status": "committed"
-    },
-    {
-      "id": "CHANGE-015",
-      "summary": "Added UI demo loader for NSW demo cases and wired demo case loading into the TRADESIGHT runtime interface.",
-      "status": "committed"
-    },
-    {
-      "id": "CHANGE-016",
-      "summary": "Added report export foundation with TXT export generation, copy action, download action, and export metadata display.",
-      "status": "committed"
-    },
-    {
-      "id": "CHANGE-017",
-      "summary": "Added evidence attachment foundation with local attachment metadata records, attachment summaries, evidence model support, and UI metadata display.",
-      "status": "committed"
-    }
+    { "id": "CHANGE-001", "summary": "Introduced BuildOS as the repository-level operating layer for future build runs.", "status": "committed" },
+    { "id": "CHANGE-002", "summary": "Added Compliance Knowledge Engine rule registry, rule source tracking, jurisdiction resolver, rule evaluator, and UI provenance display.", "status": "committed" },
+    { "id": "CHANGE-003", "summary": "Added Evidence Intelligence with evidence type inference, tagging, quality scoring, timeline summary, possible duplicate detection, and UI evidence quality display.", "status": "committed" },
+    { "id": "CHANGE-004", "summary": "Added Image DNA Engine records, visual observation typing, image confidence scoring, image analysis helper, and active image module output.", "status": "committed" },
+    { "id": "CHANGE-005", "summary": "Added Plan Review Engine with plan records, drawing type inference, missing-detail checks, plan review helper, and active engineering pathway output.", "status": "committed" },
+    { "id": "CHANGE-006", "summary": "Added Assessment Intelligence with risk scoring, evidence completeness scoring, priority calculation, evidence-aware assessment creation, and UI score display.", "status": "committed" },
+    { "id": "CHANGE-007", "summary": "Added Report Studio with report types, audience profiles, section builder, expanded report model, report generation, and report preview metadata.", "status": "committed" },
+    { "id": "CHANGE-008", "summary": "Added Project Intelligence with status summaries, version history, search helper, audit trail, expanded project model, save enrichment, and project panel status display.", "status": "committed" },
+    { "id": "CHANGE-009", "summary": "Added Agent Orchestration with agent registry, task-agent routing, auditable pipeline events, assessment integration, and UI pipeline display.", "status": "committed" },
+    { "id": "CHANGE-010", "summary": "Added TRADESIGHT Runtime connecting evidence, assessment, report, project status, runtime events, and UI execution through one local workflow.", "status": "committed" },
+    { "id": "CHANGE-011", "summary": "Added Production Readiness foundation with app config, runtime self-check, deployment notes, testing notes, and README build-state update.", "status": "committed" },
+    { "id": "CHANGE-012", "summary": "Added NSW Demonstration Platform with demo cases, demo script, presentation mode, demo documentation, and README completion update.", "status": "committed" },
+    { "id": "CHANGE-013", "summary": "Started BuildOS Agent Mode with an agent-mode controller and roadmap for continued post-v2 build increments.", "status": "committed" },
+    { "id": "CHANGE-014", "summary": "Added repository health diagnostics and repository health documentation for Agent Mode step 22.", "status": "committed" },
+    { "id": "CHANGE-015", "summary": "Added UI demo loader for NSW demo cases and wired demo case loading into the TRADESIGHT runtime interface.", "status": "committed" },
+    { "id": "CHANGE-016", "summary": "Added report export foundation with TXT export generation, copy action, download action, and export metadata display.", "status": "committed" },
+    { "id": "CHANGE-017", "summary": "Added evidence attachment foundation with local attachment metadata records, attachment summaries, evidence model support, and UI metadata display.", "status": "committed" },
+    { "id": "CHANGE-018", "summary": "Added demo polish with walkthrough guide, clearer demo loader, guided UI placement, and presentation styling.", "status": "committed" }
   ]
 }
