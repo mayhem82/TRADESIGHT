@@ -9,6 +9,11 @@
       "id": "CHANGE-002",
       "summary": "Added Compliance Knowledge Engine rule registry, rule source tracking, jurisdiction resolver, rule evaluator, and UI provenance display.",
       "status": "committed"
+    },
+    {
+      "id": "CHANGE-003",
+      "summary": "Added Evidence Intelligence with evidence type inference, tagging, quality scoring, timeline summary, possible duplicate detection, and UI evidence quality display.",
+      "status": "committed"
     }
   ]
 }
