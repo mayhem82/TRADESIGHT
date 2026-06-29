@@ -2,10 +2,10 @@
   "project": "TRADESIGHT",
   "mode": "BuildOS Controller",
   "current_plan": "agent-mode-v2",
-  "current_step": 29,
-  "next_task": "29-agent-intake-router",
+  "current_step": 30,
+  "next_task": "30-upload-photos-foundation",
   "status": "ready",
-  "last_completed": "28-remove-demo-remnants",
-  "last_commit_summary": "Removed demo-first components, sample case data, and presentation mode from the live application path; redirected roadmap to agent-first operational build.",
+  "last_completed": "29-agent-intake-router",
+  "last_commit_summary": "Added agent intake router so one user input routes questions, plans, photos, standards, evidence, assessment, report, or project pathways through agents.",
   "blocker": null
 }
