@@ -1,20 +1,11 @@
 {
   "project": "TRADESIGHT",
-  "mode": "BuildOS",
-  "current_plan": "capability-build-v2",
-  "current_step": 21,
-  "next_task": "complete",
-  "status": "complete",
-  "last_completed": "20-nsw-demonstration-platform",
-  "last_commit_summary": "Added NSW Demonstration Platform with demo cases, demo script, presentation mode, demo documentation, and README completion update.",
-  "blocker": null,
-  "operating_sequence": [
-    "Read BuildOS state",
-    "Read roadmap and quality gates",
-    "Inspect repository",
-    "Build one operational increment",
-    "Commit",
-    "Update BuildOS",
-    "Stop"
-  ]
+  "mode": "BuildOS Controller",
+  "current_plan": "agent-mode-v1",
+  "current_step": 22,
+  "next_task": "22-repository-health-check",
+  "status": "ready",
+  "last_completed": "21-agent-mode-controller",
+  "last_commit_summary": "Started the next BuildOS controller layer with a controller file and roadmap.",
+  "blocker": null
 }
