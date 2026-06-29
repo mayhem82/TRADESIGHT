@@ -2,10 +2,10 @@
   "project": "TRADESIGHT",
   "mode": "BuildOS Controller",
   "current_plan": "agent-mode-v1",
-  "current_step": 25,
-  "next_task": "25-evidence-attachment-foundation",
+  "current_step": 26,
+  "next_task": "26-demo-polish",
   "status": "ready",
-  "last_completed": "24-report-export-foundation",
-  "last_commit_summary": "Added report export foundation with TXT export generation, copy action, download action, and export metadata display.",
+  "last_completed": "25-evidence-attachment-foundation",
+  "last_commit_summary": "Added evidence attachment foundation with local attachment metadata records, attachment summaries, evidence model support, and UI metadata display.",
   "blocker": null
 }
