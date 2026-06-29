@@ -1,0 +1,42 @@
+{
+  "plan": "agent-mode-v1",
+  "status": "active",
+  "steps": [
+    {
+      "step": 21,
+      "id": "21-agent-mode-controller",
+      "status": "completed",
+      "objective": "Create the Agent Mode control layer after Capability Build v2 completion."
+    },
+    {
+      "step": 22,
+      "id": "22-repository-health-audit",
+      "status": "ready",
+      "objective": "Check source structure, module wiring, runtime flow, and integration risks."
+    },
+    {
+      "step": 23,
+      "id": "23-ui-demonstration-loader",
+      "status": "queued",
+      "objective": "Expose demo case loading in the user interface."
+    },
+    {
+      "step": 24,
+      "id": "24-report-export-foundation",
+      "status": "queued",
+      "objective": "Add text export and report copy pathway without server storage."
+    },
+    {
+      "step": 25,
+      "id": "25-evidence-attachment-foundation",
+      "status": "queued",
+      "objective": "Add browser-side attachment metadata handling for later file upload work."
+    },
+    {
+      "step": 26,
+      "id": "26-demo-polish",
+      "status": "queued",
+      "objective": "Improve NSW demonstration readability and guided walkthrough."
+    }
+  ]
+}
