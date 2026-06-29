@@ -19,6 +19,11 @@
       "id": "CHANGE-004",
       "summary": "Added Image DNA Engine records, visual observation typing, image confidence scoring, image analysis helper, and active image module output.",
       "status": "committed"
+    },
+    {
+      "id": "CHANGE-005",
+      "summary": "Added Plan Review Engine with plan records, drawing type inference, missing-detail checks, plan review helper, and active engineering pathway output.",
+      "status": "committed"
     }
   ]
 }
