@@ -40,7 +40,15 @@ export function EvidencePanel({ evidence, evidenceNote, onEvidenceNoteChange, on
             <li key={item.id}>
               {item.id}: {item.description} ({item.status}) - {item.type} - {item.quality?.label || 'quality not scored'}
               {item.tags?.length ? ` - tags: ${item.tags.join(', ')}` : ''}
+              {item.attachmentSummary?.count ? ` - attachment metadata: ${item.attachmentSummary.count}` : ''}
               {item.duplicateOf ? ` - possible duplicate of ${item.duplicateOf}` : ''}
+              {item.attachments?.length > 0 && (
+                <ul>
+                  {item.attachments.map((attachment) => (
+                    <li key={attachment.id}>{attachment.filename} - {attachment.mimeType} - {attachment.storageStatus}</li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ul>
