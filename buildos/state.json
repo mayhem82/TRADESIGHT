@@ -2,10 +2,10 @@
   "project": "TRADESIGHT",
   "mode": "BuildOS Controller",
   "current_plan": "agent-mode-v1",
-  "current_step": 24,
-  "next_task": "24-report-export-foundation",
+  "current_step": 25,
+  "next_task": "25-evidence-attachment-foundation",
   "status": "ready",
-  "last_completed": "23-ui-demonstration-loader",
-  "last_commit_summary": "Added UI demo loader for NSW demo cases and wired demo case loading into the TRADESIGHT runtime interface.",
+  "last_completed": "24-report-export-foundation",
+  "last_commit_summary": "Added report export foundation with TXT export generation, copy action, download action, and export metadata display.",
   "blocker": null
 }
