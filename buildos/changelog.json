@@ -62,7 +62,12 @@
     },
     {
       "id": "CHANGE-013",
-      "summary": "Started BuildOS Agent Mode with an agent-mode controller and agent-mode roadmap for continued post-v2 build increments.",
+      "summary": "Started BuildOS Agent Mode with an agent-mode controller and roadmap for continued post-v2 build increments.",
+      "status": "committed"
+    },
+    {
+      "id": "CHANGE-014",
+      "summary": "Added repository health diagnostics and repository health documentation for Agent Mode step 22.",
       "status": "committed"
     }
   ]
