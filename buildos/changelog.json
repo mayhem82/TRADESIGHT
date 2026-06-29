@@ -1,0 +1,9 @@
+{
+  "changes": [
+    {
+      "id": "CHANGE-001",
+      "summary": "Introduced BuildOS as the repository-level operating layer for future autonomous build runs.",
+      "status": "committed"
+    }
+  ]
+}
