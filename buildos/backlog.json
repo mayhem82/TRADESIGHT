@@ -1,0 +1,16 @@
+{
+  "backlog": [
+    {
+      "id": "BACKLOG-001",
+      "title": "Developer mode dashboard",
+      "description": "Expose BuildOS status inside the TRADESIGHT UI after capability foundations are stable.",
+      "priority": "later"
+    },
+    {
+      "id": "BACKLOG-002",
+      "title": "Reusable build runner prompt",
+      "description": "Create a reusable prompt that reads BuildOS and executes one build increment.",
+      "priority": "soon"
+    }
+  ]
+}
