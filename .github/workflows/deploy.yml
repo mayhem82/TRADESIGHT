@@ -23,11 +23,17 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - name: Install dependencies
         run: npm install
       - name: Build
         run: npm run build
+      - name: Verify built app output
+        run: |
+          test -f dist/index.html
+          find dist -type f -maxdepth 3 -print
+          test -d dist/assets
+          find dist/assets -type f -name "*.js" | grep .
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
