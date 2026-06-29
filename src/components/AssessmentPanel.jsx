@@ -32,12 +32,26 @@ export function AssessmentPanel({ assessment }) {
           <dd>{assessment.evidenceCompleteness?.label} ({assessment.evidenceCompleteness?.score})</dd>
         </div>
         <div>
+          <dt>Agent pipeline</dt>
+          <dd>{assessment.agentPipeline?.status || 'not run'}</dd>
+        </div>
+        <div>
           <dt>Conclusion status</dt>
           <dd>{assessment.finalConclusionAllowed ? 'Available' : 'Not asserted'}</dd>
         </div>
       </dl>
       <p><strong>State reason:</strong> {assessment.stateReason}</p>
       <p><strong>Boundary:</strong> {assessment.boundary}</p>
+      {assessment.agentPipeline?.events?.length > 0 && (
+        <section className="subsection">
+          <h3>Agent orchestration</h3>
+          <ul>
+            {assessment.agentPipeline.events.map((event) => (
+              <li key={`${event.step}-${event.agentId}`}>{event.step}. {event.agentName}: {event.notes.join(' ')}</li>
+            ))}
+          </ul>
+        </section>
+      )}
       {assessment.riskScore?.reasons?.length > 0 && (
         <section className="subsection">
           <h3>Assessment intelligence</h3>
