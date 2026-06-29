@@ -14,6 +14,11 @@
       "id": "CHANGE-003",
       "summary": "Added Evidence Intelligence with evidence type inference, tagging, quality scoring, timeline summary, possible duplicate detection, and UI evidence quality display.",
       "status": "committed"
+    },
+    {
+      "id": "CHANGE-004",
+      "summary": "Added Image DNA Engine records, visual observation typing, image confidence scoring, image analysis helper, and active image module output.",
+      "status": "committed"
     }
   ]
 }
