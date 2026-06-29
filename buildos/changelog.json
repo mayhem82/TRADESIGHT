@@ -24,6 +24,11 @@
       "id": "CHANGE-005",
       "summary": "Added Plan Review Engine with plan records, drawing type inference, missing-detail checks, plan review helper, and active engineering pathway output.",
       "status": "committed"
+    },
+    {
+      "id": "CHANGE-006",
+      "summary": "Added Assessment Intelligence with risk scoring, evidence completeness scoring, priority calculation, evidence-aware assessment creation, and UI score display.",
+      "status": "committed"
     }
   ]
 }
