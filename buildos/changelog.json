@@ -79,6 +79,11 @@
       "id": "CHANGE-016",
       "summary": "Added report export foundation with TXT export generation, copy action, download action, and export metadata display.",
       "status": "committed"
+    },
+    {
+      "id": "CHANGE-017",
+      "summary": "Added evidence attachment foundation with local attachment metadata records, attachment summaries, evidence model support, and UI metadata display.",
+      "status": "committed"
     }
   ]
 }
