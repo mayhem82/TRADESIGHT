@@ -1,0 +1,33 @@
+{
+  "project": "TRADESIGHT",
+  "repository": "mayhem82/TRADESIGHT",
+  "plan": "capability-build-v2",
+  "current_step": 10,
+  "last_completed": "09-ui-refinement",
+  "next_task": "10-compliance-knowledge-engine",
+  "status": "ready",
+  "last_commit": "Bootstrap build queue completed. Capability build plan v2 started.",
+  "blocker": null,
+  "rules": [
+    "Use the repository as memory.",
+    "Inspect existing files before building.",
+    "Build one capability step per run.",
+    "Commit working increments.",
+    "Update this state file after each completed step.",
+    "Do not invent legal, regulatory, technical, or standards outcomes.",
+    "Unknown items remain unknown until validated."
+  ],
+  "build_order": [
+    "10-compliance-knowledge-engine",
+    "11-evidence-intelligence",
+    "12-image-dna-engine",
+    "13-plan-review-engine",
+    "14-assessment-intelligence",
+    "15-report-studio",
+    "16-project-intelligence",
+    "17-agent-orchestration",
+    "18-tradesight-runtime",
+    "19-production-readiness",
+    "20-nsw-demonstration-platform"
+  ]
+}
