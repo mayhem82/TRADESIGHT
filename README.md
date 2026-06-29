@@ -6,15 +6,15 @@ The user interacts with the TRADESIGHT Agent. The runtime classifies the task, i
 
 ## Current Build State
 
-Capability Build v2 is active under BuildOS.
+Capability Build v2 is complete under BuildOS.
 
-Current completed capability:
+Last completed capability:
 
-- 18-tradesight-runtime
+- 20-nsw-demonstration-platform
 
 Current next capability:
 
-- 19-production-readiness
+- complete
 
 ## Active Runtime
 
@@ -30,6 +30,8 @@ TRADESIGHT now includes:
 - Project Intelligence
 - Agent Orchestration
 - TRADESIGHT Runtime
+- Production Readiness foundation
+- NSW Demonstration Platform
 
 ## Core Workflow
 
@@ -42,6 +44,13 @@ TRADESIGHT now includes:
 7. Agent orchestration
 8. Report Studio
 9. Project record update
+10. NSW demonstration workflow
+
+## Demonstration Platform
+
+The NSW demonstration platform provides homeowner, builder, and government-facing demo cases in `src/demo/`.
+
+It is designed to show the end-to-end workflow without claiming a certified compliance outcome.
 
 ## Build Memory
 
