@@ -2,10 +2,10 @@
   "project": "TRADESIGHT",
   "mode": "BuildOS Controller",
   "current_plan": "agent-mode-v1",
-  "current_step": 23,
-  "next_task": "23-ui-demonstration-loader",
+  "current_step": 24,
+  "next_task": "24-report-export-foundation",
   "status": "ready",
-  "last_completed": "22-repository-health-check",
-  "last_commit_summary": "Added repository health diagnostics and repository health documentation for Agent Mode step 22.",
+  "last_completed": "23-ui-demonstration-loader",
+  "last_commit_summary": "Added UI demo loader for NSW demo cases and wired demo case loading into the TRADESIGHT runtime interface.",
   "blocker": null
 }
