@@ -2,10 +2,10 @@
   "project": "TRADESIGHT",
   "mode": "BuildOS Controller",
   "current_plan": "agent-mode-v2",
-  "current_step": 30,
-  "next_task": "30-upload-photos-foundation",
+  "current_step": 31,
+  "next_task": "31-live-supplier-api-foundation",
   "status": "ready",
-  "last_completed": "29-agent-intake-router",
-  "last_commit_summary": "Added agent intake router so one user input routes questions, plans, photos, standards, evidence, assessment, report, or project pathways through agents.",
-  "blocker": null
+  "last_completed": "30-bunnings-credential-gated-api-connector",
+  "last_commit_summary": "Added credential-gated Bunnings Partner API connector scaffold, access boundary documentation, supplier module routing, and stock/pricing intake classification without public product pages.",
+  "blocker": "Live Bunnings stock and pricing require approved partner API credentials before runtime access can be enabled."
 }
