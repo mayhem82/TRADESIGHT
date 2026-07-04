@@ -19,6 +19,7 @@
     { "id": "CHANGE-017", "summary": "Added evidence attachment metadata support and UI display.", "status": "committed" },
     { "id": "CHANGE-018", "summary": "Added demo polish with walkthrough guide, clearer loader, guided UI placement, and presentation styling.", "status": "committed" },
     { "id": "CHANGE-019", "summary": "Started Agent Mode v2 with a controller file and roadmap for the next build cycle.", "status": "committed" },
-    { "id": "CHANGE-020", "summary": "Fixed runtime report context so Agent orchestration receives the selected report type.", "status": "committed" }
+    { "id": "CHANGE-020", "summary": "Fixed runtime report context so Agent orchestration receives the selected report type.", "status": "committed" },
+    { "id": "CHANGE-021", "summary": "Added credential-gated Bunnings Partner API connector scaffold, API access boundary documentation, supplier module routing, and stock/pricing intake classification without using public product pages.", "status": "committed" }
   ]
 }
