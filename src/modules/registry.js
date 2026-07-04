@@ -29,10 +29,16 @@ export const MODULE_REGISTRY = {
     scope: 'Material and specification review pathway',
     status: 'scaffolded'
   },
+  supplier: {
+    id: 'supplier',
+    name: 'Supplier Stock API Connector',
+    scope: 'Credential-gated supplier item, price, location, and stock lookup pathway',
+    status: 'credential-gated'
+  },
   hazard: {
     id: 'hazard',
-    name: 'Hazard Prediction Engine',
-    scope: 'Hazard identification and safety escalation pathway',
+    name: 'Safety Escalation Engine',
+    scope: 'Site risk identification and safety escalation pathway',
     status: 'scaffolded'
   },
   report: {
@@ -48,7 +54,7 @@ export const TASK_MODULE_MAP = {
   defect: ['image', 'builder', 'compliance', 'report'],
   plan: ['engineer', 'compliance', 'report'],
   dispute: ['builder', 'report'],
-  materials: ['materials', 'compliance', 'report'],
+  materials: ['materials', 'supplier', 'compliance', 'report'],
   safety: ['hazard', 'compliance', 'report'],
   government: ['compliance', 'report'],
   unknown: ['compliance']
