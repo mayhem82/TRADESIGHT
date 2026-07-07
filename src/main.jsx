@@ -57,6 +57,21 @@ function App() {
     }));
   }
 
+  function addScanObservation(observation) {
+    const point = observation.point;
+    const pointText = `x ${point.x.toFixed(2)}, y ${point.y.toFixed(2)}, z ${point.z.toFixed(2)}`;
+    const modelText = observation.modelName ? ` on ${observation.modelName}` : '';
+
+    setEvidence((current) => appendEvidence(current, {
+      source: 'scan-point-observation',
+      type: 'observation',
+      status: 'unverified',
+      description: `3D scan observation${modelText} at ${pointText}: ${observation.text}`,
+      observedAt: observation.observedAt,
+      tags: ['spatial-evidence', 'scan-observation', 'scale-unverified']
+    }));
+  }
+
   function handleSaveProject() {
     const saved = saveProject(currentProject);
     setProject(saved);
@@ -89,7 +104,7 @@ function App() {
           <ul>{runtime.events.map((event) => <li key={event.id}>{event.stage}: {event.detail}</li>)}</ul>
         </article>
 
-        <PhoneScanWorkflow onScanEvidence={addScanEvidence} />
+        <PhoneScanWorkflow onScanEvidence={addScanEvidence} onScanObservation={addScanObservation} />
 
         <article>
           <h2>Module Routing</h2>
