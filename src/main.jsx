@@ -39,6 +39,24 @@ function App() {
     setEvidenceNote('');
   }
 
+  function addScanEvidence(scan) {
+    setEvidence((current) => appendEvidence(current, {
+      source: 'phone-3d-scan',
+      type: 'scan-3d',
+      status: 'unverified',
+      description: `3D scan model loaded from ${scan.fileName}. Capture source: phone photogrammetry export. Geometry is for spatial review until scale reference is confirmed.`,
+      observedAt: scan.observedAt,
+      tags: ['visual-record', 'spatial-evidence', 'scale-unverified'],
+      attachments: [{
+        filename: scan.fileName,
+        mimeType: scan.mimeType || 'model/gltf-binary',
+        sizeBytes: scan.sizeBytes || 0,
+        source: 'browser-local',
+        storageStatus: 'metadata-only'
+      }]
+    }));
+  }
+
   function handleSaveProject() {
     const saved = saveProject(currentProject);
     setProject(saved);
@@ -71,7 +89,7 @@ function App() {
           <ul>{runtime.events.map((event) => <li key={event.id}>{event.stage}: {event.detail}</li>)}</ul>
         </article>
 
-        <PhoneScanWorkflow />
+        <PhoneScanWorkflow onScanEvidence={addScanEvidence} />
 
         <article>
           <h2>Module Routing</h2>
