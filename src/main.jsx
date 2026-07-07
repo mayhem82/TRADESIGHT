@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { appendEvidence, createEvidenceRegister } from './lib/evidence-register.js';
 import { loadProject, saveProject, clearProject } from './lib/project-storage.js';
 import { runTradesight } from './runtime/run-tradesight.js';
+import { createScanModelEvidence, createScanObservationEvidence } from './lib/scan-evidence.js';
 import { AgentIntake } from './components/AgentIntake.jsx';
 import { AgentRouterPanel } from './components/AgentRouterPanel.jsx';
 import { AssessmentPanel } from './components/AssessmentPanel.jsx';
@@ -40,36 +41,11 @@ function App() {
   }
 
   function addScanEvidence(scan) {
-    setEvidence((current) => appendEvidence(current, {
-      source: 'phone-3d-scan',
-      type: 'scan-3d',
-      status: 'unverified',
-      description: `3D scan model loaded from ${scan.fileName}. Capture source: phone photogrammetry export. Geometry is for spatial review until scale reference is confirmed.`,
-      observedAt: scan.observedAt,
-      tags: ['visual-record', 'spatial-evidence', 'scale-unverified'],
-      attachments: [{
-        filename: scan.fileName,
-        mimeType: scan.mimeType || 'model/gltf-binary',
-        sizeBytes: scan.sizeBytes || 0,
-        source: 'browser-local',
-        storageStatus: 'metadata-only'
-      }]
-    }));
+    setEvidence((current) => appendEvidence(current, createScanModelEvidence(scan)));
   }
 
   function addScanObservation(observation) {
-    const point = observation.point;
-    const pointText = `x ${point.x.toFixed(2)}, y ${point.y.toFixed(2)}, z ${point.z.toFixed(2)}`;
-    const modelText = observation.modelName ? ` on ${observation.modelName}` : '';
-
-    setEvidence((current) => appendEvidence(current, {
-      source: 'scan-point-observation',
-      type: 'observation',
-      status: 'unverified',
-      description: `3D scan observation${modelText} at ${pointText}: ${observation.text}`,
-      observedAt: observation.observedAt,
-      tags: ['spatial-evidence', 'scan-observation', 'scale-unverified']
-    }));
+    setEvidence((current) => appendEvidence(current, createScanObservationEvidence(observation)));
   }
 
   function handleSaveProject() {
