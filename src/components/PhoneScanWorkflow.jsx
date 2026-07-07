@@ -80,8 +80,15 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
     const loader = new GLTFLoader();
     let animationFrame;
 
+    function clearMarker() {
+      if (markerRef.current) {
+        scene.remove(markerRef.current);
+        markerRef.current = null;
+      }
+    }
+
     function placeMarker(point) {
-      if (markerRef.current) scene.remove(markerRef.current);
+      clearMarker();
       const marker = new THREE.Mesh(markerGeometry, markerMaterial);
       marker.position.copy(point);
       scene.add(marker);
@@ -97,10 +104,7 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
             scene.remove(modelRef.current);
             disposeObject3D(modelRef.current);
           }
-          if (markerRef.current) {
-            scene.remove(markerRef.current);
-            markerRef.current = null;
-          }
+          clearMarker();
           setSelectedPoint(null);
           setObservationText('');
 
@@ -164,6 +168,7 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
     animate();
 
     mount.loadTradesightModel = loadModel;
+    mount.clearTradesightMarker = clearMarker;
 
     return () => {
       cancelAnimationFrame(animationFrame);
@@ -176,6 +181,7 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
       delete mount.loadTradesightModel;
+      delete mount.clearTradesightMarker;
       if (fileUrlRef.current) URL.revokeObjectURL(fileUrlRef.current);
     };
   }, []);
@@ -210,6 +216,13 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
     });
     setObservationText('');
     setModelStatus('Observation saved to evidence. Tap another point to continue inspection.');
+  }
+
+  function clearSelection() {
+    mountRef.current?.clearTradesightMarker?.();
+    setSelectedPoint(null);
+    setObservationText('');
+    setModelStatus(modelName ? 'Selection cleared. Tap the model to mark another observation point.' : 'No GLB loaded yet.');
   }
 
   return (
@@ -248,6 +261,7 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
               />
               <div className="actions">
                 <button type="button" onClick={saveObservation} disabled={!observationText.trim()}>Save Scan Observation</button>
+                <button type="button" onClick={clearSelection}>Clear Selection</button>
               </div>
             </div>
           )}
