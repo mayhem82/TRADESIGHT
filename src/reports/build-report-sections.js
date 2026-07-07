@@ -1,11 +1,14 @@
 import { evidenceSummary } from '../lib/evidence-register.js';
+import { buildScanReportSection } from './scan-report-section.js';
 
 export function buildReportSections({ reportType, audienceProfile, assessment, evidence = [] } = {}) {
   const summary = evidenceSummary(evidence);
+  const scanSection = buildScanReportSection(evidence);
   const sections = [
     buildOverviewSection(reportType, audienceProfile, assessment),
     buildAssessmentSection(assessment),
     buildEvidenceSection(summary),
+    ...(scanSection ? [scanSection] : []),
     buildBoundarySection(assessment)
   ];
 
