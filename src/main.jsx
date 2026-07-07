@@ -7,6 +7,7 @@ import { AgentIntake } from './components/AgentIntake.jsx';
 import { AgentRouterPanel } from './components/AgentRouterPanel.jsx';
 import { AssessmentPanel } from './components/AssessmentPanel.jsx';
 import { EvidencePanel } from './components/EvidencePanel.jsx';
+import { PhoneScanWorkflow } from './components/PhoneScanWorkflow.jsx';
 import { ProjectPanel } from './components/ProjectPanel.jsx';
 import { ReportPreview } from './components/ReportPreview.jsx';
 import { getModulesForTask } from './modules/registry.js';
@@ -70,6 +71,8 @@ function App() {
           <ul>{runtime.events.map((event) => <li key={event.id}>{event.stage}: {event.detail}</li>)}</ul>
         </article>
 
+        <PhoneScanWorkflow />
+
         <article>
           <h2>Module Routing</h2>
           <ul>{assessment.modules.map((module) => <li key={module.id}>{module.name} - {module.status}</li>)}</ul>
@@ -93,6 +96,7 @@ function App() {
           <span>Required questions</span>
           <span>Evidence</span>
           <span>Standards</span>
+          <span>3D scan intake</span>
           <span>Report or project</span>
         </div>
       </section>
