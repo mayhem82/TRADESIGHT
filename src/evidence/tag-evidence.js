@@ -9,6 +9,7 @@ export function tagEvidence(record = {}) {
   addTagIf(tags, text, /council|certifier|regulator|government/, 'authority-record');
   addTagIf(tags, text, /photo|image|jpg|jpeg|png|heic/, 'visual-record');
   addTagIf(tags, text, /plan|drawing|sketch|layout/, 'plan-record');
+  addTagIf(tags, text, /3d|scan|glb|gltf|photogrammetry|model|spatial/, 'spatial-evidence');
 
   if (!tags.size) tags.add('unclassified');
 
