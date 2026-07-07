@@ -7,7 +7,7 @@ const captureSteps = [
   'Walk a slow clockwise loop with 60-80% overlap between photos.',
   'Capture high, middle, low, and underside angles. Add a tape measure or known board width for scale.',
   'Export the model as GLB when available. OBJ also works later, but GLB is the preferred TRADESIGHT target.',
-  'Load the GLB below, then add pinned notes and evidence observations in the normal TRADESIGHT workflow.'
+  'Load the GLB below. TRADESIGHT records the scan as metadata-only evidence, then uses the viewer for spatial review.'
 ];
 
 function disposeObject3D(object) {
@@ -25,7 +25,7 @@ function disposeObject3D(object) {
   });
 }
 
-export function PhoneScanWorkflow() {
+export function PhoneScanWorkflow({ onScanEvidence }) {
   const mountRef = useRef(null);
   const modelRef = useRef(null);
   const fileUrlRef = useRef(null);
@@ -98,7 +98,7 @@ export function PhoneScanWorkflow() {
           scene.add(model);
           modelRef.current = model;
           setModelName(name);
-          setModelStatus('Loaded. Rotate view is automatic for now; annotation hooks come next.');
+          setModelStatus('Loaded and recorded as scan evidence. Annotation hooks come next.');
         },
         undefined,
         () => setModelStatus('Could not load this file. Export as GLB and try again.')
@@ -149,6 +149,12 @@ export function PhoneScanWorkflow() {
     const objectUrl = URL.createObjectURL(file);
     fileUrlRef.current = objectUrl;
     mountRef.current?.loadTradesightModel?.(objectUrl, file.name);
+    onScanEvidence?.({
+      fileName: file.name,
+      mimeType: file.type || 'model/gltf-binary',
+      sizeBytes: file.size || 0,
+      observedAt: new Date().toISOString()
+    });
   }
 
   return (
