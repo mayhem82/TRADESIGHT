@@ -122,6 +122,8 @@ pre {
   background: rgba(2, 6, 23, 0.32);
 }
 .scan-note-panel textarea { min-height: 92px; }
+.scan-note-panel button:first-child:not(:disabled) { background: #e7edf5; color: #0b1118; font-weight: 800; }
+.scan-note-panel button:last-child { background: rgba(30, 41, 59, 0.86); color: #e7edf5; font-weight: 400; }
 
 .muted { color: #91a2b8; }
 .pathway { padding: 24px; margin-top: 18px; }
