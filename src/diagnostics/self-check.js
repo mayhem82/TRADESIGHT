@@ -2,6 +2,7 @@ import { getAppConfig } from '../config/app-config.js';
 import { runTradesight } from '../runtime/run-tradesight.js';
 import { classifyTask } from '../lib/classify-task.js';
 import { buildShedPlanPathway } from '../shed/shed-review-pathway.js';
+import { buildShedModel, disposeShedModel } from '../shed/build-shed-model.js';
 
 export function runSelfCheck() {
   const config = getAppConfig();
@@ -30,7 +31,8 @@ export function runSelfCheck() {
     check('project-created', Boolean(runtime.project?.id)),
     check('boundary-preserved', runtime.assessment?.finalConclusionAllowed === false),
     check('shed-task-classified', classifyTask('I want to build a garden shed') === 'shed'),
-    check('shed-item-list-generated', shedPathway.itemList.status === 'estimate' && shedPathway.itemList.items.length > 0)
+    check('shed-item-list-generated', shedPathway.itemList.status === 'estimate' && shedPathway.itemList.items.length > 0),
+    check('shed-model-builds', shedModelHasWallsAndRoof(shedPathway.plan))
   ];
 
   return {
@@ -38,6 +40,13 @@ export function runSelfCheck() {
     checks,
     generatedAt: new Date().toISOString()
   };
+}
+
+function shedModelHasWallsAndRoof(plan) {
+  const group = buildShedModel(plan);
+  const hasGeometry = group.children.length >= 2;
+  disposeShedModel(group);
+  return hasGeometry;
 }
 
 function check(id, pass) {

@@ -21,6 +21,7 @@
     { "id": "CHANGE-019", "summary": "Started Agent Mode v2 with a controller file and roadmap for the next build cycle.", "status": "committed" },
     { "id": "CHANGE-020", "summary": "Fixed runtime report context so Agent orchestration receives the selected report type.", "status": "committed" },
     { "id": "CHANGE-021", "summary": "Added credential-gated Bunnings Partner API connector scaffold, API access boundary documentation, supplier module routing, and stock/pricing intake classification without using public product pages.", "status": "committed" },
-    { "id": "CHANGE-022", "summary": "Added the Shed Item List Planner: homeowner shed plan intake, deterministic materials item list estimator, development-pathway boundary flags, a new 'shed' task classification and module/agent routing, and a dedicated UI panel.", "status": "committed" }
+    { "id": "CHANGE-022", "summary": "Added the Shed Item List Planner: homeowner shed plan intake, deterministic materials item list estimator, development-pathway boundary flags, a new 'shed' task classification and module/agent routing, and a dedicated UI panel.", "status": "committed" },
+    { "id": "CHANGE-023", "summary": "Turned the Shed Item List Planner into a Shed Model Builder: added a live Three.js 3D shed model (walls, skillion/gable roof, door/window openings, boundary-offset line) driven by the same plan and roof-pitch assumptions as the item list, with orbit/zoom controls.", "status": "committed" }
   ]
 }

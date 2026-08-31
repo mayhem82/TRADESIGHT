@@ -2,10 +2,10 @@
   "project": "TRADESIGHT",
   "mode": "BuildOS Controller",
   "current_plan": "agent-mode-v2",
-  "current_step": 32,
-  "next_task": "32-live-supplier-api-foundation",
+  "current_step": 33,
+  "next_task": "33-live-supplier-api-foundation",
   "status": "ready",
-  "last_completed": "31-shed-item-list-planner",
-  "last_commit_summary": "Added a homeowner Shed Item List Planner: shed plan intake, deterministic materials item list estimator, development-pathway boundary flags, a new 'shed' task classification and module/agent routing, and a dedicated UI panel wired into the runtime shell.",
+  "last_completed": "32-shed-3d-model-builder",
+  "last_commit_summary": "Turned the Shed Item List Planner into a Shed Model Builder: a live Three.js 3D shed model (walls, skillion/gable roof, door/window openings, boundary-offset line) built from the same plan and roof-pitch assumptions used by the materials item list, with drag-to-orbit and scroll-to-zoom controls.",
   "blocker": "Live Bunnings stock and pricing still require approved partner API credentials before runtime access can be enabled."
 }
