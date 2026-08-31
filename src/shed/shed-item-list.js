@@ -12,7 +12,9 @@ export const SHED_ESTIMATE_ASSUMPTIONS = {
   standardWindowM: { width: 1.2, height: 1.2 },
   claddingSheetAreaM2: 2.88,
   claddingScrewsPerM2: 6,
-  framingFixingsPerJunction: 4
+  framingFixingsPerJunction: 4,
+  openPostSpacingM: 2.4,
+  postFixingsPerPost: 4
 };
 
 export function generateShedItemList(plan = {}) {
@@ -32,11 +34,11 @@ export function generateShedItemList(plan = {}) {
 
   const items = [
     ...floorItems(plan, a, perimeterM),
-    ...wallFramingItems(plan, a, perimeterM, openingCount),
+    ...(plan.openSides ? supportPostItems(plan, a, perimeterM) : wallFramingItems(plan, a, perimeterM, openingCount)),
     ...roofFramingItems(plan, a),
     ...roofingItems(plan, a),
-    ...claddingItems(plan, a, perimeterM),
-    ...openingItems(plan, a),
+    ...(plan.openSides ? [] : claddingItems(plan, a, perimeterM)),
+    ...(plan.openSides ? [] : openingItems(plan, a)),
     ...fastenerItems(plan, a, perimeterM)
   ];
 
@@ -49,6 +51,12 @@ export function generateShedItemList(plan = {}) {
 }
 
 function floorItems(plan, a, perimeterM) {
+  if (plan.floorType === 'none') {
+    return [
+      row('Floor', 'No floor specified', '-', '-', 'Structure will sit directly on prepared ground (compaction, gravel, or pavers). Site preparation is not included in this estimate.')
+    ];
+  }
+
   if (plan.floorType === 'concrete-slab') {
     return [
       row('Floor', 'Concrete slab', 'm2', plan.floorAreaM2, 'Slab area only. Thickness, reinforcement, and vapour barrier need separate specification.'),
@@ -63,6 +71,15 @@ function floorItems(plan, a, perimeterM) {
     row('Floor', 'Bearers', 'm', round(perimeterM)),
     row('Floor', 'Floor joists', 'm', round(plan.lengthM * Math.ceil(plan.widthM / a.studSpacingM))),
     row('Floor', 'Flooring sheet (structural ply)', 'm2', round(plan.floorAreaM2 * a.wastageFactor))
+  ];
+}
+
+function supportPostItems(plan, a, perimeterM) {
+  const postCount = Math.max(4, Math.ceil(perimeterM / a.openPostSpacingM));
+
+  return [
+    row('Structure', 'Support posts', 'ea', postCount, `Open-sided structure: assumes posts at approx. ${a.openPostSpacingM}m centres supporting the roof line, in place of wall framing and cladding.`),
+    row('Structure', 'Bracing', 'ea', postCount, 'Diagonal or knee bracing per post to resist lateral load. Bracing design must be verified — an open structure carries wind load differently to a fully clad shed.')
   ];
 }
 
@@ -124,15 +141,29 @@ function openingItems(plan, a) {
 }
 
 function fastenerItems(plan, a, perimeterM) {
+  const pitchAllowance = plan.roofType === 'gable' ? a.gablePitchAllowance : a.skillionFallAllowance;
+  const roofAreaM2 = plan.widthM * plan.lengthM * pitchAllowance;
+  const roofingScrews = Math.ceil(roofAreaM2 * a.claddingScrewsPerM2);
+
+  if (plan.openSides) {
+    const postCount = Math.max(4, Math.ceil(perimeterM / a.openPostSpacingM));
+    const postFixings = postCount * a.postFixingsPerPost;
+
+    return [
+      row('Fasteners', 'Roofing screws', 'ea', roofingScrews, `Assumes ${a.claddingScrewsPerM2} fixings per m2 of roofing.`),
+      row('Fasteners', 'Post fixings/brackets', 'ea', postFixings, `Assumes ${a.postFixingsPerPost} fixings per post-to-bearer or post-to-roof connection.`)
+    ];
+  }
+
   const openingAreaM2 = plan.doorCount * a.standardDoorM.width * a.standardDoorM.height
     + plan.windowCount * a.standardWindowM.width * a.standardWindowM.height;
   const wallAreaM2 = Math.max(0, perimeterM * plan.wallHeightM - openingAreaM2);
-  const claddingScrews = Math.ceil(wallAreaM2 * a.claddingScrewsPerM2);
+  const claddingScrews = Math.ceil(wallAreaM2 * a.claddingScrewsPerM2) + roofingScrews;
   const framingJunctions = Math.ceil(perimeterM / a.studSpacingM) * 2;
   const framingFixings = framingJunctions * a.framingFixingsPerJunction;
 
   return [
-    row('Fasteners', 'Cladding/roofing screws', 'ea', claddingScrews, `Assumes ${a.claddingScrewsPerM2} fixings per m2 of cladding.`),
+    row('Fasteners', 'Cladding/roofing screws', 'ea', claddingScrews, `Assumes ${a.claddingScrewsPerM2} fixings per m2 of cladding and roofing.`),
     row('Fasteners', 'Framing nails/screws', 'ea', framingFixings, `Assumes ${a.framingFixingsPerJunction} fixings per stud-to-plate junction.`)
   ];
 }

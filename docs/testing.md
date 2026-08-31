@@ -23,6 +23,8 @@
 6. Change cladding, floor type, door count, and window count, and confirm both the model and the item list quantities update.
 7. Enter a boundary distance and confirm the dashed boundary-offset line appears in the model.
 8. Enter "I want to build a garden shed" in the main intake field and confirm the request classifies as the `shed` task type and routes through the Shed Model Builder module.
+9. Set floor type to "No floor (ground/gravel)" and confirm the item list shows a "No floor specified" row instead of slab or bearer items.
+10. Check "Open sides" and confirm: doors/windows inputs disable, the model shows corner posts instead of a solid wall box, the item list shows "Structure" (support posts, bracing) instead of wall framing/cladding/openings, and the development pathway flags note that open-sided structures are still assessed under the same exempt/complying development rules.
 
 ## Self-check module
 
@@ -37,6 +39,7 @@
 - a shed request classifies as the `shed` task type
 - the shed item list estimator generates line items
 - the 3D shed model builds walls and a roof from a plan
+- an open-sided, no-floor plan produces support-post/bracing items instead of wall framing and a floor, and the model still builds
 
 ## Boundary test
 

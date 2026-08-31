@@ -10,6 +10,7 @@ const initialForm = {
   roofType: 'skillion',
   claddingType: 'colorbond-steel',
   floorType: 'concrete-slab',
+  openSides: false,
   doorCount: '1',
   windowCount: '0',
   boundaryDistanceM: ''
@@ -200,15 +201,23 @@ export function ShedPlanner() {
           <select value={form.floorType} onChange={(event) => updateField('floorType', event.target.value)}>
             <option value="concrete-slab">Concrete slab</option>
             <option value="bearers-and-joists">Bearers and joists</option>
+            <option value="none">No floor (ground/gravel)</option>
           </select>
+        </label>
+        <label className="shed-checkbox-field">
+          <span>Open sides</span>
+          <span className="shed-checkbox-row">
+            <input type="checkbox" checked={form.openSides} onChange={(event) => updateField('openSides', event.target.checked)} />
+            <span className="muted">No wall framing or cladding (carport/shelter)</span>
+          </span>
         </label>
         <label>
           Doors
-          <input type="number" min="0" step="1" value={form.doorCount} onChange={(event) => updateField('doorCount', event.target.value)} />
+          <input type="number" min="0" step="1" value={form.doorCount} disabled={form.openSides} onChange={(event) => updateField('doorCount', event.target.value)} />
         </label>
         <label>
           Windows
-          <input type="number" min="0" step="1" value={form.windowCount} onChange={(event) => updateField('windowCount', event.target.value)} />
+          <input type="number" min="0" step="1" value={form.windowCount} disabled={form.openSides} onChange={(event) => updateField('windowCount', event.target.value)} />
         </label>
       </div>
 
@@ -225,10 +234,18 @@ export function ShedPlanner() {
             <span className="shed-model-hint">drag to orbit &middot; scroll to zoom</span>
           </div>
           <div className="shed-model-legend">
-            <span><i className="shed-swatch" style={{ background: `#${(SHED_MODEL_COLORS.cladding[pathway.plan.claddingType] || SHED_MODEL_COLORS.cladding['colorbond-steel']).color.toString(16).padStart(6, '0')}` }} />Wall cladding</span>
+            {pathway.plan.openSides ? (
+              <span><i className="shed-swatch" style={{ background: `#${SHED_MODEL_COLORS.post.color.toString(16).padStart(6, '0')}` }} />Support posts</span>
+            ) : (
+              <span><i className="shed-swatch" style={{ background: `#${(SHED_MODEL_COLORS.cladding[pathway.plan.claddingType] || SHED_MODEL_COLORS.cladding['colorbond-steel']).color.toString(16).padStart(6, '0')}` }} />Wall cladding</span>
+            )}
             <span><i className="shed-swatch" style={{ background: `#${SHED_MODEL_COLORS.roof.color.toString(16).padStart(6, '0')}` }} />Roofing</span>
-            <span><i className="shed-swatch" style={{ background: `#${SHED_MODEL_COLORS.door.toString(16).padStart(6, '0')}` }} />Door</span>
-            <span><i className="shed-swatch" style={{ background: `#${SHED_MODEL_COLORS.window.toString(16).padStart(6, '0')}` }} />Window</span>
+            {!pathway.plan.openSides && (
+              <>
+                <span><i className="shed-swatch" style={{ background: `#${SHED_MODEL_COLORS.door.toString(16).padStart(6, '0')}` }} />Door</span>
+                <span><i className="shed-swatch" style={{ background: `#${SHED_MODEL_COLORS.window.toString(16).padStart(6, '0')}` }} />Window</span>
+              </>
+            )}
             <span><i className="shed-swatch" style={{ background: `#${SHED_MODEL_COLORS.boundary.toString(16).padStart(6, '0')}` }} />Boundary offset</span>
           </div>
         </div>
@@ -238,7 +255,8 @@ export function ShedPlanner() {
         <dl className="facts compact">
           <div><dt>Floor area</dt><dd>{pathway.plan.floorAreaM2} m2</dd></div>
           <div><dt>Roof type</dt><dd>{pathway.plan.roofType}</dd></div>
-          <div><dt>Floor type</dt><dd>{pathway.plan.floorType}</dd></div>
+          <div><dt>Floor type</dt><dd>{pathway.plan.floorType === 'none' ? 'no floor' : pathway.plan.floorType}</dd></div>
+          <div><dt>Walls</dt><dd>{pathway.plan.openSides ? 'open sides' : 'enclosed'}</dd></div>
         </dl>
       )}
 

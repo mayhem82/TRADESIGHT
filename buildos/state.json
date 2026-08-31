@@ -2,10 +2,10 @@
   "project": "TRADESIGHT",
   "mode": "BuildOS Controller",
   "current_plan": "agent-mode-v2",
-  "current_step": 33,
-  "next_task": "33-live-supplier-api-foundation",
+  "current_step": 34,
+  "next_task": "34-live-supplier-api-foundation",
   "status": "ready",
-  "last_completed": "32-shed-3d-model-builder",
-  "last_commit_summary": "Turned the Shed Item List Planner into a Shed Model Builder: a live Three.js 3D shed model (walls, skillion/gable roof, door/window openings, boundary-offset line) built from the same plan and roof-pitch assumptions used by the materials item list, with drag-to-orbit and scroll-to-zoom controls.",
+  "last_completed": "33-shed-open-sided-no-floor-option",
+  "last_commit_summary": "Added open-sided (no wall framing/cladding) and no-floor options to the Shed Model Builder: a new floorType 'none', an openSides toggle that swaps wall framing/cladding for support posts and bracing in the item list and swaps the solid wall box for corner posts in the 3D model, and development-pathway flags noting open-sided structures still face the same exempt/complying development checks.",
   "blocker": "Live Bunnings stock and pricing still require approved partner API credentials before runtime access can be enabled."
 }

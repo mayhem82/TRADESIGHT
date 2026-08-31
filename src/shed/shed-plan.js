@@ -1,7 +1,7 @@
 const ROOF_TYPES = ['skillion', 'gable'];
 const CLADDING_TYPES = ['colorbond-steel', 'fibre-cement', 'timber-weatherboard'];
 const ROOFING_TYPES = ['colorbond-sheet'];
-const FLOOR_TYPES = ['concrete-slab', 'bearers-and-joists'];
+const FLOOR_TYPES = ['concrete-slab', 'bearers-and-joists', 'none'];
 
 export function createShedPlan(data = {}) {
   const widthM = toPositiveNumber(data.widthM);
@@ -19,6 +19,7 @@ export function createShedPlan(data = {}) {
     claddingType: CLADDING_TYPES.includes(data.claddingType) ? data.claddingType : 'colorbond-steel',
     roofingType: ROOFING_TYPES.includes(data.roofingType) ? data.roofingType : 'colorbond-sheet',
     floorType: FLOOR_TYPES.includes(data.floorType) ? data.floorType : 'concrete-slab',
+    openSides: Boolean(data.openSides),
     doorCount,
     windowCount,
     boundaryDistanceM: data.boundaryDistanceM === '' || data.boundaryDistanceM == null ? null : toPositiveNumber(data.boundaryDistanceM),

@@ -142,6 +142,22 @@ pre {
   outline: none;
 }
 .shed-form-grid input:focus, .shed-form-grid select:focus { border-color: rgba(125, 211, 252, 0.72); }
+.shed-form-grid input:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.shed-checkbox-field { display: flex; flex-direction: column; justify-content: center; }
+.shed-checkbox-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.shed-form-grid .shed-checkbox-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  flex: none;
+  accent-color: #7dd3fc;
+}
+.shed-checkbox-row .muted { font-size: 0.8rem; font-weight: 400; }
 
 .shed-warning {
   margin: 16px 0;

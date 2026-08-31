@@ -10,11 +10,11 @@ Capability Build v2 is complete under BuildOS.
 
 Last completed capability:
 
-- 32-shed-3d-model-builder
+- 33-shed-open-sided-no-floor-option
 
 Current next capability:
 
-- 33-live-supplier-api-foundation (blocked on approved Bunnings partner API credentials)
+- 34-live-supplier-api-foundation (blocked on approved Bunnings partner API credentials)
 
 ## Active Runtime
 

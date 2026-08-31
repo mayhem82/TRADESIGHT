@@ -10,7 +10,8 @@ export const SHED_MODEL_COLORS = {
   roof: { color: 0x3b4552, metalness: 0.5, roughness: 0.35 },
   door: 0x3d4a5c,
   window: 0x8fd0e0,
-  boundary: 0xf0b429
+  boundary: 0xf0b429,
+  post: { color: 0x51616f, metalness: 0.35, roughness: 0.55 }
 };
 
 function angleFromAllowance(allowance) {
@@ -41,12 +42,28 @@ export function buildShedModel(plan) {
   const { widthM: w, lengthM: l, wallHeightM: h } = plan;
   const a = SHED_ESTIMATE_ASSUMPTIONS;
 
-  const wallMat = material(SHED_MODEL_COLORS.cladding[plan.claddingType] || SHED_MODEL_COLORS.cladding['colorbond-steel']);
   const roofMat = material(SHED_MODEL_COLORS.roof);
 
-  const walls = new THREE.Mesh(new THREE.BoxGeometry(w, h, l), wallMat);
-  walls.position.set(0, h / 2, 0);
-  group.add(walls);
+  if (plan.openSides) {
+    const postMat = material(SHED_MODEL_COLORS.post);
+    const postSize = 0.12;
+    const postInset = postSize / 2;
+    [
+      [w / 2 - postInset, l / 2 - postInset],
+      [-(w / 2 - postInset), l / 2 - postInset],
+      [w / 2 - postInset, -(l / 2 - postInset)],
+      [-(w / 2 - postInset), -(l / 2 - postInset)]
+    ].forEach(([x, z]) => {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(postSize, h, postSize), postMat);
+      post.position.set(x, h / 2, z);
+      group.add(post);
+    });
+  } else {
+    const wallMat = material(SHED_MODEL_COLORS.cladding[plan.claddingType] || SHED_MODEL_COLORS.cladding['colorbond-steel']);
+    const walls = new THREE.Mesh(new THREE.BoxGeometry(w, h, l), wallMat);
+    walls.position.set(0, h / 2, 0);
+    group.add(walls);
+  }
 
   const overhang = 0.18;
   const roofThickness = 0.07;
@@ -74,23 +91,25 @@ export function buildShedModel(plan) {
     group.add(roof);
   }
 
-  const doorW = a.standardDoorM.width;
-  const doorH = a.standardDoorM.height;
-  for (let i = 0; i < plan.doorCount; i += 1) {
-    const spacing = w / (plan.doorCount + 1);
-    const door = buildOpening(doorW, doorH, SHED_MODEL_COLORS.door, { roughness: 0.6 });
-    door.position.set(-w / 2 + spacing * (i + 1), doorH / 2, l / 2 + 0.01);
-    group.add(door);
-  }
+  if (!plan.openSides) {
+    const doorW = a.standardDoorM.width;
+    const doorH = a.standardDoorM.height;
+    for (let i = 0; i < plan.doorCount; i += 1) {
+      const spacing = w / (plan.doorCount + 1);
+      const door = buildOpening(doorW, doorH, SHED_MODEL_COLORS.door, { roughness: 0.6 });
+      door.position.set(-w / 2 + spacing * (i + 1), doorH / 2, l / 2 + 0.01);
+      group.add(door);
+    }
 
-  const winW = a.standardWindowM.width;
-  const winH = a.standardWindowM.height;
-  for (let i = 0; i < plan.windowCount; i += 1) {
-    const spacing = l / (plan.windowCount + 1);
-    const win = buildOpening(winW, winH, SHED_MODEL_COLORS.window, { roughness: 0.08, metalness: 0.2, opacity: 0.6, transparent: true });
-    win.position.set(w / 2 + 0.01, h * 0.58, -l / 2 + spacing * (i + 1));
-    win.rotation.y = Math.PI / 2;
-    group.add(win);
+    const winW = a.standardWindowM.width;
+    const winH = a.standardWindowM.height;
+    for (let i = 0; i < plan.windowCount; i += 1) {
+      const spacing = l / (plan.windowCount + 1);
+      const win = buildOpening(winW, winH, SHED_MODEL_COLORS.window, { roughness: 0.08, metalness: 0.2, opacity: 0.6, transparent: true });
+      win.position.set(w / 2 + 0.01, h * 0.58, -l / 2 + spacing * (i + 1));
+      win.rotation.y = Math.PI / 2;
+      group.add(win);
+    }
   }
 
   if (plan.boundaryDistanceM != null) {

@@ -22,4 +22,4 @@ Done when:
 - the viewer supports drag-to-orbit and scroll-to-zoom, with geometry and renderer resources disposed on unmount
 - self-check confirms the model builder produces walls and roof geometry from a plan
 
-Next step: 33-live-supplier-api-foundation (blocked on approved Bunnings partner API credentials)
+Next step: 33-shed-open-sided-no-floor-option

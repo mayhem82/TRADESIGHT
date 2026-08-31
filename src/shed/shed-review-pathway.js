@@ -33,5 +33,13 @@ function buildDevelopmentPathwayFlags(plan) {
     flags.push('Distance to the nearest boundary has not been entered. Setback is a common trigger for requiring a development application.');
   }
 
+  if (plan.openSides) {
+    flags.push('Open-sided structures (carports, shelters) are generally assessed under the same exempt/complying development floor area, height, and setback provisions as enclosed sheds. Being open-sided does not exempt it from these checks.');
+  }
+
+  if (plan.floorType === 'none') {
+    flags.push('No floor type was specified. Ground preparation and drainage still affect siting and may still fall under council requirements even without a slab or floor structure.');
+  }
+
   return flags;
 }
