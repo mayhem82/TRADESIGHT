@@ -14,8 +14,19 @@ export const SHED_ESTIMATE_ASSUMPTIONS = {
   claddingScrewsPerM2: 6,
   framingFixingsPerJunction: 4,
   openPostSpacingM: 2.4,
-  postFixingsPerPost: 4
+  postFixingsPerPost: 4,
+  roundPostDiameterBandsMM: [
+    { maxHeightM: 2.4, diameterMM: 100 },
+    { maxHeightM: 3.0, diameterMM: 125 },
+    { maxHeightM: 3.6, diameterMM: 150 },
+    { maxHeightM: Infinity, diameterMM: 175 }
+  ]
 };
+
+export function imputeRoundPostDiameterMM(heightM, a = SHED_ESTIMATE_ASSUMPTIONS) {
+  const band = a.roundPostDiameterBandsMM.find((candidate) => heightM <= candidate.maxHeightM);
+  return band ? band.diameterMM : a.roundPostDiameterBandsMM[a.roundPostDiameterBandsMM.length - 1].diameterMM;
+}
 
 export function generateShedItemList(plan = {}) {
   const { widthM, lengthM, wallHeightM } = plan;
@@ -76,9 +87,10 @@ function floorItems(plan, a, perimeterM) {
 
 function supportPostItems(plan, a, perimeterM) {
   const postCount = Math.max(4, Math.ceil(perimeterM / a.openPostSpacingM));
+  const diameterMM = imputeRoundPostDiameterMM(plan.wallHeightM, a);
 
   return [
-    row('Structure', 'Support posts', 'ea', postCount, `Open-sided structure: assumes posts at approx. ${a.openPostSpacingM}m centres supporting the roof line, in place of wall framing and cladding.`),
+    row('Structure', `Support posts (round timber, ⌀${diameterMM}mm)`, 'ea', postCount, `Open-sided structure: assumes round timber posts at approx. ${a.openPostSpacingM}m centres, ${plan.wallHeightM}m long. Diameter is imputed from post height, not a span or wind-load calculation — confirm against timber span tables or an engineer before ordering.`),
     row('Structure', 'Bracing', 'ea', postCount, 'Diagonal or knee bracing per post to resist lateral load. Bracing design must be verified — an open structure carries wind load differently to a fully clad shed.')
   ];
 }

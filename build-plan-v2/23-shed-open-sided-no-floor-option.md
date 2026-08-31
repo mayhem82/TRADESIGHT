@@ -26,4 +26,4 @@ Done when:
 - development-pathway flags note that open-sided structures still face the same exempt/complying development floor area, height, and setback checks, and that ground preparation still matters with no floor
 - self-check covers an open-sided, no-floor plan for both the item list and the 3D model
 
-Next step: 34-live-supplier-api-foundation (blocked on approved Bunnings partner API credentials)
+Next step: 34-shed-round-post-size-impute

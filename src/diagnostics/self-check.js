@@ -3,6 +3,7 @@ import { runTradesight } from '../runtime/run-tradesight.js';
 import { classifyTask } from '../lib/classify-task.js';
 import { buildShedPlanPathway } from '../shed/shed-review-pathway.js';
 import { buildShedModel, disposeShedModel } from '../shed/build-shed-model.js';
+import { imputeRoundPostDiameterMM } from '../shed/shed-item-list.js';
 
 export function runSelfCheck() {
   const config = getAppConfig();
@@ -46,7 +47,8 @@ export function runSelfCheck() {
     check('shed-item-list-generated', shedPathway.itemList.status === 'estimate' && shedPathway.itemList.items.length > 0),
     check('shed-model-builds', shedModelHasWallsAndRoof(shedPathway.plan)),
     check('shed-open-sides-no-floor', openShedItemListHasNoWallFramingOrFloor(openShedPathway)),
-    check('shed-open-sides-model-builds', shedModelHasWallsAndRoof(openShedPathway.plan))
+    check('shed-open-sides-model-builds', shedModelHasWallsAndRoof(openShedPathway.plan)),
+    check('shed-post-diameter-imputed', shedPostDiameterIsImputed(openShedPathway))
   ];
 
   return {
@@ -70,6 +72,11 @@ function openShedItemListHasNoWallFramingOrFloor(pathway) {
     && !categories.includes('Wall cladding')
     && categories.includes('Structure')
     && pathway.itemList.items.some((item) => item.item === 'No floor specified');
+}
+
+function shedPostDiameterIsImputed(pathway) {
+  const expectedDiameterMM = imputeRoundPostDiameterMM(pathway.plan.wallHeightM);
+  return pathway.itemList.items.some((item) => item.category === 'Structure' && item.item.includes(`⌀${expectedDiameterMM}mm`));
 }
 
 function check(id, pass) {

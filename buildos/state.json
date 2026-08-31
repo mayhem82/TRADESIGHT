@@ -2,10 +2,10 @@
   "project": "TRADESIGHT",
   "mode": "BuildOS Controller",
   "current_plan": "agent-mode-v2",
-  "current_step": 34,
-  "next_task": "34-live-supplier-api-foundation",
+  "current_step": 35,
+  "next_task": "35-live-supplier-api-foundation",
   "status": "ready",
-  "last_completed": "33-shed-open-sided-no-floor-option",
-  "last_commit_summary": "Added open-sided (no wall framing/cladding) and no-floor options to the Shed Model Builder: a new floorType 'none', an openSides toggle that swaps wall framing/cladding for support posts and bracing in the item list and swaps the solid wall box for corner posts in the 3D model, and development-pathway flags noting open-sided structures still face the same exempt/complying development checks.",
+  "last_completed": "34-shed-round-post-size-impute",
+  "last_commit_summary": "Imputed a round timber post diameter for open-sided shed support posts, banded from wall height (100/125/150/175mm), shown in the item list line and used to size the 3D model's cylindrical posts, kept in sync via a shared imputeRoundPostDiameterMM helper.",
   "blocker": "Live Bunnings stock and pricing still require approved partner API credentials before runtime access can be enabled."
 }

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { SHED_ESTIMATE_ASSUMPTIONS } from './shed-item-list.js';
+import { SHED_ESTIMATE_ASSUMPTIONS, imputeRoundPostDiameterMM } from './shed-item-list.js';
 
 export const SHED_MODEL_COLORS = {
   cladding: {
@@ -46,15 +46,15 @@ export function buildShedModel(plan) {
 
   if (plan.openSides) {
     const postMat = material(SHED_MODEL_COLORS.post);
-    const postSize = 0.12;
-    const postInset = postSize / 2;
+    const postRadius = imputeRoundPostDiameterMM(h, a) / 1000 / 2;
+    const postInset = postRadius;
     [
       [w / 2 - postInset, l / 2 - postInset],
       [-(w / 2 - postInset), l / 2 - postInset],
       [w / 2 - postInset, -(l / 2 - postInset)],
       [-(w / 2 - postInset), -(l / 2 - postInset)]
     ].forEach(([x, z]) => {
-      const post = new THREE.Mesh(new THREE.BoxGeometry(postSize, h, postSize), postMat);
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, h, 12), postMat);
       post.position.set(x, h / 2, z);
       group.add(post);
     });

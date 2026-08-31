@@ -10,11 +10,11 @@ Capability Build v2 is complete under BuildOS.
 
 Last completed capability:
 
-- 33-shed-open-sided-no-floor-option
+- 34-shed-round-post-size-impute
 
 Current next capability:
 
-- 34-live-supplier-api-foundation (blocked on approved Bunnings partner API credentials)
+- 35-live-supplier-api-foundation (blocked on approved Bunnings partner API credentials)
 
 ## Active Runtime
 
