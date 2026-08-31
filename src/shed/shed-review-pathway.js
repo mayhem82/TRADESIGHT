@@ -4,7 +4,7 @@ import { generateShedItemList } from './shed-item-list.js';
 
 export function buildShedPlanPathway(data = {}) {
   const plan = createShedPlan(data);
-  const missingDetails = checkMissingShedDetails(plan);
+  const missingDetails = checkMissingShedDetails(plan, data);
   const itemList = generateShedItemList(plan);
 
   return {
@@ -41,5 +41,14 @@ function buildDevelopmentPathwayFlags(plan) {
     flags.push('No floor type was specified. Ground preparation and drainage still affect siting and may still fall under council requirements even without a slab or floor structure.');
   }
 
+  if (plan.leanToEnabled) {
+    const totalFootprintM2 = round2(plan.floorAreaM2 + plan.leanToFloorAreaM2);
+    flags.push(`Lean-to adds approximately ${plan.leanToFloorAreaM2}m2, for a total covered footprint of approximately ${totalFootprintM2}m2. The combined footprint counts toward exempt/complying development floor area and setback limits, not just the main structure.`);
+  }
+
   return flags;
+}
+
+function round2(value) {
+  return Math.round(value * 100) / 100;
 }

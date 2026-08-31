@@ -16,4 +16,4 @@ Done when:
 - no line item's quantity is the sum of two different fastener types under one label
 - self-check still passes
 
-Next step: 36-live-supplier-api-foundation (blocked on approved Bunnings partner API credentials)
+Next step: 36-shed-roof-pitch-and-lean-to

@@ -2,10 +2,10 @@
   "project": "TRADESIGHT",
   "mode": "BuildOS Controller",
   "current_plan": "agent-mode-v2",
-  "current_step": 36,
-  "next_task": "36-live-supplier-api-foundation",
+  "current_step": 37,
+  "next_task": "37-live-supplier-api-foundation",
   "status": "ready",
-  "last_completed": "35-shed-fastener-split-fix",
-  "last_commit_summary": "Fixed the shed item list fastener estimate: 'Cladding/roofing screws' silently summed wall cladding screws and roof screws into one number. Split back into separate 'Wall cladding screws' and 'Roofing screws' lines so each figure corresponds to a single fastener type a homeowner would actually buy.",
+  "last_completed": "36-shed-roof-pitch-and-lean-to",
+  "last_commit_summary": "Added a user-adjustable roof pitch (replacing the fixed per-roof-type allowance factors, so item-list quantities and the 3D model's roof tilt derive from one real pitch angle) and an open-sided lean-to add-on off the back wall, with its own support posts, roof framing, roofing, and fasteners, both in the item list and the 3D model. Pulled in from reviewing a competitor shed configurator (Best Sheds Designer / ACT Building Systems).",
   "blocker": "Live Bunnings stock and pricing still require approved partner API credentials before runtime access can be enabled."
 }

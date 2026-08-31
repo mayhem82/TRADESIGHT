@@ -3,7 +3,7 @@ import { runTradesight } from '../runtime/run-tradesight.js';
 import { classifyTask } from '../lib/classify-task.js';
 import { buildShedPlanPathway } from '../shed/shed-review-pathway.js';
 import { buildShedModel, disposeShedModel } from '../shed/build-shed-model.js';
-import { imputeRoundPostDiameterMM } from '../shed/shed-item-list.js';
+import { imputeRoundPostDiameterMM, pitchAllowanceFromDegrees } from '../shed/shed-item-list.js';
 
 export function runSelfCheck() {
   const config = getAppConfig();
@@ -36,6 +36,21 @@ export function runSelfCheck() {
     boundaryDistanceM: 3
   });
 
+  const lowPitchPathway = buildShedPlanPathway({
+    widthM: 3, lengthM: 4, wallHeightM: 2.1, roofType: 'skillion', roofPitchDeg: 5,
+    claddingType: 'colorbond-steel', floorType: 'concrete-slab', doorCount: 1, windowCount: 0, boundaryDistanceM: 1.2
+  });
+  const highPitchPathway = buildShedPlanPathway({
+    widthM: 3, lengthM: 4, wallHeightM: 2.1, roofType: 'skillion', roofPitchDeg: 25,
+    claddingType: 'colorbond-steel', floorType: 'concrete-slab', doorCount: 1, windowCount: 0, boundaryDistanceM: 1.2
+  });
+
+  const leanToPathway = buildShedPlanPathway({
+    widthM: 4, lengthM: 5, wallHeightM: 2.4, roofType: 'skillion', roofPitchDeg: 10,
+    claddingType: 'colorbond-steel', floorType: 'concrete-slab', doorCount: 1, windowCount: 0, boundaryDistanceM: 1.5,
+    leanToEnabled: true, leanToDepthM: 2
+  });
+
   const checks = [
     check('config-loaded', Boolean(config.name && config.version)),
     check('runtime-completes', runtime.status === 'complete'),
@@ -48,7 +63,10 @@ export function runSelfCheck() {
     check('shed-model-builds', shedModelHasWallsAndRoof(shedPathway.plan)),
     check('shed-open-sides-no-floor', openShedItemListHasNoWallFramingOrFloor(openShedPathway)),
     check('shed-open-sides-model-builds', shedModelHasWallsAndRoof(openShedPathway.plan)),
-    check('shed-post-diameter-imputed', shedPostDiameterIsImputed(openShedPathway))
+    check('shed-post-diameter-imputed', shedPostDiameterIsImputed(openShedPathway)),
+    check('shed-roof-pitch-affects-roof-area', roofPitchAffectsRoofArea(lowPitchPathway, highPitchPathway)),
+    check('shed-lean-to-items-generated', leanToItemsGenerated(leanToPathway)),
+    check('shed-lean-to-model-builds', leanToAddsModelGeometry(leanToPathway.plan))
   ];
 
   return {
@@ -77,6 +95,32 @@ function openShedItemListHasNoWallFramingOrFloor(pathway) {
 function shedPostDiameterIsImputed(pathway) {
   const expectedDiameterMM = imputeRoundPostDiameterMM(pathway.plan.wallHeightM);
   return pathway.itemList.items.some((item) => item.category === 'Structure' && item.item.includes(`⌀${expectedDiameterMM}mm`));
+}
+
+function findItem(items, category, itemName) {
+  return items.find((item) => item.category === category && item.item === itemName);
+}
+
+function roofPitchAffectsRoofArea(lowPathway, highPathway) {
+  const lowSheeting = findItem(lowPathway.itemList.items, 'Roofing', 'Roof sheeting');
+  const highSheeting = findItem(highPathway.itemList.items, 'Roofing', 'Roof sheeting');
+  if (!lowSheeting || !highSheeting) return false;
+  return highSheeting.quantity > lowSheeting.quantity
+    && Math.abs(pitchAllowanceFromDegrees(5) - pitchAllowanceFromDegrees(25)) > 0.01;
+}
+
+function leanToItemsGenerated(pathway) {
+  const categories = pathway.itemList.items.map((item) => item.category);
+  return pathway.itemList.status === 'estimate' && categories.filter((c) => c === 'Lean-to').length >= 3;
+}
+
+function leanToAddsModelGeometry(plan) {
+  const withLeanTo = buildShedModel(plan);
+  const withoutLeanTo = buildShedModel({ ...plan, leanToEnabled: false });
+  const grew = withLeanTo.children.length > withoutLeanTo.children.length;
+  disposeShedModel(withLeanTo);
+  disposeShedModel(withoutLeanTo);
+  return grew;
 }
 
 function check(id, pass) {

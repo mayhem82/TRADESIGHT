@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { SHED_ESTIMATE_ASSUMPTIONS, imputeRoundPostDiameterMM } from './shed-item-list.js';
+import { SHED_ESTIMATE_ASSUMPTIONS, imputeRoundPostDiameterMM, computeLeanToPostHeightM } from './shed-item-list.js';
 
 export const SHED_MODEL_COLORS = {
   cladding: {
@@ -14,8 +14,8 @@ export const SHED_MODEL_COLORS = {
   post: { color: 0x51616f, metalness: 0.35, roughness: 0.55 }
 };
 
-function angleFromAllowance(allowance) {
-  return Math.acos(Math.min(0.999, 1 / allowance));
+function degToRad(deg) {
+  return (deg * Math.PI) / 180;
 }
 
 function material(spec, opts = {}) {
@@ -68,8 +68,9 @@ export function buildShedModel(plan) {
   const overhang = 0.18;
   const roofThickness = 0.07;
 
+  const theta = degToRad(plan.roofPitchDeg);
+
   if (plan.roofType === 'gable') {
-    const theta = angleFromAllowance(a.gablePitchAllowance);
     const halfSpan = w / 2 + overhang;
     const slopeLen = halfSpan / Math.cos(theta);
     const ridgeRise = halfSpan * Math.tan(theta);
@@ -81,7 +82,6 @@ export function buildShedModel(plan) {
       group.add(panel);
     });
   } else {
-    const theta = angleFromAllowance(a.skillionFallAllowance);
     const runLen = l + overhang * 2;
     const slopeLen = runLen / Math.cos(theta);
     const rise = runLen * Math.tan(theta);
@@ -89,6 +89,25 @@ export function buildShedModel(plan) {
     roof.position.set(0, h + rise / 2, 0);
     roof.rotation.x = -theta;
     group.add(roof);
+  }
+
+  if (plan.leanToEnabled) {
+    const postHeightM = computeLeanToPostHeightM(plan);
+    const postRadius = imputeRoundPostDiameterMM(postHeightM, a) / 1000 / 2;
+    const postMat = material(SHED_MODEL_COLORS.post);
+    const outerZ = -l / 2 - plan.leanToDepthM;
+
+    [-1, 1].forEach((side) => {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, postHeightM, 12), postMat);
+      post.position.set(side * (w / 2 - postRadius), postHeightM / 2, outerZ + postRadius);
+      group.add(post);
+    });
+
+    const slopeLen = plan.leanToDepthM / Math.cos(theta);
+    const leanToRoof = new THREE.Mesh(new THREE.BoxGeometry(w, roofThickness, slopeLen), roofMat);
+    leanToRoof.position.set(0, (h + postHeightM) / 2, -l / 2 - plan.leanToDepthM / 2);
+    leanToRoof.rotation.x = -theta;
+    group.add(leanToRoof);
   }
 
   if (!plan.openSides) {

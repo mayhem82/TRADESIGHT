@@ -10,11 +10,11 @@ Capability Build v2 is complete under BuildOS.
 
 Last completed capability:
 
-- 35-shed-fastener-split-fix
+- 36-shed-roof-pitch-and-lean-to
 
 Current next capability:
 
-- 36-live-supplier-api-foundation (blocked on approved Bunnings partner API credentials)
+- 37-live-supplier-api-foundation (blocked on approved Bunnings partner API credentials)
 
 ## Active Runtime
 

@@ -6,8 +6,6 @@ export const SHED_ESTIMATE_ASSUMPTIONS = {
   rafterSpacingM: 0.6,
   postSpacingM: 1.8,
   wastageFactor: 1.1,
-  gablePitchAllowance: 1.1,
-  skillionFallAllowance: 1.05,
   standardDoorM: { width: 0.82, height: 2.04 },
   standardWindowM: { width: 1.2, height: 1.2 },
   claddingSheetAreaM2: 2.88,
@@ -26,6 +24,10 @@ export const SHED_ESTIMATE_ASSUMPTIONS = {
 export function imputeRoundPostDiameterMM(heightM, a = SHED_ESTIMATE_ASSUMPTIONS) {
   const band = a.roundPostDiameterBandsMM.find((candidate) => heightM <= candidate.maxHeightM);
   return band ? band.diameterMM : a.roundPostDiameterBandsMM[a.roundPostDiameterBandsMM.length - 1].diameterMM;
+}
+
+export function pitchAllowanceFromDegrees(pitchDeg) {
+  return 1 / Math.cos((pitchDeg * Math.PI) / 180);
 }
 
 export function generateShedItemList(plan = {}) {
@@ -50,7 +52,8 @@ export function generateShedItemList(plan = {}) {
     ...roofingItems(plan, a),
     ...(plan.openSides ? [] : claddingItems(plan, a, perimeterM)),
     ...(plan.openSides ? [] : openingItems(plan, a)),
-    ...fastenerItems(plan, a, perimeterM)
+    ...fastenerItems(plan, a, perimeterM),
+    ...(plan.leanToEnabled ? leanToItems(plan, a) : [])
   ];
 
   return {
@@ -108,27 +111,28 @@ function wallFramingItems(plan, a, perimeterM, openingCount) {
 
 function roofFramingItems(plan, a) {
   const memberCount = Math.ceil(plan.lengthM / a.rafterSpacingM) + 1;
+  const pitchAllowance = pitchAllowanceFromDegrees(plan.roofPitchDeg);
 
   if (plan.roofType === 'gable') {
-    const rafterLengthEach = round((plan.widthM / 2) * a.gablePitchAllowance, 2);
+    const rafterLengthEach = round((plan.widthM / 2) * pitchAllowance, 2);
     return [
-      row('Roof framing', 'Rafters (pair per station)', 'ea', memberCount * 2, `Each rafter approx. ${rafterLengthEach}m, includes pitch allowance.`),
+      row('Roof framing', 'Rafters (pair per station)', 'ea', memberCount * 2, `Each rafter approx. ${rafterLengthEach}m, at ${plan.roofPitchDeg} deg pitch.`),
       row('Roof framing', 'Ridge board', 'm', round(plan.lengthM))
     ];
   }
 
-  const rafterLengthEach = round(plan.widthM * a.skillionFallAllowance, 2);
+  const rafterLengthEach = round(plan.widthM * pitchAllowance, 2);
   return [
-    row('Roof framing', 'Rafters', 'ea', memberCount, `Each rafter approx. ${rafterLengthEach}m, includes fall allowance.`)
+    row('Roof framing', 'Rafters', 'ea', memberCount, `Each rafter approx. ${rafterLengthEach}m, at ${plan.roofPitchDeg} deg pitch.`)
   ];
 }
 
 function roofingItems(plan, a) {
-  const pitchAllowance = plan.roofType === 'gable' ? a.gablePitchAllowance : a.skillionFallAllowance;
+  const pitchAllowance = pitchAllowanceFromDegrees(plan.roofPitchDeg);
   const roofAreaM2 = round(plan.widthM * plan.lengthM * pitchAllowance, 2);
 
   return [
-    row('Roofing', 'Roof sheeting', 'm2', round(roofAreaM2 * a.wastageFactor), 'Colorbond sheet coverage; cut sheets to actual run length on site.'),
+    row('Roofing', 'Roof sheeting', 'm2', round(roofAreaM2 * a.wastageFactor), `Colorbond sheet coverage at ${plan.roofPitchDeg} deg pitch; cut sheets to actual run length on site.`),
     row('Roofing', plan.roofType === 'gable' ? 'Ridge capping' : 'Top/back flashing', 'm', round(plan.lengthM)),
     row('Roofing', 'Eave/barge flashing', 'm', round(2 * plan.lengthM + plan.widthM))
   ];
@@ -153,7 +157,7 @@ function openingItems(plan, a) {
 }
 
 function fastenerItems(plan, a, perimeterM) {
-  const pitchAllowance = plan.roofType === 'gable' ? a.gablePitchAllowance : a.skillionFallAllowance;
+  const pitchAllowance = pitchAllowanceFromDegrees(plan.roofPitchDeg);
   const roofAreaM2 = plan.widthM * plan.lengthM * pitchAllowance;
   const roofingScrews = Math.ceil(roofAreaM2 * a.claddingScrewsPerM2);
 
@@ -178,6 +182,34 @@ function fastenerItems(plan, a, perimeterM) {
     row('Fasteners', 'Wall cladding screws', 'ea', claddingScrews, `Assumes ${a.claddingScrewsPerM2} fixings per m2 of wall cladding.`),
     row('Fasteners', 'Roofing screws', 'ea', roofingScrews, `Assumes ${a.claddingScrewsPerM2} fixings per m2 of roofing.`),
     row('Fasteners', 'Framing nails/screws', 'ea', framingFixings, `Assumes ${a.framingFixingsPerJunction} fixings per stud-to-plate junction.`)
+  ];
+}
+
+const MIN_LEAN_TO_POST_HEIGHT_M = 1.8;
+
+export function computeLeanToPostHeightM(plan) {
+  const pitchRad = (plan.roofPitchDeg * Math.PI) / 180;
+  const drop = plan.leanToDepthM * Math.tan(pitchRad);
+  return Math.max(MIN_LEAN_TO_POST_HEIGHT_M, round(plan.wallHeightM - drop, 2));
+}
+
+function leanToItems(plan, a) {
+  const postHeightM = computeLeanToPostHeightM(plan);
+  const postCount = Math.max(2, Math.ceil(plan.widthM / a.openPostSpacingM) + 1);
+  const diameterMM = imputeRoundPostDiameterMM(postHeightM, a);
+  const pitchAllowance = pitchAllowanceFromDegrees(plan.roofPitchDeg);
+  const rafterCount = Math.ceil(plan.widthM / a.rafterSpacingM) + 1;
+  const rafterLengthEach = round(plan.leanToDepthM * pitchAllowance, 2);
+  const roofAreaM2 = round(plan.widthM * plan.leanToDepthM * pitchAllowance, 2);
+  const roofingScrews = Math.ceil(roofAreaM2 * a.claddingScrewsPerM2);
+  const postFixings = postCount * a.postFixingsPerPost;
+
+  return [
+    row('Lean-to', `Support posts (round timber, ⌀${diameterMM}mm)`, 'ea', postCount, `Attached off the back wall, dropping to approx. ${postHeightM}m at the outer edge over a ${plan.leanToDepthM}m depth. Open-sided by design — no wall framing or cladding assumed.`),
+    row('Lean-to', 'Roof rafters', 'ea', rafterCount, `Each rafter approx. ${rafterLengthEach}m, at ${plan.roofPitchDeg} deg pitch.`),
+    row('Lean-to', 'Roof sheeting', 'm2', round(roofAreaM2 * a.wastageFactor), 'Colorbond sheet coverage for the lean-to roof only.'),
+    row('Lean-to', 'Roofing screws', 'ea', roofingScrews, `Assumes ${a.claddingScrewsPerM2} fixings per m2 of roofing.`),
+    row('Lean-to', 'Post fixings/brackets', 'ea', postFixings, `Assumes ${a.postFixingsPerPost} fixings per post-to-bearer or post-to-roof connection.`)
   ];
 }
 

@@ -8,12 +8,15 @@ const initialForm = {
   lengthM: '4',
   wallHeightM: '2.1',
   roofType: 'skillion',
+  roofPitchDeg: '10',
   claddingType: 'colorbond-steel',
   floorType: 'concrete-slab',
   openSides: false,
   doorCount: '1',
   windowCount: '0',
-  boundaryDistanceM: ''
+  boundaryDistanceM: '',
+  leanToEnabled: false,
+  leanToDepthM: ''
 };
 
 export function ShedPlanner() {
@@ -189,6 +192,10 @@ export function ShedPlanner() {
           </select>
         </label>
         <label>
+          Roof pitch (deg)
+          <input type="number" min="2" max="45" step="1" value={form.roofPitchDeg} onChange={(event) => updateField('roofPitchDeg', event.target.value)} />
+        </label>
+        <label>
           Wall cladding
           <select value={form.claddingType} onChange={(event) => updateField('claddingType', event.target.value)}>
             <option value="colorbond-steel">Colorbond steel</option>
@@ -219,6 +226,17 @@ export function ShedPlanner() {
           Windows
           <input type="number" min="0" step="1" value={form.windowCount} disabled={form.openSides} onChange={(event) => updateField('windowCount', event.target.value)} />
         </label>
+        <label className="shed-checkbox-field">
+          <span>Lean-to</span>
+          <span className="shed-checkbox-row">
+            <input type="checkbox" checked={form.leanToEnabled} onChange={(event) => updateField('leanToEnabled', event.target.checked)} />
+            <span className="muted">Add an open-sided lean-to off the back wall</span>
+          </span>
+        </label>
+        <label>
+          Lean-to depth (m)
+          <input type="number" min="0" step="0.1" value={form.leanToDepthM} disabled={!form.leanToEnabled} placeholder="Not entered" onChange={(event) => updateField('leanToDepthM', event.target.value)} />
+        </label>
       </div>
 
       {pathway.missingDetails.length > 0 && (
@@ -247,6 +265,9 @@ export function ShedPlanner() {
               </>
             )}
             <span><i className="shed-swatch" style={{ background: `#${SHED_MODEL_COLORS.boundary.toString(16).padStart(6, '0')}` }} />Boundary offset</span>
+            {pathway.plan.leanToEnabled && !pathway.plan.openSides && (
+              <span><i className="shed-swatch" style={{ background: `#${SHED_MODEL_COLORS.post.color.toString(16).padStart(6, '0')}` }} />Lean-to posts</span>
+            )}
           </div>
         </div>
       )}
@@ -254,9 +275,12 @@ export function ShedPlanner() {
       {pathway.plan.floorAreaM2 != null && (
         <dl className="facts compact">
           <div><dt>Floor area</dt><dd>{pathway.plan.floorAreaM2} m2</dd></div>
-          <div><dt>Roof type</dt><dd>{pathway.plan.roofType}</dd></div>
+          <div><dt>Roof type</dt><dd>{pathway.plan.roofType} &middot; {pathway.plan.roofPitchDeg} deg</dd></div>
           <div><dt>Floor type</dt><dd>{pathway.plan.floorType === 'none' ? 'no floor' : pathway.plan.floorType}</dd></div>
           <div><dt>Walls</dt><dd>{pathway.plan.openSides ? 'open sides' : 'enclosed'}</dd></div>
+          {pathway.plan.leanToEnabled && (
+            <div><dt>Lean-to</dt><dd>{pathway.plan.leanToDepthM}m deep &middot; {pathway.plan.leanToFloorAreaM2} m2</dd></div>
+          )}
         </dl>
       )}
 

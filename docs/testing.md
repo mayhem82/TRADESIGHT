@@ -26,6 +26,8 @@
 9. Set floor type to "No floor (ground/gravel)" and confirm the item list shows a "No floor specified" row instead of slab or bearer items.
 10. Check "Open sides" and confirm: doors/windows inputs disable, the model shows corner posts instead of a solid wall box, the item list shows "Structure" (support posts, bracing) instead of wall framing/cladding/openings, and the development pathway flags note that open-sided structures are still assessed under the same exempt/complying development rules.
 11. With "Open sides" checked, change wall height across 2.4m, 3.0m, and 3.6m and confirm the support post item's imputed round timber diameter steps up (100mm / 125mm / 150mm / 175mm bands) and the posts in the model change thickness to match.
+12. Change "Roof pitch (deg)" and confirm the roof sheeting area, rafter lengths, and the model's roof tilt all change together.
+13. Check "Lean-to" and enter a depth. Confirm: a "Lean-to depth (m)" input appears, "Lean-to" item rows (support posts, roof rafters, roof sheeting, screws, post fixings) appear in the item list, the model shows a lower lean-to roof and posts attached to the back wall, the facts panel shows the lean-to's own floor area, and the development pathway flags mention the combined footprint. Works in combination with both roof types and with "Open sides".
 
 ## Self-check module
 
@@ -42,6 +44,8 @@
 - the 3D shed model builds walls and a roof from a plan
 - an open-sided, no-floor plan produces support-post/bracing items instead of wall framing and a floor, and the model still builds
 - the open-sided support post item's round timber diameter is imputed from wall height and appears in the item text
+- roof pitch changes the roof sheeting quantity
+- a lean-to plan produces lean-to item rows and adds geometry to the 3D model
 
 ## Boundary test
 
