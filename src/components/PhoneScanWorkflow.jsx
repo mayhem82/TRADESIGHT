@@ -6,8 +6,8 @@ const captureSteps = [
   'Open Polycam or another phone photogrammetry app and choose Photo Mode / 3D Capture.',
   'Walk a slow clockwise loop with 60-80% overlap between photos.',
   'Capture high, middle, low, and underside angles. Add a tape measure or known board width for scale.',
-  'Export the model as GLB when available. OBJ also works later, but GLB is the preferred TRADESIGHT target.',
-  'Load the GLB below. Tap the scan surface to create spatial observations for the evidence register.'
+  'Export as GLB if your app offers it. If not, export GLTF — pick a single embedded/binary file, not a bundle of separate .bin or texture files, which will not load here.',
+  'Load the GLB or GLTF below. Tap the scan surface to create spatial observations for the evidence register.'
 ];
 
 function disposeObject3D(object) {
@@ -35,7 +35,7 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
   const modelRef = useRef(null);
   const markerRef = useRef(null);
   const fileUrlRef = useRef(null);
-  const [modelStatus, setModelStatus] = useState('No GLB loaded yet.');
+  const [modelStatus, setModelStatus] = useState('No model loaded yet.');
   const [modelName, setModelName] = useState('');
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [observationText, setObservationText] = useState('');
@@ -43,7 +43,7 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
   const scanState = useMemo(() => ({
     capture: 'Phone-first',
     reconstruction: 'External photogrammetry app/service',
-    viewer: 'TRADESIGHT Three.js GLB viewer',
+    viewer: 'TRADESIGHT Three.js GLB/GLTF viewer',
     evidenceMode: 'Spatial notes + report linkage'
   }), []);
 
@@ -130,7 +130,7 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
           setModelStatus('Loaded and recorded as scan evidence. Tap the model to mark an observation point.');
         },
         undefined,
-        () => setModelStatus('Could not load this file. Export as GLB and try again.')
+        () => setModelStatus('Could not load this file. If it was exported as GLTF, it may be a multi-file bundle (separate .bin or texture files) rather than a single embedded file — re-export as GLB, or as a single embedded GLTF file, and try again.')
       );
     }
 
@@ -189,8 +189,9 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
   function handleModelFile(event) {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!file.name.toLowerCase().endsWith('.glb')) {
-      setModelStatus('Rejected. TRADESIGHT currently accepts GLB exports only.');
+    const lowerName = file.name.toLowerCase();
+    if (!lowerName.endsWith('.glb') && !lowerName.endsWith('.gltf')) {
+      setModelStatus('Rejected. TRADESIGHT currently accepts GLB or GLTF exports only.');
       return;
     }
 
@@ -200,7 +201,7 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
     mountRef.current?.loadTradesightModel?.(objectUrl, file.name);
     onScanEvidence?.({
       fileName: file.name,
-      mimeType: file.type || 'model/gltf-binary',
+      mimeType: file.type || (lowerName.endsWith('.gltf') ? 'model/gltf+json' : 'model/gltf-binary'),
       sizeBytes: file.size || 0,
       observedAt: new Date().toISOString()
     });
@@ -222,7 +223,7 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
     mountRef.current?.clearTradesightMarker?.();
     setSelectedPoint(null);
     setObservationText('');
-    setModelStatus(modelName ? 'Selection cleared. Tap the model to mark another observation point.' : 'No GLB loaded yet.');
+    setModelStatus(modelName ? 'Selection cleared. Tap the model to mark another observation point.' : 'No model loaded yet.');
   }
 
   return (
@@ -230,7 +231,7 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
       <div className="panel-heading">
         <div>
           <h2>Phone 3D Scan Workflow</h2>
-          <p>Capture on the phone, reconstruct with a photogrammetry app, then load the GLB into TRADESIGHT for spatial evidence review.</p>
+          <p>Capture on the phone, reconstruct with a photogrammetry app, then load the GLB or GLTF into TRADESIGHT for spatial evidence review.</p>
         </div>
         <span className="status-pill">3D intake</span>
       </div>
@@ -244,8 +245,8 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
       <div className="scan-layout">
         <div>
           <label className="file-loader">
-            Load GLB scan export
-            <input type="file" accept=".glb,model/gltf-binary" onChange={handleModelFile} />
+            Load GLB or GLTF scan export
+            <input type="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json" onChange={handleModelFile} />
           </label>
           <p className="muted">{modelStatus}</p>
           {modelName && <p className="muted">Current model: {modelName}</p>}

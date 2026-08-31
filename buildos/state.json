@@ -2,10 +2,10 @@
   "project": "TRADESIGHT",
   "mode": "BuildOS Controller",
   "current_plan": "agent-mode-v2",
-  "current_step": 37,
-  "next_task": "37-live-supplier-api-foundation",
+  "current_step": 38,
+  "next_task": "38-live-supplier-api-foundation",
   "status": "ready",
-  "last_completed": "36-shed-roof-pitch-and-lean-to",
-  "last_commit_summary": "Added a user-adjustable roof pitch (replacing the fixed per-roof-type allowance factors, so item-list quantities and the 3D model's roof tilt derive from one real pitch angle) and an open-sided lean-to add-on off the back wall, with its own support posts, roof framing, roofing, and fasteners, both in the item list and the 3D model. Pulled in from reviewing a competitor shed configurator (Best Sheds Designer / ACT Building Systems).",
+  "last_completed": "37-scan-workflow-gltf-import-support",
+  "last_commit_summary": "Fixed the Phone 3D Scan Workflow to accept GLTF exports, not just GLB: a real photogrammetry app's export menu showed no GLB option, only GLTF among other formats. The importer, on-screen instructions, and status/error copy now cover both, with the error path explaining that a multi-file GLTF bundle (separate .bin/texture files) will not load, only a single embedded file or GLB.",
   "blocker": "Live Bunnings stock and pricing still require approved partner API credentials before runtime access can be enabled."
 }

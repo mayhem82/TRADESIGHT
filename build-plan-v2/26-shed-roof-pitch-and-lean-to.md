@@ -26,4 +26,4 @@ Done when:
 - development-pathway flags account for the lean-to's added footprint
 - self-check confirms pitch changes roof area and that a lean-to plan produces lean-to items and additional model geometry
 
-Next step: 37-live-supplier-api-foundation (blocked on approved Bunnings partner API credentials)
+Next step: 37-scan-workflow-gltf-import-support

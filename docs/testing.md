@@ -29,6 +29,14 @@
 12. Change "Roof pitch (deg)" and confirm the roof sheeting area, rafter lengths, and the model's roof tilt all change together.
 13. Check "Lean-to" and enter a depth. Confirm: a "Lean-to depth (m)" input appears, "Lean-to" item rows (support posts, roof rafters, roof sheeting, screws, post fixings) appear in the item list, the model shows a lower lean-to roof and posts attached to the back wall, the facts panel shows the lean-to's own floor area, and the development pathway flags mention the combined footprint. Works in combination with both roof types and with "Open sides".
 
+## Phone 3D Scan Workflow smoke test
+
+1. Scroll to the Phone 3D Scan Workflow panel.
+2. Load a `.glb` export and confirm it loads and shows "Loaded and recorded as scan evidence."
+3. Load a single-file, embedded (base64) `.gltf` export and confirm it loads the same way.
+4. Load a `.gltf` that references an external `.bin`/texture file (a multi-file bundle) and confirm the status message explains the file needs to be a single embedded file or GLB, rather than a generic failure.
+5. Load a file with an unsupported extension (e.g. `.obj`) and confirm it is rejected with a message naming GLB/GLTF as the accepted formats.
+
 ## Self-check module
 
 `src/diagnostics/self-check.js` provides a runtime self-check that verifies:

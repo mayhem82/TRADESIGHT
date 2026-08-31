@@ -10,11 +10,11 @@ Capability Build v2 is complete under BuildOS.
 
 Last completed capability:
 
-- 36-shed-roof-pitch-and-lean-to
+- 37-scan-workflow-gltf-import-support
 
 Current next capability:
 
-- 37-live-supplier-api-foundation (blocked on approved Bunnings partner API credentials)
+- 38-live-supplier-api-foundation (blocked on approved Bunnings partner API credentials)
 
 ## Active Runtime
 
