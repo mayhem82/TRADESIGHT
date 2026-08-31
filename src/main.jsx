@@ -11,6 +11,7 @@ import { EvidencePanel } from './components/EvidencePanel.jsx';
 import { PhoneScanWorkflow } from './components/PhoneScanWorkflow.jsx';
 import { ProjectPanel } from './components/ProjectPanel.jsx';
 import { ReportPreview } from './components/ReportPreview.jsx';
+import { ShedPlanner } from './components/ShedPlanner.jsx';
 import { getModulesForTask } from './modules/registry.js';
 import './styles.css';
 
@@ -82,6 +83,8 @@ function App() {
 
         <PhoneScanWorkflow onScanEvidence={addScanEvidence} onScanObservation={addScanObservation} />
 
+        <ShedPlanner />
+
         <article>
           <h2>Module Routing</h2>
           <ul>{assessment.modules.map((module) => <li key={module.id}>{module.name} - {module.status}</li>)}</ul>
@@ -106,6 +109,7 @@ function App() {
           <span>Evidence</span>
           <span>Standards</span>
           <span>3D scan intake</span>
+          <span>Shed item list</span>
           <span>Report or project</span>
         </div>
       </section>

@@ -10,11 +10,11 @@ Capability Build v2 is complete under BuildOS.
 
 Last completed capability:
 
-- 20-nsw-demonstration-platform
+- 31-shed-item-list-planner
 
 Current next capability:
 
-- complete
+- 32-live-supplier-api-foundation (blocked on approved Bunnings partner API credentials)
 
 ## Active Runtime
 
@@ -32,6 +32,8 @@ TRADESIGHT now includes:
 - TRADESIGHT Runtime
 - Production Readiness foundation
 - NSW Demonstration Platform
+- Supplier Stock API Connector (credential-gated)
+- Shed Item List Planner
 
 ## Core Workflow
 

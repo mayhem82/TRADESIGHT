@@ -2,6 +2,7 @@ export function classifyTask(input = '') {
   const text = input.toLowerCase();
 
   if (/defect|crack|leak|mould|rot|failed|damage|unsafe|non[- ]?compliant/.test(text)) return 'defect';
+  if (/\bshed\b|garden shed|storage shed|carport|garage shed/.test(text)) return 'shed';
   if (/plan|drawing|sketch|approval|da|cdc|certifier|layout/.test(text)) return 'plan';
   if (/builder|dispute|quote|contract|invoice|variation|warranty|tribunal|fair trading/.test(text)) return 'dispute';
   if (/material|product|sheet|spec|cladding|membrane|waterproof|timber|concrete|steel|bunnings|stock|inventory|supplier|price|pricing|availability|kempsey/.test(text)) return 'materials';

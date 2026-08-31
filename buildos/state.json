@@ -2,10 +2,10 @@
   "project": "TRADESIGHT",
   "mode": "BuildOS Controller",
   "current_plan": "agent-mode-v2",
-  "current_step": 31,
-  "next_task": "31-live-supplier-api-foundation",
+  "current_step": 32,
+  "next_task": "32-live-supplier-api-foundation",
   "status": "ready",
-  "last_completed": "30-bunnings-credential-gated-api-connector",
-  "last_commit_summary": "Added credential-gated Bunnings Partner API connector scaffold, access boundary documentation, supplier module routing, and stock/pricing intake classification without public product pages.",
-  "blocker": "Live Bunnings stock and pricing require approved partner API credentials before runtime access can be enabled."
+  "last_completed": "31-shed-item-list-planner",
+  "last_commit_summary": "Added a homeowner Shed Item List Planner: shed plan intake, deterministic materials item list estimator, development-pathway boundary flags, a new 'shed' task classification and module/agent routing, and a dedicated UI panel wired into the runtime shell.",
+  "blocker": "Live Bunnings stock and pricing still require approved partner API credentials before runtime access can be enabled."
 }

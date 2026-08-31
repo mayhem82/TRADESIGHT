@@ -1,0 +1,156 @@
+// Estimation assumptions. These are planning defaults, not engineering values.
+// A real footing, framing, or bracing design must be verified against AS 1684,
+// a manufacturer's shed engineering certificate, or a qualified designer.
+export const SHED_ESTIMATE_ASSUMPTIONS = {
+  studSpacingM: 0.6,
+  rafterSpacingM: 0.6,
+  postSpacingM: 1.8,
+  wastageFactor: 1.1,
+  gablePitchAllowance: 1.1,
+  skillionFallAllowance: 1.05,
+  standardDoorM: { width: 0.82, height: 2.04 },
+  standardWindowM: { width: 1.2, height: 1.2 },
+  claddingSheetAreaM2: 2.88,
+  claddingScrewsPerM2: 6,
+  framingFixingsPerJunction: 4
+};
+
+export function generateShedItemList(plan = {}) {
+  const { widthM, lengthM, wallHeightM } = plan;
+
+  if (!widthM || !lengthM || !wallHeightM) {
+    return {
+      status: 'incomplete',
+      items: [],
+      note: 'Enter shed width, length, and wall height to generate an item list.'
+    };
+  }
+
+  const a = SHED_ESTIMATE_ASSUMPTIONS;
+  const perimeterM = 2 * (widthM + lengthM);
+  const openingCount = plan.doorCount + plan.windowCount;
+
+  const items = [
+    ...floorItems(plan, a, perimeterM),
+    ...wallFramingItems(plan, a, perimeterM, openingCount),
+    ...roofFramingItems(plan, a),
+    ...roofingItems(plan, a),
+    ...claddingItems(plan, a, perimeterM),
+    ...openingItems(plan, a),
+    ...fastenerItems(plan, a, perimeterM)
+  ];
+
+  return {
+    status: 'estimate',
+    generatedAt: new Date().toISOString(),
+    items,
+    note: 'Quantities are a planning estimate using standard framing spacings and 10% wastage. Confirm final quantities and bracing/footing design against AS 1684, a shed manufacturer engineering certificate, or a qualified designer before ordering or building.'
+  };
+}
+
+function floorItems(plan, a, perimeterM) {
+  if (plan.floorType === 'concrete-slab') {
+    return [
+      row('Floor', 'Concrete slab', 'm2', plan.floorAreaM2, 'Slab area only. Thickness, reinforcement, and vapour barrier need separate specification.'),
+      row('Floor', 'Slab edge formwork', 'm', round(perimeterM))
+    ];
+  }
+
+  const postCount = Math.max(4, Math.ceil(perimeterM / a.postSpacingM));
+
+  return [
+    row('Floor', 'Stump/pier footings', 'ea', postCount, `Assumes posts at approx. ${a.postSpacingM}m centres around the perimeter.`),
+    row('Floor', 'Bearers', 'm', round(perimeterM)),
+    row('Floor', 'Floor joists', 'm', round(plan.lengthM * Math.ceil(plan.widthM / a.studSpacingM))),
+    row('Floor', 'Flooring sheet (structural ply)', 'm2', round(plan.floorAreaM2 * a.wastageFactor))
+  ];
+}
+
+function wallFramingItems(plan, a, perimeterM, openingCount) {
+  const studCount = Math.ceil(perimeterM / a.studSpacingM) + 4 + openingCount * 2;
+
+  return [
+    row('Wall framing', 'Bottom plate', 'm', round(perimeterM)),
+    row('Wall framing', 'Top plate', 'm', round(perimeterM), 'Single top plate assumed; doubled top plate may be required by the framing design.'),
+    row('Wall framing', 'Wall studs', 'ea', studCount, `Assumes studs at ${a.studSpacingM * 1000}mm centres plus corner and opening jamb studs.`),
+    row('Wall framing', 'Noggins/blocking', 'm', round(perimeterM), 'One row of mid-height blocking assumed.')
+  ];
+}
+
+function roofFramingItems(plan, a) {
+  const memberCount = Math.ceil(plan.lengthM / a.rafterSpacingM) + 1;
+
+  if (plan.roofType === 'gable') {
+    const rafterLengthEach = round((plan.widthM / 2) * a.gablePitchAllowance, 2);
+    return [
+      row('Roof framing', 'Rafters (pair per station)', 'ea', memberCount * 2, `Each rafter approx. ${rafterLengthEach}m, includes pitch allowance.`),
+      row('Roof framing', 'Ridge board', 'm', round(plan.lengthM))
+    ];
+  }
+
+  const rafterLengthEach = round(plan.widthM * a.skillionFallAllowance, 2);
+  return [
+    row('Roof framing', 'Rafters', 'ea', memberCount, `Each rafter approx. ${rafterLengthEach}m, includes fall allowance.`)
+  ];
+}
+
+function roofingItems(plan, a) {
+  const pitchAllowance = plan.roofType === 'gable' ? a.gablePitchAllowance : a.skillionFallAllowance;
+  const roofAreaM2 = round(plan.widthM * plan.lengthM * pitchAllowance, 2);
+
+  return [
+    row('Roofing', 'Roof sheeting', 'm2', round(roofAreaM2 * a.wastageFactor), 'Colorbond sheet coverage; cut sheets to actual run length on site.'),
+    row('Roofing', plan.roofType === 'gable' ? 'Ridge capping' : 'Top/back flashing', 'm', round(plan.lengthM)),
+    row('Roofing', 'Eave/barge flashing', 'm', round(2 * plan.lengthM + plan.widthM))
+  ];
+}
+
+function claddingItems(plan, a, perimeterM) {
+  const openingAreaM2 = plan.doorCount * a.standardDoorM.width * a.standardDoorM.height
+    + plan.windowCount * a.standardWindowM.width * a.standardWindowM.height;
+  const wallAreaM2 = Math.max(0, perimeterM * plan.wallHeightM - openingAreaM2);
+  const sheetCount = Math.ceil((wallAreaM2 * a.wastageFactor) / a.claddingSheetAreaM2);
+
+  return [
+    row('Wall cladding', claddingLabel(plan.claddingType), 'ea', sheetCount, `Based on ${wallAreaM2.toFixed(2)}m2 net wall area after door/window deductions.`)
+  ];
+}
+
+function openingItems(plan, a) {
+  const items = [];
+  if (plan.doorCount) items.push(row('Openings', 'Door frame + lintel', 'ea', plan.doorCount));
+  if (plan.windowCount) items.push(row('Openings', 'Window frame + lintel', 'ea', plan.windowCount));
+  return items;
+}
+
+function fastenerItems(plan, a, perimeterM) {
+  const openingAreaM2 = plan.doorCount * a.standardDoorM.width * a.standardDoorM.height
+    + plan.windowCount * a.standardWindowM.width * a.standardWindowM.height;
+  const wallAreaM2 = Math.max(0, perimeterM * plan.wallHeightM - openingAreaM2);
+  const claddingScrews = Math.ceil(wallAreaM2 * a.claddingScrewsPerM2);
+  const framingJunctions = Math.ceil(perimeterM / a.studSpacingM) * 2;
+  const framingFixings = framingJunctions * a.framingFixingsPerJunction;
+
+  return [
+    row('Fasteners', 'Cladding/roofing screws', 'ea', claddingScrews, `Assumes ${a.claddingScrewsPerM2} fixings per m2 of cladding.`),
+    row('Fasteners', 'Framing nails/screws', 'ea', framingFixings, `Assumes ${a.framingFixingsPerJunction} fixings per stud-to-plate junction.`)
+  ];
+}
+
+function claddingLabel(claddingType) {
+  const labels = {
+    'colorbond-steel': 'Colorbond steel wall sheet',
+    'fibre-cement': 'Fibre cement sheet',
+    'timber-weatherboard': 'Timber weatherboard'
+  };
+  return labels[claddingType] || 'Wall cladding sheet';
+}
+
+function row(category, item, unit, quantity, notes = '') {
+  return { category, item, unit, quantity, notes };
+}
+
+function round(value, places = 2) {
+  const factor = 10 ** places;
+  return Math.round(value * factor) / factor;
+}

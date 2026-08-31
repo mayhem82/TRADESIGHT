@@ -128,9 +128,40 @@ pre {
 .muted { color: #91a2b8; }
 .pathway { padding: 24px; margin-top: 18px; }
 
+.shed-form-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
+.shed-form-grid label { margin-bottom: 0; font-weight: 700; font-size: 0.85rem; color: #91a2b8; }
+.shed-form-grid input, .shed-form-grid select {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #eef5ff;
+  background: rgba(2, 6, 23, 0.78);
+  outline: none;
+}
+.shed-form-grid input:focus, .shed-form-grid select:focus { border-color: rgba(125, 211, 252, 0.72); }
+
+.shed-warning {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(251, 191, 36, 0.32);
+  border-radius: 8px;
+  background: rgba(120, 53, 15, 0.14);
+}
+.shed-warning strong { color: #fbbf24; }
+.shed-warning ul { margin-top: 8px; }
+
+.shed-item-table-wrap { margin: 16px 0; overflow-x: auto; }
+.shed-item-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.shed-item-table th, .shed-item-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid rgba(148, 163, 184, 0.16); vertical-align: top; }
+.shed-item-table th { color: #91a2b8; font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+
 @media (max-width: 900px) {
   .demo-list, .scan-layout { grid-template-columns: 1fr; }
   .scan-viewer { min-height: 300px; }
+  .shed-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 760px) {
@@ -139,4 +170,5 @@ pre {
   .shell { width: min(100% - 20px, 1180px); padding-top: 18px; }
   .agent-card, article, .pathway { padding: 18px; }
   .scan-viewer { min-height: 260px; }
+  .shed-form-grid { grid-template-columns: 1fr; }
 }

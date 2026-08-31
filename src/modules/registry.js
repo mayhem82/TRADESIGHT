@@ -29,6 +29,12 @@ export const MODULE_REGISTRY = {
     scope: 'Material and specification review pathway',
     status: 'scaffolded'
   },
+  shed: {
+    id: 'shed',
+    name: 'Shed Item List Planner',
+    scope: 'Homeowner shed dimension intake, materials item list estimate, and development pathway flags',
+    status: 'active'
+  },
   supplier: {
     id: 'supplier',
     name: 'Supplier Stock API Connector',
@@ -55,6 +61,7 @@ export const TASK_MODULE_MAP = {
   plan: ['engineer', 'compliance', 'report'],
   dispute: ['builder', 'report'],
   materials: ['materials', 'supplier', 'compliance', 'report'],
+  shed: ['shed', 'materials', 'supplier', 'compliance', 'report'],
   safety: ['hazard', 'compliance', 'report'],
   government: ['compliance', 'report'],
   unknown: ['compliance']

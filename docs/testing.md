@@ -13,6 +13,14 @@
 9. Refresh the browser and confirm the project loads.
 10. Clear the project and confirm state resets.
 
+## Shed Item List Planner smoke test
+
+1. Scroll to the Shed Item List Planner panel.
+2. Enter width, length, and wall height. Confirm the item list table appears with quantities.
+3. Leave the boundary distance blank and confirm it appears under "Missing before an item list can be generated" and under the development pathway flags.
+4. Change roof type, cladding, floor type, door count, and window count, and confirm the item list quantities update.
+5. Enter "I want to build a garden shed" in the main intake field and confirm the request classifies as the `shed` task type and routes through the Shed Item List Planner module.
+
 ## Self-check module
 
 `src/diagnostics/self-check.js` provides a runtime self-check that verifies:
@@ -23,6 +31,8 @@
 - report is created
 - project is created
 - compliance boundary remains conservative
+- a shed request classifies as the `shed` task type
+- the shed item list estimator generates line items
 
 ## Boundary test
 

@@ -6,6 +6,7 @@ export const TASK_AGENT_MAP = {
   plan: ['intake', 'plan', 'engineer', 'compliance', 'evidence', 'report'],
   dispute: ['intake', 'builder', 'evidence', 'report'],
   materials: ['intake', 'builder', 'compliance', 'evidence', 'report'],
+  shed: ['intake', 'builder', 'compliance', 'evidence', 'report'],
   safety: ['intake', 'image', 'compliance', 'evidence', 'report'],
   government: ['intake', 'government', 'compliance', 'evidence', 'report'],
   unknown: ['intake', 'compliance']

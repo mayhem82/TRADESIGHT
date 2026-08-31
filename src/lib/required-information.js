@@ -4,6 +4,7 @@ export const REQUIRED_INFORMATION = {
   plan: ['Plan, sketch, or drawing', 'Site location', 'Building class if known', 'Intended work', 'Known council or certifier requirements'],
   dispute: ['What happened', 'Who is involved', 'Timeline', 'Contract or written agreement', 'Photos, invoices, reports, or messages'],
   materials: ['Material or product name', 'Application area', 'Exposure conditions', 'Manufacturer information', 'Relevant measurements'],
+  shed: ['Shed width, length, and wall height', 'Roof type', 'Cladding and roofing material', 'Floor type', 'Distance to nearest boundary'],
   safety: ['Hazard description', 'Location', 'Photos', 'Who may be exposed', 'Urgency'],
   government: ['Responsible body', 'Decision or failure being reviewed', 'Timeline', 'Rules or policy involved', 'Evidence already held'],
   unknown: ['Describe the issue in plain language', 'Location', 'Photos or files', 'What outcome is needed']
