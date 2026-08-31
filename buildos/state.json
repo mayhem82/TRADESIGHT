@@ -2,10 +2,10 @@
   "project": "TRADESIGHT",
   "mode": "BuildOS Controller",
   "current_plan": "agent-mode-v2",
-  "current_step": 35,
-  "next_task": "35-live-supplier-api-foundation",
+  "current_step": 36,
+  "next_task": "36-live-supplier-api-foundation",
   "status": "ready",
-  "last_completed": "34-shed-round-post-size-impute",
-  "last_commit_summary": "Imputed a round timber post diameter for open-sided shed support posts, banded from wall height (100/125/150/175mm), shown in the item list line and used to size the 3D model's cylindrical posts, kept in sync via a shared imputeRoundPostDiameterMM helper.",
+  "last_completed": "35-shed-fastener-split-fix",
+  "last_commit_summary": "Fixed the shed item list fastener estimate: 'Cladding/roofing screws' silently summed wall cladding screws and roof screws into one number. Split back into separate 'Wall cladding screws' and 'Roofing screws' lines so each figure corresponds to a single fastener type a homeowner would actually buy.",
   "blocker": "Live Bunnings stock and pricing still require approved partner API credentials before runtime access can be enabled."
 }

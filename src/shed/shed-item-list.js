@@ -170,12 +170,13 @@ function fastenerItems(plan, a, perimeterM) {
   const openingAreaM2 = plan.doorCount * a.standardDoorM.width * a.standardDoorM.height
     + plan.windowCount * a.standardWindowM.width * a.standardWindowM.height;
   const wallAreaM2 = Math.max(0, perimeterM * plan.wallHeightM - openingAreaM2);
-  const claddingScrews = Math.ceil(wallAreaM2 * a.claddingScrewsPerM2) + roofingScrews;
+  const claddingScrews = Math.ceil(wallAreaM2 * a.claddingScrewsPerM2);
   const framingJunctions = Math.ceil(perimeterM / a.studSpacingM) * 2;
   const framingFixings = framingJunctions * a.framingFixingsPerJunction;
 
   return [
-    row('Fasteners', 'Cladding/roofing screws', 'ea', claddingScrews, `Assumes ${a.claddingScrewsPerM2} fixings per m2 of cladding and roofing.`),
+    row('Fasteners', 'Wall cladding screws', 'ea', claddingScrews, `Assumes ${a.claddingScrewsPerM2} fixings per m2 of wall cladding.`),
+    row('Fasteners', 'Roofing screws', 'ea', roofingScrews, `Assumes ${a.claddingScrewsPerM2} fixings per m2 of roofing.`),
     row('Fasteners', 'Framing nails/screws', 'ea', framingFixings, `Assumes ${a.framingFixingsPerJunction} fixings per stud-to-plate junction.`)
   ];
 }

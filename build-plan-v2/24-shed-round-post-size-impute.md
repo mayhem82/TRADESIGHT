@@ -19,4 +19,4 @@ Done when:
 - the 3D model's open-sided posts render as cylinders sized from the same imputed diameter, so the model and the item list agree
 - self-check confirms the item list diameter matches `imputeRoundPostDiameterMM` for the plan's wall height
 
-Next step: 35-live-supplier-api-foundation (blocked on approved Bunnings partner API credentials)
+Next step: 35-shed-fastener-split-fix
