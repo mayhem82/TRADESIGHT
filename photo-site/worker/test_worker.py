@@ -138,6 +138,24 @@ class Tests(unittest.TestCase):
         self.assertIsNone(self.jobs.last_success)
         self.assertNotIn('private implementation', state['error'])
 
+    def test_private_https_proxy_origin(self):
+        # A proxy can rewrite Host to localhost; only the configured HTTPS origin is accepted.
+        proxy = ThreadingHTTPServer(('127.0.0.1', 0), handler_for(
+            self.jobs, 'a' * 32, Path(self.temp.name) / 'web', 'https://photo.example.ts.net:8443'))
+        threading.Thread(target=proxy.serve_forever, daemon=True).start()
+        try:
+            def upload(origin):
+                return urlopen(Request(f'http://127.0.0.1:{proxy.server_port}/api/jobs',
+                    data=self.photo_bytes(), headers={'Authorization': 'Bearer ' + 'a' * 32,
+                                                     'Origin': origin}), timeout=5)
+            self.assertEqual(upload('https://photo.example.ts.net:8443').status, 202)
+            self.jobs.pending.join()
+            with self.assertRaises(HTTPError) as error:
+                upload('https://other.example')
+            self.assertEqual(error.exception.code, 403)
+        finally:
+            proxy.shutdown(); proxy.server_close()
+
     def test_restart_marks_interrupted_job_failed(self):
         folder = self.jobs.root / ('b' * 32); folder.mkdir()
         (folder / 'status.json').write_text(json.dumps({'id': folder.name, 'status': 'processing'}))

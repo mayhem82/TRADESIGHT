@@ -12,6 +12,6 @@
     "plan": "build-plan-v2/28-independent-photo-depth.md",
     "source": "photo-site",
     "verification": "photo-site/VERIFICATION.md",
-    "status": "implemented; local inference verified with synthetic fixture; phone and remote deployment unverified"
+    "status": "implemented for private access from anywhere through Tailscale Serve; local inference verified with synthetic fixture; Tailscale install/login and mobile-data phone test outstanding"
   }
 }

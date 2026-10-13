@@ -87,7 +87,7 @@ class Jobs:
                 self.pending.task_done()
 
 
-def handler_for(jobs, token, web):
+def handler_for(jobs, token, web, public_origin=None):
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_):
             pass  # Avoid exposing job identifiers in default access logs.
@@ -147,7 +147,8 @@ def handler_for(jobs, token, web):
             if not self.authorized():
                 return
             origin = self.headers.get("Origin")
-            if origin and urlsplit(origin).netloc != self.headers.get("Host"):
+            valid_origin = origin == public_origin if public_origin else urlsplit(origin or "").netloc == self.headers.get("Host")
+            if origin and not valid_origin:
                 self.respond(403, {"error": "Upload from the PC service's own website."})
                 return
             if self.path != "/api/jobs":
@@ -191,13 +192,20 @@ if __name__ == "__main__":
     parser.add_argument("--web", type=Path, default=Path("photo-site/dist"))
     args = parser.parse_args()
     token = os.environ.get("TRADESIGHT_PHOTO_KEY", "")
+    public_origin = os.environ.get("TRADESIGHT_PHOTO_ORIGIN")
+    if public_origin:
+        parsed_origin = urlsplit(public_origin)
+        if (parsed_origin.scheme != "https" or not parsed_origin.hostname
+                or parsed_origin.username or parsed_origin.password
+                or parsed_origin.path or parsed_origin.query or parsed_origin.fragment):
+            parser.error("TRADESIGHT_PHOTO_ORIGIN must be an HTTPS origin without a path, for example https://pc.example.ts.net:8443")
     if len(token) < 32:
         parser.error("Set TRADESIGHT_PHOTO_KEY to a private random key of at least 32 characters.")
     if not (args.web / "index.html").is_file():
         parser.error("Build the independent photo site first: npm run build:photo")
     estimator = SmallEstimator(args.model.resolve())
     jobs = Jobs(args.data.resolve(), estimator)
-    service = ThreadingHTTPServer((args.host, args.port), handler_for(jobs, token, args.web.resolve()))
+    service = ThreadingHTTPServer((args.host, args.port), handler_for(jobs, token, args.web.resolve(), public_origin))
     print(f"TRADESIGHT photo service listening on {args.host}:{args.port}; Small model loaded on {estimator.device}.")
     print("Model inference and phone access remain unverified until a real photo completes.")
     try:
