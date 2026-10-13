@@ -1,5 +1,6 @@
 {
   "changes": [
+    { "id": "PHOTO-001", "summary": "Added independent Photo Studio inside TRADESIGHT with Windows Depth Anything V2 Small service, protected photo jobs, relative-depth outputs, unscaled relief viewer/OBJ, tests and setup. Local CPU inference verified with a synthetic fixture; phone and remote deployment remain unverified.", "status": "committed" },
     { "id": "CHANGE-001", "summary": "Introduced BuildOS as the repository-level operating layer for future build runs.", "status": "committed" },
     { "id": "CHANGE-002", "summary": "Added Compliance Knowledge Engine rule registry, rule source tracking, jurisdiction resolver, rule evaluator, and UI provenance display.", "status": "committed" },
     { "id": "CHANGE-003", "summary": "Added Evidence Intelligence with evidence type inference, tagging, quality scoring, timeline summary, possible duplicate detection, and UI evidence quality display.", "status": "committed" },

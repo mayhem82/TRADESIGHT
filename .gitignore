@@ -1,2 +1,7 @@
 node_modules/
 dist/
+photo-site/model/
+photo-site/data/
+photo-site/.venv/
+__pycache__/
+*.pyc
