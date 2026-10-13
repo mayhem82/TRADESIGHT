@@ -1,5 +1,13 @@
 # TRADESIGHT
 
+## Independent Photo Studio
+
+The separate single-photo relative-depth site and Windows PC service are in
+[`photo-site/`](photo-site/README.md). Build it with `npm run build:photo`.
+It runs independently of this site's runtime and deployment. Its 3D relief is
+inferred and unscaled, never measured geometry. Follow its setup and verification
+instructions before claiming a working PC connection or model deployment.
+
 TRADESIGHT is an agent-first universal application for construction compliance, defect intelligence, project advocacy, and structured assessment workflows in New South Wales.
 
 The user interacts with the TRADESIGHT Agent. The runtime classifies the task, identifies the assessment pathway, links evidence, runs agent orchestration, prepares a report, and updates the project record.

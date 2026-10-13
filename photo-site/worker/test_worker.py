@@ -1,5 +1,6 @@
 """Contract tests use a deterministic estimator; they do not verify the neural model."""
 import io
+import http.client
 import json
 from pathlib import Path
 import tempfile
@@ -97,6 +98,33 @@ class Tests(unittest.TestCase):
             relief(np.full((20, 40), np.nan), photo)
         with self.assertRaises(ValueError):
             decode_photo(b'broken')
+
+    def test_portrait_orientation_and_metadata_removed(self):
+        image = Image.new('RGB', (40, 20), 'blue')
+        metadata = Image.Exif(); metadata[274] = 6
+        stream = io.BytesIO(); image.save(stream, format='JPEG', exif=metadata)
+        decoded = decode_photo(stream.getvalue())
+        self.assertEqual(decoded.size, (20, 40))
+        self.jobs.capacity.acquire()
+        job = self.jobs.submit(decoded)
+        self.jobs.pending.join()
+        with Image.open(self.jobs.root / job['id'] / 'photo.jpg') as result:
+            self.assertEqual(result.size, (20, 40))
+            self.assertEqual(len(result.getexif()), 0)
+
+    def test_rejects_oversized_and_animated_input(self):
+        connection = http.client.HTTPConnection('127.0.0.1', self.service.server_port, timeout=5)
+        connection.putrequest('POST', '/api/jobs')
+        connection.putheader('Authorization', 'Bearer ' + 'a' * 32)
+        connection.putheader('Content-Length', str(13 * 1024 * 1024))
+        connection.endheaders()
+        self.assertEqual(connection.getresponse().status, 413)
+        connection.close()
+        stream = io.BytesIO()
+        Image.new('RGB', (8, 8), 'blue').save(stream, format='PNG', save_all=True,
+                                           append_images=[Image.new('RGB', (8, 8), 'red')])
+        with self.assertRaises(ValueError):
+            decode_photo(stream.getvalue())
 
     def test_failure_is_not_success(self):
         def fail(_):

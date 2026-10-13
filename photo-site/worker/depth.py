@@ -49,7 +49,7 @@ class SmallEstimator:
         from transformers import AutoImageProcessor, AutoModelForDepthEstimation
         self.torch = torch
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.processor = AutoImageProcessor.from_pretrained(model_path, local_files_only=True)
+        self.processor = AutoImageProcessor.from_pretrained(model_path, local_files_only=True, use_fast=False)
         self.model = AutoModelForDepthEstimation.from_pretrained(
             model_path, local_files_only=True).to(self.device).eval()
         if self.model.config.model_type != "depth_anything" or self.model.config.backbone_config.hidden_size != 384:
@@ -65,7 +65,7 @@ class SmallEstimator:
             output = self.model(**inputs)
             depth = self.torch.nn.functional.interpolate(
                 output.predicted_depth.unsqueeze(1), size=(photo.height, photo.width),
-                mode="bicubic", align_corners=False).squeeze().cpu().numpy()
+                mode="bicubic", align_corners=False)[0, 0].cpu().numpy()
         return depth
 
 

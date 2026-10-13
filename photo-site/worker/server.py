@@ -33,6 +33,7 @@ class Jobs:
                 record = json.loads((folder / "status.json").read_text(encoding="utf-8"))
                 if record["status"] in {"queued", "processing"}:
                     record.update(status="failed", error="PC service restarted. Upload the photo again.")
+                    (folder / "input.jpg").unlink(missing_ok=True)
                 self.items[folder.name] = record
                 self.persist(folder.name, record)
         threading.Thread(target=self.run, daemon=True).start()
