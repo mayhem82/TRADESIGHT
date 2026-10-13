@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>TRADESIGHT | Photo to 3D relief</title></head>
+<body>
+<main>
+<header><p class="brand">TRADESIGHT / PHOTO STUDIO</p><h1>Explore the depth<br>in your photo.</h1><p>Upload one photo. Your Windows PC estimates relative depth and creates an unscaled 3D relief of the visible surfaces.</p></header>
+<aside>Inferred depth, not measured geometry. This cannot recover hidden surfaces, true dimensions, or a complete object model.</aside>
+<section><h2>1. Connect to your PC service</h2><label for="key">Private PC access key</label><div class="row"><input id="key" type="password" autocomplete="off" placeholder="Enter the key from your PC"><button id="connect">Check connection</button></div><p id="connection" role="status">PC connection and model processing have not been tested.</p></section>
+<section><h2>2. Choose one photo</h2><label class="upload" for="photo">Choose a photo or use your phone camera<input id="photo" type="file" accept="image/jpeg,image/png,image/webp"></label><p>JPEG, PNG or WebP · up to 12 MB and 20 megapixels. Convert HEIC to JPEG first.</p><img id="original" alt="Selected photo" hidden><button id="process" disabled>Estimate depth on PC</button><p id="status" role="status" aria-live="polite">No photo uploaded.</p></section>
+<section id="results" hidden><h2>3. Explore inferred depth</h2><div class="results"><div><h3>Relative depth</h3><img id="depth" alt="Relative depth map: brighter areas are inferred nearer"><p>Brighter = inferred nearer. Values are relative within this photo.</p></div><div><h3>Unscaled 3D relief</h3><div id="viewer" aria-label="Rotatable inferred relief"></div><p>Drag to rotate · pinch or scroll to zoom. Relief height is a visual convention.</p></div></div><div class="row"><button id="obj">Download relief OBJ</button><button id="raw">Download raw depth</button><button id="map">Download depth image</button></div><p id="provenance"></p></section>
+<footer>Depth Anything V2 Small · Apache-2.0 · Processing runs on the configured PC. Photos and results stay on that service until its operator deletes them.</footer>
+</main><script type="module" src="/main.js"></script>
+</body></html>
