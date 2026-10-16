@@ -12,6 +12,7 @@ import { PhoneScanWorkflow } from './components/PhoneScanWorkflow.jsx';
 import { ProjectPanel } from './components/ProjectPanel.jsx';
 import { ReportPreview } from './components/ReportPreview.jsx';
 import { ShedPlanner } from './components/ShedPlanner.jsx';
+import { FreeCadStudio } from './components/FreeCadStudio.jsx';
 import { getModulesForTask } from './modules/registry.js';
 import './styles.css';
 
@@ -84,6 +85,7 @@ function App() {
         <PhoneScanWorkflow onScanEvidence={addScanEvidence} onScanObservation={addScanObservation} />
 
         <ShedPlanner />
+        <FreeCadStudio />
 
         <article>
           <h2>Module Routing</h2>

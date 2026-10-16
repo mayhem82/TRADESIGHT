@@ -1,5 +1,16 @@
 # TRADESIGHT
 
+## Site CAD console
+
+The standalone `cad-site` console runs FreeCAD on the Windows PC and serves a
+phone interface for calibrated photo tracing, supplied component/service models,
+trusted FreeCAD import, drawing sheets, schedules and offline interactive 3D.
+Start locally with `./cad-site/Start-CAD.ps1`, or use
+`./cad-site/Start-TemporaryRemote.ps1` for a temporary mobile-data HTTPS link
+without Tailscale. See [setup and limits](cad-site/README.md) and
+[verification](cad-site/VERIFICATION.md). Automatic complete reconstruction from
+photos is not implemented. The service is independent of any customer project.
+
 ## Independent Photo Studio
 
 The separate single-photo relative-depth site and Windows PC service are in

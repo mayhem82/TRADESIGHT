@@ -5,3 +5,5 @@ photo-site/data/
 photo-site/.venv/
 __pycache__/
 *.pyc
+cad-site/data/
+cad-site/.local/
