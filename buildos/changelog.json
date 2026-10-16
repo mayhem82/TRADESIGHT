@@ -1,5 +1,6 @@
 {
   "changes": [
+    { "id": "CAD-002", "summary": "Added actual-photo front-surface UV texturing for traced components, offline texture toggle and embedded-photo GLB export. Verified quadrant orientation in remote Chromium and offline viewer loading.", "status": "implemented" },
     { "id": "CAD-001", "summary": "Added independent TradeSight Site CAD with photo tracing, trusted FCStd import, real FreeCAD exports, drawings/schedules, offline model, authenticated jobs and temporary HTTPS access. Public mobile-browser workflow verified; complete automatic photo reconstruction is not implemented.", "status": "implemented" },
     { "id": "PHOTO-001", "summary": "Added independent Photo Studio inside TRADESIGHT with Windows Depth Anything V2 Small service, protected photo jobs, relative-depth outputs, unscaled relief viewer/OBJ, tests and setup. Local CPU inference verified with a synthetic fixture; phone and remote deployment remain unverified.", "status": "committed" },
     { "id": "CHANGE-001", "summary": "Introduced BuildOS as the repository-level operating layer for future build runs.", "status": "committed" },
@@ -32,3 +33,4 @@
     { "id": "CHANGE-028", "summary": "Fixed the Phone 3D Scan Workflow to accept GLTF exports as well as GLB, since a real photogrammetry app's export menu had no GLB option. Updated instructions and error copy to explain that a multi-file GLTF bundle will not load, only a single embedded file or GLB.", "status": "committed" }
   ]
 }
+

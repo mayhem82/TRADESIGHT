@@ -33,3 +33,12 @@ engineering analysis. Native TechDraw pages are editable; exported projection
 sheets include overall sizes plus separate component dimensions and descriptions.
 
 Do not commit access keys, runtime URLs, photos, CAD jobs or tunnel binaries.
+
+## Actual photo texturing increment
+
+The actual FreeCAD integration test now checks a photo crop, mapping restricted
+to front-plane triangles, embedded photo bytes in the offline viewer, and GLB
+container/image/UV metadata. A colour-quadrant test image is used to distinguish
+correct orientation from a flipped or stretched mapping. The web viewer is also
+checked for switching between photo texture and base colour. This validates the
+mapping mechanism, not real-site photographic alignment or concealed textures.

@@ -2,6 +2,7 @@
 import os
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 import csv
+import base64
 import html
 import json
 import math
@@ -18,6 +19,7 @@ from PySide6.QtCore import QByteArray, QRectF
 from PySide6.QtGui import QImage, QPainter, QColor, QPdfWriter, QPageSize, QFontDatabase
 from PySide6.QtSvg import QSvgRenderer
 from contract import validate
+from gltf import export_glb
 
 E = html.escape
 COLORS = ['#39a58e', '#4a98d0', '#d9a340', '#bd7fc8', '#db7b66']
@@ -160,7 +162,23 @@ def run(jobfile, destination):
         raise ValueError('Invalid geometry: '+', '.join(invalid[:5]))
     bb = Part.makeCompound([o.Shape for o in items]).BoundBox
     mesh = make_mesh(items)
+    textured_count=0
+    if job.get('photoTexture',True) and (folder/'photo.jpg').is_file() and job['mode']=='components':
+        inputs={c['id']:c for c in job['components']}
+        for exported in mesh:
+            c=inputs.get(exported['id'],{})
+            if c.get('kind','box')!='box' or not c.get('photoRect'): continue
+            left,top,right,bottom=c['photoRect']
+            # Texture only the actual front plane. Sides/rear retain base colours.
+            uv=[]
+            for x,z,negative_y in exported['positions']:
+                uv.append([left+(x-c['x'])/c['width']*(right-left),bottom-(z-c['z'])/c['height']*(bottom-top)])
+            front=[i for i,f in enumerate(exported['faces']) if all(abs(exported['positions'][v][2]+c['y'])<.01 for v in f)]
+            if front:
+                exported['texture']={'image':'photo.jpg','uv':uv,'faces':front,'mapping':'front-plane-photo-crop'}
+                textured_count+=1
     (folder/'mesh.json').write_text(json.dumps(mesh, separators=(',',':')), encoding='utf-8')
+    (folder/'model.glb').write_bytes(export_glb(mesh,(folder/'photo.jpg').read_bytes() if (folder/'photo.jpg').exists() else None))
     Part.export(items, str(folder/'model.step'))
     Part.makeCompound([o.Shape for o in items]).exportStl(str(folder/'model.stl'))
     fields = ['id','label','width_mm','depth_mm','height_mm','volume_mm3','dimension_source','material','description']
@@ -239,11 +257,15 @@ def run(jobfile, destination):
     painter.end()
     script=(Path(__file__).parent.parent/'web/viewer.js').read_text(encoding='utf-8')
     safe_mesh=json.dumps(mesh,separators=(',',':')).replace('<','\\u003c').replace('>','\\u003e').replace('&','\\u0026')
+    embedded_photos={}
+    if textured_count:
+        embedded_photos['photo.jpg']='data:image/jpeg;base64,'+base64.b64encode((folder/'photo.jpg').read_bytes()).decode()
     viewer='<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+E(job['title'])+'</title><style>body{font:16px Arial;background:#edf2f4;color:#173244;margin:0;padding:16px}button,select{padding:10px;margin:3px;border:1px solid #aabac4;border-radius:6px;background:white;color:#173244}#viewer{height:65vh;min-height:330px;touch-action:none}canvas{width:100%;height:100%}#selection{white-space:pre-wrap}#layers{display:flex;gap:8px;flex-wrap:wrap}label{padding:7px}h1{font-size:24px}</style><h1>'+E(job['title'])+'</h1><p>Drag to rotate · pinch or scroll to zoom · tap a component for dimensions and descriptions</p><div id="controls"></div><div id="viewer"></div><p id="selection" role="status">Select a component.</p><div id="layers"></div><p>Dimension provenance is recorded per component. Photo-inferred geometry needs site confirmation.</p><script id="mesh" type="application/json">'+safe_mesh+'</script><script>'+script+'</script></html>'
+    viewer=viewer.replace('<script id="mesh"','<script id="texture-data" type="application/json">'+json.dumps(embedded_photos)+'</script><script id="mesh"')
     (folder/'viewer.html').write_text(viewer,encoding='utf-8')
-    outputs=['model.FCStd','model.step','model.stl','drawings.pdf','components.csv','mesh.json','viewer.html','drawing-template.svg']+[d['id']+ext for d in drawings for ext in ('.svg','.png')]
+    outputs=['model.FCStd','model.step','model.stl','model.glb','drawings.pdf','components.csv','mesh.json','viewer.html','drawing-template.svg']+[d['id']+ext for d in drawings for ext in ('.svg','.png')]
     if (folder/'photo.jpg').exists(): outputs.append('photo.jpg')
-    manifest={'title':job['title'],'engine':'FreeCAD '+'.'.join(App.Version()[:3]),'components':len(items),'geometryValid':True,'units':'mm','drawings':drawings,'outputs':outputs+['job.json'],'boundary':'Dimensions preserve supplied or inferred model geometry; this is not a site measurement or engineering approval.'}
+    manifest={'title':job['title'],'engine':'FreeCAD '+'.'.join(App.Version()[:3]),'components':len(items),'photoTexturedComponents':textured_count,'geometryValid':True,'units':'mm','drawings':drawings,'outputs':outputs+['job.json'],'boundary':'Dimensions preserve supplied or inferred model geometry; this is not a site measurement or engineering approval.'}
     (folder/'manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
     with zipfile.ZipFile(folder/'package.zip','w',zipfile.ZIP_DEFLATED) as archive:
         for name in outputs+['manifest.json','job.json']:

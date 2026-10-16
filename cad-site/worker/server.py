@@ -116,11 +116,18 @@ def handler_for(jobs, token, web=ROOT/'web', public_origin=None, main_dist=None)
     download_session=hmac.new(token.encode(),b'TradeSight download session',hashlib.sha256).hexdigest()
     class Handler(BaseHTTPRequestHandler):
         def log_message(self,*args): pass
-        def respond(self,status,payload,kind='application/json',download=None,cookie=None):
+        def respond(self,status,payload,kind='application/json',download=None,cookie=None,embedded=False):
             data=json.dumps(payload).encode() if kind=='application/json' else payload
             self.send_response(status)
             for k,v in [('Content-Type',kind),('Content-Length',str(len(data))),('Cache-Control','no-store'),('X-Content-Type-Options','nosniff'),('Referrer-Policy','no-referrer')]: self.send_header(k,v)
-            self.send_header('Content-Security-Policy',f"default-src 'self'; img-src 'self' blob: data:; script-src 'self' 'sha256-{VIEWER_HASH}'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-src blob:; object-src 'none'; frame-ancestors 'none'")
+            hashes=[VIEWER_HASH]
+            if embedded:
+                # Saved viewers keep their original script, even after upgrades.
+                for script in re.findall(r'<script>(.*?)</script>',data.decode('utf-8'),re.S):
+                    hashes.append(base64.b64encode(hashlib.sha256(script.replace('\r\n','\n').encode()).digest()).decode())
+            scripts=' '.join("'sha256-"+value+"'" for value in hashes)
+            ancestors="'self'" if embedded else "'none'"
+            self.send_header('Content-Security-Policy',f"default-src 'self'; img-src 'self' blob: data:; script-src 'self' {scripts}; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-src 'self' blob:; object-src 'none'; frame-ancestors {ancestors}")
             if download: self.send_header('Content-Disposition',f'attachment; filename="{download}"')
             if cookie: self.send_header('Set-Cookie',cookie)
             self.end_headers(); self.wfile.write(data)
@@ -151,7 +158,8 @@ def handler_for(jobs, token, web=ROOT/'web', public_origin=None, main_dist=None)
                         target=jobs.root/jobid/name
                         if target.is_file():
                             kind=mimetypes.guess_type(name)[0] or 'application/octet-stream'
-                            self.respond(200,target.read_bytes(),kind+'; charset=utf-8' if kind in {'text/html','application/json','text/csv','image/svg+xml'} else kind,name)
+                            inline=name=='viewer.html' and urlsplit(self.path).query=='inline=1'
+                            self.respond(200,target.read_bytes(),kind+'; charset=utf-8' if kind in {'text/html','application/json','text/csv','image/svg+xml'} else kind,None if inline else name,embedded=inline)
                             return
                 self.respond(404,{'error':'Job or file not found.'}); return
             if path.startswith('/tradesight/') and main_dist:

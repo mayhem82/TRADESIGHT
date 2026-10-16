@@ -3,6 +3,7 @@ import base64
 import hashlib
 import io
 import json
+import struct
 from pathlib import Path
 import tempfile
 import threading
@@ -29,6 +30,8 @@ class ContractTests(unittest.TestCase):
         j=fixture();j['components'][1]['host']='Missing'
         with self.assertRaises(ValueError):validate(j)
         j=fixture();j['components'][0]['source']='guaranteed'
+        with self.assertRaises(ValueError):validate(j)
+        j=fixture();j['components'][0]['photoRect']=[-.1,0,1,1]
         with self.assertRaises(ValueError):validate(j)
 
 class RealPipeline(unittest.TestCase):
@@ -66,8 +69,10 @@ class RealPipeline(unittest.TestCase):
     def test_real_photo_job_and_existing_reimport(self):
         photo=io.BytesIO();Image.new('RGB',(320,240),'#a4c1ca').save(photo,'JPEG')
         spec=fixture();spec['photo']=base64.b64encode(photo.getvalue()).decode()
+        spec['components'][0]['photoRect']=[.1,.1,.9,.9]
         record=json.load(self.fetch('/api/cad/jobs',spec));result=self.wait(record['id']);manifest=result['manifest']
         self.assertTrue(manifest['geometryValid']);self.assertEqual(manifest['components'],2)
+        self.assertEqual(manifest['photoTexturedComponents'],1)
         self.assertTrue({'front','plan','side','section','services','schedule_1'} <= {d['id'] for d in manifest['drawings']})
         model=self.fetch('/api/cad/jobs/'+record['id']+'/model.FCStd').read()
         self.assertGreater(len(model),1000)
@@ -78,6 +83,18 @@ class RealPipeline(unittest.TestCase):
             schedule=z.read('components.csv').decode('utf-8-sig');self.assertIn('1200.0',schedule);self.assertIn('Opening',schedule)
         mesh=json.loads(self.fetch('/api/cad/jobs/'+record['id']+'/mesh.json').read())
         self.assertEqual(mesh[0]['bounds'],[3600.0,110.0,2400.0])
+        texture=mesh[0]['texture'];self.assertGreater(len(texture['faces']),0)
+        for index in texture['faces']:
+            self.assertTrue(all(abs(mesh[0]['positions'][v][2])<.01 for v in mesh[0]['faces'][index]))
+        glb=self.fetch('/api/cad/jobs/'+record['id']+'/model.glb').read()
+        magic,version,length=struct.unpack_from('<III',glb)
+        self.assertEqual((magic,version,length),(0x46546c67,2,len(glb)))
+        jsonlength=struct.unpack_from('<I',glb,12)[0]
+        gltf=json.loads(glb[20:20+jsonlength])
+        self.assertEqual(gltf['images'][0]['mimeType'],'image/jpeg')
+        self.assertTrue(any('TEXCOORD_0' in p['attributes'] for m in gltf['meshes'] for p in m['primitives']))
+        viewer=self.fetch('/api/cad/jobs/'+record['id']+'/viewer.html').read().decode()
+        self.assertIn('data:image/jpeg;base64,',viewer)
         original_hash=hashlib.sha256(model).hexdigest()
         imported=json.load(self.fetch('/api/cad/jobs',{'title':'Reimport test','mode':'existing','sourceFile':base64.b64encode(model).decode()}))
         self.wait(imported['id'])

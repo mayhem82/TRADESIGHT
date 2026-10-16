@@ -16,6 +16,8 @@ def validate(job):
     if not isinstance(title, str) or not title.strip() or len(title) > 120:
         raise ValueError('Use a job title of 1–120 characters.')
     job['title'] = title.strip()
+    if 'photoTexture' in job and not isinstance(job['photoTexture'],bool):
+        raise ValueError('Photo texture must be enabled or disabled.')
     if job.get('mode') == 'existing':
         return job
     job['mode'] = 'components'
@@ -36,6 +38,13 @@ def validate(job):
                 raise ValueError(f'Invalid {key}.')
         if c.get('source') not in PROVENANCE:
             raise ValueError('Choose dimension provenance for every component.')
+        if c.get('photoRect') is not None:
+            rect=c['photoRect']
+            if not isinstance(rect,list) or len(rect)!=4:
+                raise ValueError('Photo crop must contain left, top, right and bottom coordinates.')
+            for n in rect: number(n,'photo crop coordinate',0,1)
+            if rect[2]<=rect[0] or rect[3]<=rect[1]:
+                raise ValueError('Photo crop must have positive width and height.')
         kind = c.get('kind', 'box')
         if kind not in {'box', 'opening', 'cylinder', 'service'}:
             raise ValueError('Supported components: box, opening, cylinder, service.')

@@ -53,6 +53,24 @@ after connecting Tailscale on the PC and phone. That uses private HTTPS port 944
    drawing sheets, schedules, exchange formats and an offline interactive model.
 7. Open results on the phone or download the full ZIP for use without a signal.
 
+### Actual photo textures
+
+The checked **Apply actual photo texture** option maps the selected photo crop
+onto the front surface of each traced solid box. It uses the actual sanitized
+photo pixels, including their captured lighting. The viewer's **Photo textures**
+button switches between this appearance and the CAD base colours. Unseen sides,
+rear faces, service routes and manually entered components stay untextured.
+Selecting a different photo detaches the old crops to avoid applying the wrong
+image. A straight-on photo gives the best alignment; this is planar mapping,
+not automatic multi-view unwrapping or lighting correction.
+
+Textures are embedded in `viewer.html` for offline use and `model.glb` for a
+portable 3D model. GLB units are metres; CAD/drawing values remain millimetres.
+The FCStd, STEP and STL exports retain geometric/material information rather than
+the baked photograph. Texturing changes the visual surface, not the measured
+geometry or dimensions. Existing-model imports do not get automatic camera/photo
+registration in this release.
+
 The advanced JSON editor accepts components prepared by Codex from photos and
 specifications. Supported editable primitives are boxes, vertical cylinders,
 host-cut rectangular openings and cylindrical polyline service routes. This
@@ -65,6 +83,8 @@ Photo Studio remains available separately for unscaled relative depth.
 - `model.FCStd`: BRep geometry, component provenance, materials, descriptions and
   native TechDraw pages/views. Original source files remain unchanged.
 - `model.step`, `model.stl`: solid/surface exchange and tessellated export.
+- `model.glb`: portable model with embedded source photo and front-face UV mapping
+  when a photo crop is supplied. No external textures need downloading separately.
 - `drawings.pdf`: plan, front and side elevations, real mid-depth BRep section
   where geometry intersects, supplied service schematic when present, and
   paginated component dimensions/materials/descriptions.
