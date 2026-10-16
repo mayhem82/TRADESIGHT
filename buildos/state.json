@@ -13,5 +13,21 @@
     "source": "photo-site",
     "verification": "photo-site/VERIFICATION.md",
     "status": "implemented for private access from anywhere through Tailscale Serve; local inference verified with synthetic fixture; Tailscale install/login and mobile-data phone test outstanding"
+  },
+  "independent_cad_site": {
+    "source": "cad-site",
+    "status": "operational first release: photo tracing and existing-model CAD export; remote HTTPS browser workflow verified; physical phone confirmation pending",
+    "capabilities": [
+      "FreeCAD 1.1.4 BRep generation",
+      "host-cut openings",
+      "supplied service routes",
+      "native TechDraw pages",
+      "PDF SVG PNG drawings and component schedules",
+      "FCStd STEP STL exports",
+      "offline interactive model",
+      "authenticated job persistence",
+      "temporary mobile-data HTTPS console"
+    ],
+    "verification": "cad-site/VERIFICATION.md"
   }
 }
