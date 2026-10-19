@@ -67,6 +67,22 @@
         "GLB export"
       ],
       "editableSource": "public/models/chicken-enclosure.js"
+    },
+    {
+      "id": "outline-windmill-v1",
+      "name": "Outline Windmill",
+      "description": "Animated windmill with transparent fins and cyan outline edges inspired by Colour Vision Extreme",
+      "type": "parametric-model",
+      "viewer": "model-viewer.html?model=outline-windmill-v1",
+      "version": 1,
+      "features": [
+        "3D",
+        "AR",
+        "Animation",
+        "Transparent fins",
+        "GLB export"
+      ],
+      "editableSource": "public/models/outline-windmill.js"
     }
   ]
 }
