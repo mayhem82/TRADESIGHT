@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TRADESIGHT Model Viewer</title><style>
-body{margin:0;background:#102237;color:white;font:16px Arial}#panel{position:fixed;z-index:5;top:8px;left:8px;background:#102237ed;padding:12px;border-radius:9px;width:min(320px,84vw);max-height:80vh;overflow:auto}label{display:block;margin:10px 0}input[type=range]{width:100%}button{padding:10px;margin:4px;background:#256b95;border:0;border-radius:5px;color:white;font:inherit}#info{position:fixed;bottom:8px;left:8px;z-index:5;background:#102237dd;padding:8px;max-width:90vw}canvas{display:block}a{color:#bde3ff}#showMenu{display:none;position:fixed;z-index:6;top:8px;left:8px}small{display:block;line-height:1.4}
+body{margin:0;background:#102237;color:white;font:16px Arial}#panel{position:fixed;z-index:5;top:8px;left:8px;background:#102237ed;padding:12px;border-radius:9px;width:min(320px,84vw);max-height:80vh;overflow:auto}label{display:block;margin:10px 0}input[type=range]{width:100%}button{padding:10px;margin:4px;background:#256b95;border:0;border-radius:5px;color:white;font:inherit}#info{position:fixed;bottom:8px;left:8px;z-index:5;background:#102237dd;padding:8px;max-width:90vw}canvas{display:block}a{color:#bde3ff}#showMenu{display:none;position:fixed;z-index:1001;top:8px;left:8px}#panel{z-index:1000}#hideMenu,#showMenu{touch-action:manipulation;min-height:48px;min-width:64px}body.menu-hidden #panel{display:none!important}body.menu-hidden #showMenu{display:block!important}small{display:block;line-height:1.4}
 </style><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}</script></head><body>
 <div id="panel"><button id="hideMenu" style="float:right">✕ Hide</button><a href="./model-library.html">← Library</a><h3 id="title">TRADESIGHT MODEL</h3><p id="description"></p>
 <label>Distance <output id="dv">8</output> m<input id="distance" type="range" min="1" max="150" step=".5" value="8"></label>
@@ -8,16 +8,16 @@ body{margin:0;background:#102237;color:white;font:16px Arial}#panel{position:fix
 <label>Model height <output id="sv">4</output> m<input id="size" type="range" min=".2" max="50" step=".2" value="4"></label>
 <label>Rotation <output id="rv">0</output>°<input id="rotation" type="range" min="0" max="360" value="0"></label>
 <div id="parameters"></div><button id="reset">Reset</button><button id="save">Save</button><button id="export">Export GLB</button><div id="ar"></div><small>Uses the Lighthouse AR camera-relative placement method. Distance and position are adjustable; not GPS or ground anchored.</small></div>
-<button id="showMenu">☰ Controls</button><div id="info">Loading model…</div>
+<button id="showMenu" type="button" aria-label="Show controls">☰ Controls</button><div id="info">Loading model…</div>
 <script type="module">
 import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';import{ARButton}from'three/addons/webxr/ARButton.js';
 const id=new URLSearchParams(location.search).get('model')||'outline-windmill-v1';
 const registry={'outline-windmill-v1':()=>import('./models/outline-windmill.js'),'chicken-enclosure-v1':()=>import('./models/chicken-enclosure.js')};
 const info=document.getElementById('info');if(!registry[id])throw Error('Unknown model '+id);
 const {metadata,createModel,updateModel}=await registry[id]();
-document.getElementById('title').textContent='TRADESIGHT · '+metadata.name.toUpperCase();document.getElementById('description').textContent=metadata.description;
+document.getElementById('title').textContent='TRADESIGHT · '+metadata.name.toUpperCase();document.getElementById('description').textContent=metadata.description+(id==='outline-windmill-v1'?' — Camera-scene Outlines Mode is not implemented yet.':'');
 const panel=document.getElementById('panel'),show=document.getElementById('showMenu');
-document.getElementById('hideMenu').onclick=()=>{panel.style.display='none';show.style.display='block'};show.onclick=()=>{panel.style.display='block';show.style.display='none'};
+document.getElementById('hideMenu').addEventListener('click',e=>{e.preventDefault();e.stopPropagation();document.body.classList.add('menu-hidden')});show.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();document.body.classList.remove('menu-hidden')});
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x102237);
 const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.01,3000);camera.position.set(18,14,24);
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setSize(innerWidth,innerHeight);renderer.xr.enabled=true;document.body.appendChild(renderer.domElement);
