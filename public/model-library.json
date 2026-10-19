@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "models": [
+    {
+      "id": "flying-saucer-ar",
+      "name": "Flying Saucer",
+      "description": "Animated spacecraft with AR sky placement",
+      "type": "interactive-scene",
+      "viewer": "flying-saucer-ar.html",
+      "version": 1,
+      "features": [
+        "3D",
+        "AR"
+      ],
+      "editableSource": "public/flying-saucer-ar.html"
+    },
+    {
+      "id": "orrery-ar",
+      "name": "Mechanical Solar System",
+      "description": "Animated orbital model",
+      "type": "interactive-scene",
+      "viewer": "orrery-ar.html",
+      "version": 1,
+      "features": [
+        "3D",
+        "AR"
+      ],
+      "editableSource": "public/orrery-ar.html"
+    },
+    {
+      "id": "lighthouse-ar",
+      "name": "Lighthouse",
+      "description": "Exploded architectural model",
+      "type": "interactive-scene",
+      "viewer": "lighthouse-ar.html",
+      "version": 1,
+      "features": [
+        "3D",
+        "AR"
+      ],
+      "editableSource": "public/lighthouse-ar.html"
+    },
+    {
+      "id": "exploded-car-ar",
+      "name": "Exploded Car",
+      "description": "Vehicle component model",
+      "type": "interactive-scene",
+      "viewer": "exploded-car-ar.html",
+      "version": 1,
+      "features": [
+        "3D",
+        "AR"
+      ],
+      "editableSource": "public/exploded-car-ar.html"
+    }
+  ]
+}
