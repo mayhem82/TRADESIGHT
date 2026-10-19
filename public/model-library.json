@@ -52,6 +52,21 @@
         "AR"
       ],
       "editableSource": "public/exploded-car-ar.html"
+    },
+    {
+      "id": "chicken-enclosure-v1",
+      "name": "Chicken Enclosure",
+      "description": "Reusable parametric 3D enclosure, galvanised frame, mesh roof and brick coop; provisional dimensions",
+      "type": "parametric-model",
+      "viewer": "model-viewer.html?model=chicken-enclosure-v1",
+      "version": 1,
+      "features": [
+        "3D",
+        "AR",
+        "Parametric",
+        "GLB export"
+      ],
+      "editableSource": "public/models/chicken-enclosure.js"
     }
   ]
 }
