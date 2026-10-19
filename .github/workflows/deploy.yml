@@ -34,6 +34,12 @@ jobs:
           find dist -type f -maxdepth 3 -print
           test -d dist/assets
           find dist/assets -type f -name "*.js" | grep .
+      - name: Verify standalone AR pages included in published artifact
+        run: |
+          test -s dist/lighthouse-ar.html
+          test -s dist/exploded-car-ar.html
+          grep -q 'TRADESIGHT' dist/lighthouse-ar.html
+          grep -q 'TRADESIGHT' dist/exploded-car-ar.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
