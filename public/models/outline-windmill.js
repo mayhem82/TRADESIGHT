@@ -1,11 +1,13 @@
 import * as THREE from 'three';
-export const metadata={id:'outline-windmill-v1',name:'Outline Windmill',description:'Rotating windmill with transparent outlined fins inspired by Colour Vision Extreme outline mode.',version:1,units:'metres',parameters:{towerHeight:8,bladeLength:3.5,finWidth:1.15,finOpacity:.12,rotationSpeed:12},features:['3D','AR','Animated','Transparent fins','GLB export']};
+export const metadata={id:'outline-windmill-v1',name:'Outline Windmill',description:'Rotating windmill with transparent outlined fins inspired by Colour Vision Extreme outline mode.',version:1,units:'metres',parameters:{towerHeight:8,bladeLength:3.5,finWidth:1.15,finOpacity:.12,outlineThickness:2.5,outlineBlend:100,outlineOpacity:88,outlineColorHue:195,rotationSpeed:12},features:['3D','AR','Animated','Transparent fins','GLB export']};
 export function createModel(options={}){
 const p={...metadata.parameters,...options},root=new THREE.Group();root.name=metadata.name;
 const metal=new THREE.MeshStandardMaterial({color:0x9eacba,metalness:.75,roughness:.33});
 const dark=new THREE.MeshStandardMaterial({color:0x263541,metalness:.65,roughness:.36});
-const fin=new THREE.MeshBasicMaterial({color:0x83d7f2,transparent:true,opacity:Math.max(0,Math.min(1,p.finOpacity)),side:THREE.DoubleSide,depthWrite:false});
-const edge=new THREE.LineBasicMaterial({color:0x7bd9ff,transparent:true,opacity:.88,depthTest:true});
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));const outlineColor=new THREE.Color().setHSL((((p.outlineColorHue%360)+360)%360)/360,.95,.7);
+const blend=clamp(p.outlineBlend/100,0,1);
+const fin=new THREE.MeshBasicMaterial({color:0x83d7f2,transparent:true,opacity:clamp(p.finOpacity,0,1)*(1-blend),side:THREE.DoubleSide,depthWrite:false});
+const edge=new THREE.MeshBasicMaterial({color:outlineColor,transparent:true,opacity:clamp(p.outlineOpacity/100,0,1)*blend,depthWrite:false});
 const cyl=(r1,r2,h,x,y,z,material,parent=root)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,16),material);o.position.set(x,y,z);parent.add(o);return o};
 cyl(.16,.52,p.towerHeight,0,p.towerHeight/2,0,metal);
 cyl(.85,.85,.22,0,.11,0,dark);
@@ -17,7 +19,10 @@ for(let i=0;i<3;i++){const a=i*Math.PI*2/3;const blade=new THREE.Group();blade.r
 const length=p.bladeLength,width=p.finWidth;
 const shape=new THREE.Shape();shape.moveTo(-.12,.28);shape.lineTo(width*.38,length*.32);shape.lineTo(width*.56,length*.77);shape.lineTo(.10,length);shape.lineTo(-width*.25,length*.85);shape.lineTo(-width*.24,length*.34);shape.closePath();
 const geo=new THREE.ShapeGeometry(shape);const panel=new THREE.Mesh(geo,fin);panel.position.z=.03;blade.add(panel);
-const outline=new THREE.LineSegments(new THREE.EdgesGeometry(geo),edge);outline.position.z=.045;blade.add(outline);
+// WebGL ignores LineBasicMaterial.linewidth on most phones. Use actual tubular geometry
+// so thickness remains adjustable in the Lighthouse-based 3D/AR viewer.
+const contour=shape.getPoints(18);const thickness=clamp(p.outlineThickness,0.5,10)*.004;
+for(let j=0;j<contour.length;j++){const v=contour[j],w=contour[(j+1)%contour.length];const start=new THREE.Vector3(v.x,v.y,.05),end=new THREE.Vector3(w.x,w.y,.05);if(start.distanceTo(end)<.0001)continue;const segment=new THREE.Vector3().subVectors(end,start);const tube=new THREE.Mesh(new THREE.CylinderGeometry(thickness,thickness,segment.length(),6),edge);tube.position.copy(start).add(end).multiplyScalar(.5);tube.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),segment.normalize());blade.add(tube)}
 const spar=new THREE.Mesh(new THREE.CylinderGeometry(.035,.07,length*.92,8),metal);spar.position.set(0,length*.52,-.04);blade.add(spar);
 }
 cyl(.34,.34,.22,0,0,.48,metal,head).rotation.x=Math.PI/2;
