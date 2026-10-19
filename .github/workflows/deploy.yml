@@ -40,6 +40,9 @@ jobs:
           test -s dist/exploded-car-ar.html
           grep -q 'TRADESIGHT' dist/lighthouse-ar.html
           grep -q 'TRADESIGHT' dist/exploded-car-ar.html
+          test -s dist/model-library.html
+          test -s dist/model-library.json
+          grep -q 'Model Library' dist/model-library.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
