@@ -52,6 +52,22 @@
         "AR"
       ],
       "editableSource": "public/exploded-car-ar.html"
+    },
+    {
+      "id": "chicken-enclosure",
+      "name": "Chicken Enclosure — Site Concept 01",
+      "description": "Interactive pitched galvanised-tube chicken run with adjustable dimensions, movable brick coop, boundary layout, nine connector positions and GLB export; measurements provisional",
+      "type": "interactive-scene",
+      "viewer": "chicken-enclosure.html",
+      "version": 1,
+      "features": [
+        "3D",
+        "Adjustable dimensions",
+        "GLB export",
+        "Save layout"
+      ],
+      "editableSource": "public/chicken-enclosure.html",
+      "origin": "mayhem82/Digital-Manuals/chicken-enclosure-concept.html"
     }
   ]
 }
