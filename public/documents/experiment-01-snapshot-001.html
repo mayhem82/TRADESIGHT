@@ -1,0 +1,47 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TRADESIGHT — SNAP-001</title><style>html{font-size:20px}body{margin:0;background:#0d1726;color:#f4eee3;font-family:system-ui,sans-serif;line-height:1.6;padding:20px 18px 65px;overflow-wrap:anywhere}main{max-width:760px;margin:auto}h1{font-size:1.6rem;line-height:1.2}h2{font-size:1.3rem;margin-top:1.8em}h3{font-size:1.15rem;margin-top:1.5em}p{margin:0.85em 0}a{color:#bde8ff}nav{margin-bottom:25px}nav a{display:inline-block;padding:10px 0}article{overflow-wrap:anywhere}button{font:inherit;padding:10px;background:#253c51;color:white;border:1px solid #8ca3b8;border-radius:8px}</style></head><body><main><nav><a href="../documents.html">← Documents</a></nav><article><h1>TRADESIGHT — EXPERIMENT 01: DEPTH PERCEPTION</h1>
+<h2>Continuity Snapshot 001 — 20 October 2026</h2>
+
+<p>Status: OPEN / NOT FINAL. First continuity baseline. Scope: Experiment 01 and its earlier physical-occlusion prototype. Source basis: user device reports, screenshot, and recorded repository changes. No independent phone performance measurement.</p>
+
+<h3>Objective and scope correction</h3>
+<p>Original prototype sought real-world occlusion of an outline windmill. User corrected scope: Experiment 01 is depth perception ONLY. No windmill, cube, virtual model, simulated depth, or occlusion effects. Core question: can the phone/browser acquire reliable real-world depth data, with acceptable stability and latency?</p>
+
+<h3>Chronological change and observation register</h3>
+<p>1. e639fb1 — Created physical-occlusion experiment with WebXR CPU depth and geometry occluder. e7dbdf8 — Linked experiment from model library.</p>
+<p>2. f022e1a — Fixed AR-button visibility and added diagnostics after user screenshot showed controls obscuring the interface. Screenshot established page loading, NOT depth functionality.</p>
+<p>3. User reported AR started then froze. 3e05894 — Reduced depth mesh 40×30 to 20×15; throttled processing and added error shutdown. Cause of freeze was not proven.</p>
+<p>4. User reported mixed-in model. 1e3d38f — Replaced windmill with static calibration cube, which user subsequently rejected as outside scope.</p>
+<p>5. e9c4d14 and ab11b04 — Removed all virtual geometry, renamed experiment to Depth Perception, and exposed sampled depth readings. User reported another frozen screen. Depth values were NOT confirmed.</p>
+<p>6. 45bcf38 — Fixed undefined 'seen' reference in AR session-start handler and added explicit depth-reading toggle. User reported freezing with reads disabled.</p>
+<p>7. c554fb5 — Separated basic immersive-AR and depth-required sessions while retaining Three.js rendering. User reported another freeze even on basic AR.</p>
+<p>8. d25f551 — Removed Three.js, graphics, rendering loop and depth requests for a bare WebXR session test.</p>
+<p>9. User supplied screenshot: 'Immersive AR supported — ready' at 11:22:54; 'Requesting basic immersive-ar session…' and 'Basic AR session started; no render loop, no depth, no graphics' at 11:22:58. This verifies the requestSession promise resolved, NOT ongoing tracking or depth acquisition. Black screen is expected without rendering.</p>
+<p>10. eabd953 — Added bare depth-required WebXR session option, without renderer or buffer reads. Result NOT YET REPORTED.</p>
+
+<h3>Findings, evidence levels and limits</h3>
+<p>OBSERVED: Previous Three.js-based AR test configurations repeatedly froze according to user device reports. Exact freeze cause remains unknown.</p>
+<p>OBSERVED: Browser reported immersive AR support and successfully created a basic session in a minimal implementation.</p>
+<p>NOT ESTABLISHED: Device WebXR depth support, availability of depth frames, accuracy in metres, update rate, latency, occlusion quality, sustained AR session stability, and root cause of prior freezes.</p>
+<p>CORRECTED: Successful basic session creation is not proof of depth perception; failure in a WebXR implementation is not proof that the phone lacks depth sensing.</p>
+
+<h3>Alternative engine discovery (research candidates, not benchmarked)</h3>
+<p>Native Google ARCore Depth API: candidate for low-latency Android live depth; requires native integration and device support.</p>
+<p>WebXR Depth Sensing: browser candidate; current integration unstable or unverified.</p>
+<p>Depth Anything V2 Small: candidate for image-based relative depth, potentially accelerated on device; does not intrinsically provide metric distance.</p>
+<p>Metric3D / UniDepth: candidates for metric depth estimation subject to calibration and validation.</p>
+<p>MiDaS: relative depth baseline.</p>
+<p>DUSt3R / photogrammetry: multi-view reconstruction, generally not first choice for low-latency feedback.</p>
+<p>Proposed engineering targets of 30 FPS (33 ms) and 15 FPS (67 ms) are TARGETS, not measured outcomes.</p>
+
+<h3>Immediate next validation gates</h3>
+<p>A. Launch bare depth-enabled WebXR session, report session success or error; do not add rendering.</p>
+<p>B. If A succeeds, add minimal depth-data acquisition with timestamped diagnostics and no geometry.</p>
+<p>C. Measure actual end-to-end latency and stability on target phone before choosing engine.</p>
+<p>D. Independently evaluate native ARCore and image-depth fallbacks if WebXR fails.</p>
+
+<h3>Snapshot continuity protocol</h3>
+<p>This is SNAP-001, the baseline. Future SNAP-002 must explicitly reference SNAP-001 and preserve the full change/observation register; never overwrite a prior snapshot. Keep source evidence separate from inference. Do not mark investigation final without user approval.</p>
+
+<p>Repository: https://github.com/mayhem82/TRADESIGHT</p>
+<p>Experiment: https://mayhem82.github.io/TRADESIGHT/physical-occlusion-experiment.html</p>
+</article><p><a href="./experiment-01-snapshot-001.md">Original Markdown source</a></p></main></body></html>
