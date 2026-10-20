@@ -43,6 +43,14 @@ jobs:
           test -s dist/model-library.html
           test -s dist/model-library.json
           grep -q 'Model Library' dist/model-library.html
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Verify gallery is in deployment
+        run: |
+          test -s dist/gallery.html
+          grep -q 'Independent Model Gallery' dist/gallery.html
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
