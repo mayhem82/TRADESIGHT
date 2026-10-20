@@ -1,0 +1,20 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TRADESIGHT SNAP-002</title><style>body{margin:0;padding:20px 18px 70px;background:#0d1726;color:#f4eee3;font:20px/1.6 system-ui;overflow-wrap:anywhere}main{max-width:760px;margin:auto}h1{font-size:1.55em;line-height:1.25}h2{font-size:1.3em}h3{font-size:1.15em}a{color:#bde8ff}</style></head><body><main><a href="../documents.html">← Documents</a><h1>TRADESIGHT — EXPERIMENT 01: DEPTH PERCEPTION</h1>
+<h2>Continuity Snapshot 002 — 20 October 2026</h2>
+
+<p>Status: OPEN / NOT FINAL. Predecessor: SNAP-001 at ./experiment-01-snapshot-001.html. This is an additive continuity record, not a replacement.</p>
+
+<h3>New implementation</h3>
+<p>Commit 8b4258967250ad2890a442f01edb9a94fad07b31: extended the native WebXR diagnostic to request a single CPU depth frame on demand. The earlier bare basic-AR and depth-enabled session buttons remain. The new READ DEPTH — ONE FRAME control is enabled only after depth-session creation. The code sets up an XR-compatible WebGL context and XRWebGLLayer, requests local reference space, waits up to 30 XR frames for pose and CPU depth, and reports five samples (centre, left, right, top, bottom), frame dimensions, or an explicit error.</p>
+
+<h3>Technical distinction</h3>
+<p>The WebGL context is required for WebXR frame access but no 3D models, Three.js renderer, synthetic depth, continuous scene rendering or occlusion meshes are used. A depth sample is a runtime-provided estimate, not independently calibrated ground-truth distance. Reading one frame does not demonstrate live throughput or latency.</p>
+
+<h3>Results</h3>
+<p>No device test result has yet been supplied for this revision. Depth-enabled session acceptance, depth frame availability, measured values and stability remain UNKNOWN. Prior confirmed result: basic immersive-AR session creation in SNAP-001.</p>
+
+<h3>Next test</h3>
+<p>Open Experiment 01; select START DEPTH AR — NO RENDERER. Record exact status. If it succeeds, select READ DEPTH — ONE FRAME and record readings/error. If frozen, report which button triggered the freeze. Do not claim success until observed.</p>
+
+<h3>Continuity</h3>
+<p>SNAP-001 is immutable and remains the baseline. Future SNAP-003 must reference this SNAP-002. No final disposition without user approval.</p>
+<p><a href="./experiment-01-snapshot-001.html">Read preceding SNAP-001</a></p></main></body></html>
