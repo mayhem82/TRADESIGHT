@@ -1,6 +1,8 @@
 {
   "schemaVersion": 1,
   "models": [
+    {"id":"sound-wall-cube-ar","name":"Sound Wall Cube · VIP Zone","description":"Adjustable AR cube with phone-position-triggered audio demonstration","type":"interactive-scene","viewer":"sound-wall-cube-ar.html","version":1,"features":["3D","AR","Audio"],"editableSource":"public/sound-wall-cube-ar.html"},
+
     {"id":"invisible-beholder-mirror-ar","name":"Invisible Beholder Mirror","description":"Frameless AR surface prototype","type":"interactive-scene","viewer":"invisible-beholder-mirror-ar.html","version":1,"features":["3D","AR"],"editableSource":"public/invisible-beholder-mirror-ar.html"},
 
     {
