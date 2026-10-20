@@ -1,6 +1,8 @@
 {
   "schemaVersion": 1,
   "models": [
+    {"id":"invisible-beholder-mirror-ar","name":"Invisible Beholder Mirror","description":"Frameless AR surface prototype","type":"interactive-scene","viewer":"invisible-beholder-mirror-ar.html","version":1,"features":["3D","AR"],"editableSource":"public/invisible-beholder-mirror-ar.html"},
+
     {
       "id": "flying-saucer-ar",
       "name": "Flying Saucer",
