@@ -7,19 +7,19 @@ const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.01,100);
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setSize(innerWidth,innerHeight);renderer.xr.enabled=true;document.body.append(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xffffff,0x445566,3));const sun=new THREE.DirectionalLight(0xffffff,2);sun.position.set(4,10,4);scene.add(sun);
 const model=createModel();scene.add(model);const height=Math.max(.01,new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).y);
-const W=40,H=30,verts=new Float32Array(W*H*3),indices=[];for(let y=0;y<H-1;y++)for(let x=0;x<W-1;x++){const i=y*W+x;indices.push(i,i+W,i+1,i+1,i+W,i+W+1)}
+const W=20,H=15,verts=new Float32Array(W*H*3),indices=[];for(let y=0;y<H-1;y++)for(let x=0;x<W-1;x++){const i=y*W+x;indices.push(i,i+W,i+1,i+1,i+W,i+W+1)}
 const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(verts,3));geo.setIndex(indices);const mat=new THREE.MeshBasicMaterial({colorWrite:false,depthWrite:true,side:THREE.DoubleSide});const occluder=new THREE.Mesh(geo,mat);occluder.frustumCulled=false;occluder.renderOrder=-100;scene.add(occluder);occluder.visible=false;
 const near=new THREE.Vector3(),far=new THREE.Vector3(),inverse=new THREE.Matrix4(),world=new THREE.Matrix4();
 function update(){document.querySelector('#d').textContent=distance.value+' m';document.querySelector('#s').textContent=size.value+' m';model.scale.setScalar(+size.value/height);model.position.set(0,0,-Number(distance.value))}
 distance.oninput=size.oninput=update;update();
 status.textContent='3D viewer ready · checking WebXR depth support';window.addEventListener('error',e=>status.textContent='Page error: '+e.message);window.addEventListener('unhandledrejection',e=>status.textContent='AR error: '+(e.reason?.message||e.reason));const btn=ARButton.createButton(renderer,{requiredFeatures:['depth-sensing'],optionalFeatures:['dom-overlay'],domOverlay:{root:document.body},depthSensing:{usagePreference:['cpu-optimized'],dataFormatPreference:['luminance-alpha']}});document.querySelector('#ar').append(btn);if(navigator.xr){navigator.xr.isSessionSupported('immersive-ar').then(ok=>{if(!renderer.xr.isPresenting)status.textContent=ok?'AR available · tap START AR below. Depth sensing will be checked on launch.':'Immersive AR not supported in this browser.'}).catch(e=>status.textContent='AR support check failed: '+e.message)}else status.textContent='WebXR unavailable in this browser. Open in Android Chrome.';
-renderer.xr.addEventListener('sessionstart',()=>{scene.background=null;status.textContent='AR active · waiting for CPU depth data';});
+renderer.xr.addEventListener('sessionstart',()=>{lastDepth=0;depthFailures=0;seen=false;scene.background=null;status.textContent='AR active · waiting for CPU depth data';});
 renderer.xr.addEventListener('sessionend',()=>{scene.background=new THREE.Color(0x102237);occluder.visible=false;status.textContent='AR ended';});
-let previous=0,seen=false;
+let previous=0,seen=false,lastDepth=0,depthFailures=0;
 renderer.setAnimationLoop((time,frame)=>{if(updateModel)updateModel(model,Math.min(.05,(time-previous)/1000||0));previous=time;
-occluder.visible=false;
-if(frame&&renderer.xr.isPresenting){try{const pose=frame.getViewerPose(renderer.xr.getReferenceSpace());const view=pose?.views?.[0];const info=view&&frame.getDepthInformation?.(view);
-if(info&&info.data&&document.querySelector('#occlude').checked){const raw=new Uint8Array(info.data),dw=info.width,dh=info.height;inverse.fromArray(view.projectionMatrix).invert();world.fromArray(view.transform.matrix);
+if(!renderer.xr.isPresenting)occluder.visible=false;
+if(frame&&renderer.xr.isPresenting && time-lastDepth>=200){try{const pose=frame.getViewerPose(renderer.xr.getReferenceSpace());const view=pose?.views?.[0];const info=view&&frame.getDepthInformation?.(view);
+if(info&&info.data&&document.querySelector('#occlude').checked){lastDepth=time;const raw=new Uint8Array(info.data),dw=info.width,dh=info.height;if(raw.length<dw*dh*2)throw Error('Unexpected depth buffer size');inverse.fromArray(view.projectionMatrix).invert();world.fromArray(view.transform.matrix);
 const uv=info.normDepthBufferFromNormView||null;
 for(let y=0;y<H;y++)for(let x=0;x<W;x++){const u=x/(W-1),v=y/(H-1);let du=u,dv=v;if(uv){const e=uv.matrix||uv;const m=e.elements||e;if(m.length>=16){du=m[0]*u+m[4]*v+m[12];dv=m[1]*u+m[5]*v+m[13]}}
 const ix=Math.max(0,Math.min(dw-1,Math.floor(du*dw))),iy=Math.max(0,Math.min(dh-1,Math.floor(dv*dh))),at=2*(iy*dw+ix);const meters=(raw[at]+256*raw[at+1])*info.rawValueToMeters;
@@ -27,7 +27,7 @@ const i=3*(y*W+x);if(!Number.isFinite(meters)||meters<.15||meters>20){verts[i]=v
 near.set(2*u-1,1-2*v,-1).applyMatrix4(inverse);far.set(2*u-1,1-2*v,1).applyMatrix4(inverse);far.sub(near).normalize();const point=far.multiplyScalar(meters/Math.max(.01,-far.z)).applyMatrix4(world);verts[i]=point.x;verts[i+1]=point.y;verts[i+2]=point.z;
 }geo.attributes.position.needsUpdate=true;occluder.visible=true;if(!seen){status.textContent='CPU depth received · occlusion active (experimental)';seen=true}}
 else if(!seen)status.textContent=info?'Depth available · toggle occlusion on':'AR running · CPU depth not supplied by runtime';
-}catch(e){status.textContent='Depth error: '+e.message}}
-renderer.render(scene,camera)});
+}catch(e){depthFailures++;occluder.visible=false;status.textContent='Depth error ('+depthFailures+'): '+e.message;if(depthFailures>=3){document.querySelector('#occlude').checked=false;status.textContent+=' · depth processing disabled for safety'}}}
+if(!document.querySelector('#occlude').checked)occluder.visible=false;renderer.render(scene,camera)});
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 </script></body></html>
