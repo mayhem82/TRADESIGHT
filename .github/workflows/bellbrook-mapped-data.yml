@@ -1,0 +1,40 @@
+name: Capture Bellbrook mapped town features
+on:
+  push:
+    paths: ['.github/workflows/bellbrook-mapped-data.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Capture source geometry without simplifying it
+        run: |
+          python3 - <<'PY'
+          import urllib.request, urllib.parse, json, pathlib, datetime, time
+          box='-30.842,152.480,-30.794,152.536'
+          filters=['way[building]','way[waterway]','way[natural=water]','relation[natural=water]','way[landuse=forest]','way[natural=wood]','way[leisure=park]','nwr[amenity]','nwr[shop]','nwr[tourism]','nwr[historic]','nwr[place=village]']
+          query='[out:json][timeout:90];('+''.join(f+'('+box+');' for f in filters)+');out body geom;'
+          errors=[]
+          for endpoint in ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter']:
+              try:
+                  req=urllib.request.Request(endpoint,data=urllib.parse.urlencode({'data':query}).encode(),headers={'User-Agent':'TradeSight-Bellbrook-mapped-world/1.0'})
+                  with urllib.request.urlopen(req,timeout=120) as response: data=json.load(response)
+                  assert len(data.get('elements',[]))>5, 'No usable source features'
+                  break
+              except Exception as e: errors.append(str(e))
+          else: raise RuntimeError(errors)
+          data['tradesightCapture']={'retrievedUTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),'endpoint':endpoint,'query':query,'boundsWGS84':[-30.842,152.480,-30.794,152.536],'attribution':'© OpenStreetMap contributors, ODbL 1.0','geometryTreatment':'Original source coordinates retained. Missing heights are not surveyed.'}
+          path=pathlib.Path('public/bellbrook-terrain/town-source-osm.json');path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(data,separators=(',',':')))
+          print('Captured',len(data['elements']),'mapped features')
+          PY
+      - name: Save captured public source geometry
+        run: |
+          git config user.name 'TradeSight build'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/bellbrook-terrain/town-source-osm.json
+          git diff --cached --quiet || git commit -m 'Capture Bellbrook building, water and landmark source geometry'
+          git pull --rebase origin main
+          git push origin HEAD:main
