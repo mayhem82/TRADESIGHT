@@ -1,0 +1,10 @@
+{
+  "buildingFootprints": 222,
+  "validNativeBuildingSolids": 222,
+  "failedFootprints": [],
+  "reopened": true,
+  "fullWorldTerrainTriangles": 1996002,
+  "bridgeDeckHeightsStillUnresolved": true,
+  "roofFormsReconstructed": false,
+  "geometrySimplified": false
+}
