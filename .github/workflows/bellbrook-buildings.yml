@@ -1,0 +1,53 @@
+name: Capture Bellbrook building footprints
+on:
+  push:
+    paths: ['.github/workflows/bellbrook-buildings.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select original building polygons intersecting Bellbrook
+        run: |
+          python3 - <<'PY'
+          import urllib.request, csv, io, gzip, json, pathlib, math, datetime
+          west,south,east,north=152.480,-30.842,152.536,-30.794
+          def tile(lon,lat):
+              p=math.radians(lat)
+              return int((lon+180)/360*512),int((1-math.asinh(math.tan(p))/math.pi)/2*512)
+          def key(x,y):return ''.join(str(((x>>b)&1)+2*((y>>b)&1)) for b in range(8,-1,-1))
+          x0,y0=tile(west,north);x1,y1=tile(east,south)
+          keys={key(x,y) for x in range(x0,x1+1) for y in range(y0,y1+1)}
+          index='https://bfppub.blob.core.windows.net/%24web/2026-08-13/dataset-links.csv'
+          with urllib.request.urlopen(index,timeout=90) as r: rows=list(csv.DictReader(io.TextIOWrapper(r,encoding='utf-8-sig')))
+          selected=[r for r in rows if r.get('Location')=='Australia' and r.get('QuadKey','').zfill(9) in keys]
+          assert selected, ('No matching tiles',keys,list(rows[0]))
+          features=[]
+          for row in selected:
+              print('Downloading tile',row['QuadKey'],flush=True)
+              with urllib.request.urlopen(row['Url'],timeout=120) as r:
+                  stream=io.TextIOWrapper(gzip.GzipFile(fileobj=r),encoding='utf-8')
+                  for line in stream:
+                      f=json.loads(line);g=f.get('geometry',{});rings=g.get('coordinates',[])
+                      if g.get('type')=='MultiPolygon': points=[p for poly in rings for ring in poly for p in ring]
+                      elif g.get('type')=='Polygon':points=[p for ring in rings for p in ring]
+                      else:continue
+                      xs=[p[0] for p in points];ys=[p[1] for p in points]
+                      if max(xs)<west or min(xs)>east or max(ys)<south or min(ys)>north:continue
+                      f['id']='microsoft/'+row['QuadKey']+'/'+str(len(features));features.append(f)
+          assert len(features)>5, 'No usable footprint coverage'
+          result={'type':'FeatureCollection','features':features,'source':{'publisher':'Microsoft Global ML Building Footprints','repository':'https://github.com/microsoft/GlobalMLBuildingFootprints','license':'CDLA-Permissive-2.0','licenseURL':'https://cdla.dev/permissive-2-0/','index':index,'tiles':selected,'retrievedUTC':datetime.datetime.now(datetime.timezone.utc).isoformat(),'boundsWGS84':[west,south,east,north],'geometryTreatment':'Original intersecting source polygons retained without simplification. ML footprints are not surveyed building boundaries.'}}
+          path=pathlib.Path('public/bellbrook-terrain/town-source-buildings.geojson');path.write_text(json.dumps(result,separators=(',',':')))
+          print('Captured',len(features),'building footprints')
+          PY
+      - name: Save public footprint source
+        run: |
+          git config user.name 'TradeSight build'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/bellbrook-terrain/town-source-buildings.geojson
+          git diff --cached --quiet || git commit -m 'Capture Bellbrook ML building footprint polygons'
+          git pull --rebase origin main
+          git push origin HEAD:main
