@@ -1,0 +1,24 @@
+{
+  "width": 1000,
+  "height": 1000,
+  "spacingM": 5,
+  "firstPixelCentreLocal": [
+    -2497.5,
+    2497.5
+  ],
+  "originUTM56S": [
+    453024,
+    6590535
+  ],
+  "crs": "EPSG:32756",
+  "minHeightM": 53.346248626708984,
+  "maxHeightM": 341.7161865234375,
+  "validSamples": 1000000,
+  "triangleCount": 1996002,
+  "heightScale": 1,
+  "elevationDatumNote": "Catalogue tile names indicate AHD; vertical datum not independently validated. Values retained without vertical transformation.",
+  "sourceTileNames": [
+    "Carrai-DEM-AHD_56_5m",
+    "Macksville-DEM-AHD_56_5m"
+  ]
+}

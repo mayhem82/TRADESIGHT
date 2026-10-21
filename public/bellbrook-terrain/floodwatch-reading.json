@@ -1,0 +1,26 @@
+{
+  "schema": "tradesight-floodwatch-sign-v1",
+  "stationId": "059122",
+  "bridgeSourceID": "1541923",
+  "bridgeName": "Bellbrook Bridge (Toose Road)",
+  "checkedAt": "2026-10-21T00:02:00.333359+00:00",
+  "observation": {
+    "heightMetres": 0.62,
+    "observedAt": "2026-10-20T09:10:00+00:00",
+    "source": "historical mirror"
+  },
+  "lastFetchHadValidData": true,
+  "sourcesReached": [
+    "current mirror",
+    "historical mirror",
+    "Floodwatch server history"
+  ],
+  "sourceErrors": {},
+  "futureRowsRejected": 3,
+  "dashboardUrl": "https://mayhem82.github.io/Bellbrook-Bridge-Automated-Floodwatch/",
+  "deckReferenceMetres": 2.8,
+  "deckReferenceMeaning": "Gauge-relative dashboard threshold; no conversion to terrain elevation",
+  "refreshIntervalSeconds": 300,
+  "staleObservationMinutes": 60,
+  "notificationsEnabled": false
+}

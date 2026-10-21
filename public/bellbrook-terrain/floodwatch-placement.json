@@ -1,0 +1,64 @@
+{
+  "schema": "tradesight-floodwatch-sign-v1",
+  "hallName": "Bellbrook Hall / School of Arts",
+  "hallAddress": "52 Main Street, Bellbrook NSW",
+  "hallFootprint": [
+    [
+      -77.29299065249506,
+      -105.97838936373591
+    ],
+    [
+      -69.3392097671749,
+      -107.17357403226197
+    ],
+    [
+      -72.50927049631719,
+      -128.00065884925425
+    ],
+    [
+      -80.45347152976319,
+      -126.80543461441994
+    ],
+    [
+      -77.29299065249506,
+      -105.97838936373591
+    ]
+  ],
+  "hallOSMWay": 455447760,
+  "hallOSMSource": {
+    "building": "yes",
+    "name": "Bellbrook Hall",
+    "source": "NSW LPI Base Map;NSW LPI Imagery",
+    "source:date": "2016-11"
+  },
+  "hallAddressSource": "https://www.kempsey.nsw.gov.au/Your-Valley/Festivals-events/Venues-facilities-for-hire",
+  "position": {
+    "x": -72.58321301929864,
+    "north": -104.93193900817981
+  },
+  "faceNormal": {
+    "x": 0.8354883105282358,
+    "north": 0.5495082192021099
+  },
+  "crs": "EPSG:32756",
+  "originUTM56S": [
+    453024,
+    6590535
+  ],
+  "placementStatus": "Proposed from mapped hall footprint and Main Street alignment; exact verge position/orientation not field-verified",
+  "hallEnvelopeHeightM": 4,
+  "hallEnvelopeStatus": "Illustrative height only; footprint from OSM, no surveyed facade or roof",
+  "boardWidthM": 2.4,
+  "boardHeightM": 1.5,
+  "boardCentreHeightM": 2.15,
+  "postHeightM": 3.0,
+  "postSectionM": 0.1,
+  "bridgeSourceID": "1541923",
+  "bridgeLocalName": "Bellbrook Bridge (Toose Road)",
+  "bridgeIdentitySource": "User confirmation in this chat",
+  "bridgePosition": {
+    "x": -309.0645664703167,
+    "north": -260.46786425315906
+  },
+  "dashboardUrl": "https://mayhem82.github.io/Bellbrook-Bridge-Automated-Floodwatch/"
+}
