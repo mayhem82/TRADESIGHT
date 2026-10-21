@@ -2,6 +2,22 @@
   "schemaVersion": 1,
   "models": [
     {
+      "id": "c03-container-ar",
+      "name": "C-03 Container · AR & Walkthrough",
+      "description": "Full-size custom processing container, native phone AR and indoor walkthrough, English / Japanese",
+      "type": "interactive-scene",
+      "viewer": "c03/index.html",
+      "version": 1,
+      "features": [
+        "3D",
+        "AR",
+        "Walkthrough",
+        "English / Japanese",
+        "1:1 scale"
+      ],
+      "editableSource": "public/c03/index.html"
+    },
+    {
       "id": "sound-wall-cube-ar",
       "name": "Sound Wall Cube · VIP Zone",
       "description": "Resizable VIP AR zone with live microphone-driven bass/mid/treble colour tint",
