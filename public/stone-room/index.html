@@ -4,12 +4,12 @@
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101820;color:white;font:16px system-ui}canvas{display:block;touch-action:none}#ui{position:fixed;top:10px;left:10px;right:10px;z-index:2;display:flex;flex-wrap:wrap;gap:7px;align-items:center}button,input{font:inherit}button{background:#233b48;color:white;border:1px solid #9bb0ba;border-radius:9px;padding:10px}button:disabled{opacity:.4}#speed{width:100px}#pad{position:fixed;bottom:20px;left:20px;display:grid;grid-template-columns:repeat(3,55px);gap:4px;z-index:2}#pad button{height:55px;touch-action:none}#info{position:fixed;bottom:10px;right:10px;background:#10212acc;padding:8px;border-radius:8px;font-size:12px;max-width:45vw}#look{position:fixed;right:0;top:90px;bottom:60px;width:55%;touch-action:none;z-index:1}#error{position:fixed;top:85px;left:10px;color:#ffd3d3;z-index:3}
 #ui{right:auto;max-width:calc(100% - 20px);background:#12232bd9;padding:7px;border-radius:12px}#info{bottom:8px;right:8px;max-width:42vw;font-size:11px;pointer-events:none}#npcpanel{position:fixed;top:105px;right:9px;z-index:4;background:#15232de8;border:1px solid #87949c;border-radius:12px;padding:10px;width:165px;display:grid;gap:7px;font-size:13px}#npcpanel select,#npcpanel button{width:100%;min-height:36px;background:#253d4b;color:white;border-radius:8px}#npcpanel label{display:flex;gap:5px;align-items:center}#npcpanel input[type=range]{width:100%}#npcactions{display:grid;grid-template-columns:1fr 1fr;gap:5px}#npcpanel small{font-size:10px;color:#d1dce0}#pad{bottom:22px}#look{width:48%;right:0;top:305px;bottom:90px}@media(max-width:600px){#npcpanel{top:150px;width:125px;padding:7px}#ui{font-size:12px}#ui button{padding:7px}#info{max-width:35vw}#pad{left:8px;bottom:18px;grid-template-columns:repeat(3,48px)}#pad button{height:48px}} </style></head><body>
 <div id="ui"><button id="mode">Virtual walk</button><button id="ar">Start AR</button><label>Speed <input id="speed" type="range" min=".2" max="5" step=".1" value="1.4"><span id="sv">1.4</span> m/s</label><button id="reset">Reset</button><button id="plan">Top view</button></div>
-<div id="pad"><span></span><button data-move="forward">▲</button><span></span><button data-move="left">◀</button><button data-move="back">▼</button><button data-move="right">▶</button></div><div id="look"></div><div id="npcpanel"><b>NPC · Prototype</b><select id="behaviour"><option value="idle">Idle</option><option value="wander">Walk around</option><option value="follow">Follow camera</option><option value="stop">Stop</option></select><label>NPC speed <span id="nsv">1.0</span></label><input id="nspeed" type="range" min=".2" max="2.5" step=".1" value="1"><label><input type="checkbox" id="collision" checked> Collision</label><div id="npcactions"><button id="follow">Follow</button><button id="stop">Stop</button><button id="wave">Wave</button><button id="talk">Talk</button></div><small>Photo-referenced placeholder mesh. Not a reconstructed photorealistic character.</small></div><div id="info">Drag right side to look. Walk with arrows or WASD. Individual stonework with recessed mortar and staggered timber floorboards. Illustrative 8 × 6 × 3 m room; not measured.</div><div id="error"></div>
+<div id="pad"><span></span><button data-move="forward">▲</button><span></span><button data-move="left">◀</button><button data-move="back">▼</button><button data-move="right">▶</button></div><div id="look"></div><div id="npcpanel"><b>NPC · Model viewer</b><label style='display:block'>Import rigged GLB<input id='npcfile' type='file' accept='.glb,.gltf,model/gltf-binary' style='width:100%;font-size:11px'></label><select id="behaviour"><option value="idle">Idle</option><option value="wander">Walk around</option><option value="follow">Follow camera</option><option value="stop">Stop</option></select><label>NPC speed <span id="nsv">1.0</span></label><input id="nspeed" type="range" min=".2" max="2.5" step=".1" value="1"><label><input type="checkbox" id="collision" checked> Collision</label><div id="npcactions"><button id="follow">Follow</button><button id="stop">Stop</button><button id="wave">Wave</button><button id="talk">Talk</button></div><small>Placeholder until a photo-derived rigged GLB is imported. Uploaded files stay on this device.</small></div><div id="info">Drag right side to look. Walk with arrows or WASD. Individual stonework with recessed mortar and staggered timber floorboards. Illustrative 8 × 6 × 3 m room; not measured.</div><div id="error"></div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
 
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x94b6ca);
-const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.02,100);camera.position.set(0,1.65,2);
+const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.02,100);camera.position.set(-1.6,1.65,2.15);
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.xr.enabled=true;document.body.prepend(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xffffff,0x566273,2));const sun=new THREE.DirectionalLight(0xffffff,2);sun.position.set(2,7,4);scene.add(sun);
 const room=new THREE.Group();scene.add(room);
@@ -121,20 +121,42 @@ function frame(axis,fixed,a,b,low,high){const t=.075;const add=(u,v,w,h)=>{const
 add(a,(low+high)/2,t,high-low);add(b,(low+high)/2,t,high-low);add((a+b)/2,low,b-a,t);add((a+b)/2,high,b-a,t);add((a+b)/2,(low+high)/2,t*.55,high-low)}
 frame('x',-3,-2.9,-.7,.7,2.5);frame('x',-3,.7,2.9,.7,2.5);frame('x',3,-1.2,1.2,.7,2.5);frame('z',-4,-1.5,.5,.7,2.5);
 // Lightweight, separately animated 3D NPC stand-in: full photogrammetric reconstruction pending.
-const npc=new THREE.Group();room.add(npc);npc.position.set(1,0,-1.2);
+const npc=new THREE.Group();room.add(npc);npc.position.set(1.25,0,-1.65);const placeholder=new THREE.Group();npc.add(placeholder);let importedModel=null,importedMixer=null;
 const skin=new THREE.MeshStandardMaterial({color:0xb9876b,roughness:.94}),navy=new THREE.MeshStandardMaterial({color:0x172d46,roughness:.88}),black=new THREE.MeshStandardMaterial({color:0x14191e,roughness:.74}),denim=new THREE.MeshStandardMaterial({color:0x34475c,roughness:.91}),lens=new THREE.MeshStandardMaterial({color:0x090d12,metalness:.2,roughness:.16}),hair=new THREE.MeshStandardMaterial({color:0x392b23,roughness:1});
 function part(parent,geo,mat,x,y,z){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);parent.add(m);return m}
-part(npc,new THREE.CapsuleGeometry(.26,.51,5,10),navy,0,1.19,0);
-part(npc,new THREE.SphereGeometry(.145,12,8),skin,0,1.66,0);
-part(npc,new THREE.CylinderGeometry(.155,.16,.17,14),black,0,1.81,0);
-const brim=part(npc,new THREE.BoxGeometry(.39,.025,.20),black,0,1.75,-.15);brim.rotation.x=-.09;
+part(placeholder,new THREE.CapsuleGeometry(.26,.51,5,10),navy,0,1.19,0);
+part(placeholder,new THREE.SphereGeometry(.145,12,8),skin,0,1.66,0);
+part(placeholder,new THREE.CylinderGeometry(.155,.16,.17,14),black,0,1.81,0);
+const brim=part(placeholder,new THREE.BoxGeometry(.39,.025,.20),black,0,1.75,-.15);brim.rotation.x=-.09;
 for(const x of [-.077,.077])part(npc,new THREE.BoxGeometry(.145,.075,.04),lens,x,1.675,-.142);
 part(npc,new THREE.SphereGeometry(.115,10,6),hair,0,1.59,-.09);
-const leftArm=new THREE.Group(),rightArm=new THREE.Group();leftArm.position.set(-.30,1.44,0);rightArm.position.set(.30,1.44,0);npc.add(leftArm,rightArm);
+const leftArm=new THREE.Group(),rightArm=new THREE.Group();leftArm.position.set(-.30,1.44,0);rightArm.position.set(.30,1.44,0);placeholder.add(leftArm,rightArm);
 part(leftArm,new THREE.CapsuleGeometry(.083,.43,4,8),navy,0,-.32,0);part(rightArm,new THREE.CapsuleGeometry(.083,.43,4,8),navy,0,-.32,0);
-const leftLeg=new THREE.Group(),rightLeg=new THREE.Group();leftLeg.position.set(-.13,.86,0);rightLeg.position.set(.13,.86,0);npc.add(leftLeg,rightLeg);
+const leftLeg=new THREE.Group(),rightLeg=new THREE.Group();leftLeg.position.set(-.13,.86,0);rightLeg.position.set(.13,.86,0);placeholder.add(leftLeg,rightLeg);
 part(leftLeg,new THREE.CapsuleGeometry(.105,.54,4,8),denim,0,-.39,0);part(rightLeg,new THREE.CapsuleGeometry(.105,.54,4,8),denim,0,-.39,0);
 part(leftLeg,new THREE.BoxGeometry(.19,.13,.31),black,0,-.83,-.07);part(rightLeg,new THREE.BoxGeometry(.19,.13,.31),black,0,-.83,-.07);
+// Import external photo-reconstructed, rigged glTF model without replacing the scene.
+document.querySelector('#npcfile').addEventListener('change',async event=>{
+ const file=event.target.files?.[0];if(!file)return;
+ const url=URL.createObjectURL(file);
+ try{
+  const {GLTFLoader}=await import('https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/loaders/GLTFLoader.js');
+  const loader=new GLTFLoader();
+  const gltf=await loader.loadAsync(url);
+  if(importedModel)npc.remove(importedModel);
+  importedModel=gltf.scene;
+  const box=new THREE.Box3().setFromObject(importedModel),size=box.getSize(new THREE.Vector3());
+  if(size.y<=0)throw Error('Model has no measurable height');
+  const scale=1.75/size.y;importedModel.scale.setScalar(scale);
+  const scaled=new THREE.Box3().setFromObject(importedModel);
+  importedModel.position.y-=scaled.min.y;
+  npc.add(importedModel);placeholder.visible=false;
+  importedMixer=gltf.animations.length?new THREE.AnimationMixer(importedModel):null;
+  if(importedMixer)importedMixer.clipAction(gltf.animations[0]).play();
+  document.querySelector('#info').textContent='Imported GLB NPC; normalized to 1.75 m. Animation: '+(gltf.animations.length?'available':'not supplied');
+ }catch(error){document.querySelector('#error').textContent='NPC import failed: '+error.message}
+ finally{URL.revokeObjectURL(url)}
+});
 let npcBehaviour='idle',npcHeading=1.2,npcTimer=0,waveUntil=0,elapsed=0;
 document.querySelector('#behaviour').onchange=e=>npcBehaviour=e.target.value;
 document.querySelector('#nspeed').oninput=e=>document.querySelector('#nsv').textContent=Number(e.target.value).toFixed(1);
@@ -142,12 +164,12 @@ document.querySelector('#follow').onclick=()=>{npcBehaviour='follow';document.qu
 document.querySelector('#stop').onclick=()=>{npcBehaviour='stop';document.querySelector('#behaviour').value='stop'};
 document.querySelector('#wave').onclick=()=>{waveUntil=elapsed+2.2};
 document.querySelector('#talk').onclick=()=>{document.querySelector('#info').textContent='NPC dialogue audio is not yet implemented.'};
-function animateNPC(dt){elapsed+=dt;npcTimer-=dt;let tx=npc.position.x,tz=npc.position.z;const speed=Number(document.querySelector('#nspeed').value);let walking=false;
+function animateNPC(dt){importedMixer?.update(dt);elapsed+=dt;npcTimer-=dt;let tx=npc.position.x,tz=npc.position.z;const speed=Number(document.querySelector('#nspeed').value);let walking=false;
 if(npcBehaviour==='follow'){tx=camera.position.x;tz=camera.position.z;walking=Math.hypot(tx-npc.position.x,tz-npc.position.z)>1.5}
 if(npcBehaviour==='wander'){if(npcTimer<=0){npcHeading=hash(Math.floor(elapsed*5),3)*Math.PI*2;npcTimer=2+hash(Math.floor(elapsed*5),4)*3}tx=npc.position.x+Math.sin(npcHeading);tz=npc.position.z+Math.cos(npcHeading);walking=true}
 if(walking){const dx=tx-npc.position.x,dz=tz-npc.position.z,d=Math.hypot(dx,dz)||1;npc.rotation.y=Math.atan2(-dx,-dz);const nx=npc.position.x+dx/d*speed*dt,nz=npc.position.z+dz/d*speed*dt;
 if(!document.querySelector('#collision').checked||(Math.abs(nx)<3.5&&Math.abs(nz)<2.5)){npc.position.x=nx;npc.position.z=nz}else npcTimer=0}
-const stride=walking?Math.sin(elapsed*speed*7)*.45:0;leftLeg.rotation.x=stride;rightLeg.rotation.x=-stride;leftArm.rotation.x=-stride*.6;rightArm.rotation.x=waveUntil>elapsed?-1.8+Math.sin(elapsed*14)*.3:stride*.6;
+const stride=walking?Math.sin(elapsed*speed*7)*.45:0;if(placeholder.visible){leftLeg.rotation.x=stride;rightLeg.rotation.x=-stride;leftArm.rotation.x=-stride*.6;rightArm.rotation.x=waveUntil>elapsed?-1.8+Math.sin(elapsed*14)*.3:stride*.6;}
 }
 const keys=new Set();let yaw=0,pitch=0,top=false,ar=false;const clock=new THREE.Clock();
 function updateLook(){camera.rotation.order='YXZ';camera.rotation.y=yaw;camera.rotation.x=pitch}
@@ -156,7 +178,7 @@ document.querySelectorAll('[data-move]').forEach(b=>{const k=b.dataset.move;b.ad
 window.addEventListener('keydown',e=>keys.add(e.key.toLowerCase()));window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 const look=document.querySelector('#look');let last=null;look.addEventListener('pointerdown',e=>{last=[e.clientX,e.clientY];look.setPointerCapture(e.pointerId)});look.addEventListener('pointermove',e=>{if(!last||ar||top)return;yaw-=(e.clientX-last[0])*.005;pitch=THREE.MathUtils.clamp(pitch-(e.clientY-last[1])*.005,-1.45,1.45);last=[e.clientX,e.clientY];updateLook()});look.addEventListener('pointerup',()=>last=null);look.addEventListener('pointercancel',()=>last=null);
 document.querySelector('#speed').oninput=e=>document.querySelector('#sv').textContent=Number(e.target.value).toFixed(1);
-document.querySelector('#reset').onclick=()=>{top=false;camera.position.set(0,1.65,2);yaw=pitch=0;updateLook()};
+document.querySelector('#reset').onclick=()=>{top=false;camera.position.set(-1.6,1.65,2.15);yaw=pitch=0;updateLook()};
 document.querySelector('#plan').onclick=()=>{top=!top;if(top){camera.position.set(0,12,0);camera.rotation.set(-Math.PI/2,0,0)}else{camera.position.set(0,1.65,2);yaw=pitch=0;updateLook()}};
 // Real WebXR hit testing: green placement reticle for floor and vertical wall surfaces.
 const reticle=new THREE.Group();reticle.visible=false;scene.add(reticle);
