@@ -43,6 +43,28 @@ jobs:
           test -s dist/model-library.html
           test -s dist/model-library.json
           grep -q 'Model Library' dist/model-library.html
+      - name: Verify Stone Room contracts
+        run: |
+          node --test tests/stone-room/core.test.mjs tests/stone-room/xr.test.mjs
+          python tests/stone-room/assets.py
+          test -s dist/stone-room/index.html
+          test -s dist/stone-room/assets/stone-room.glb
+          test -s dist/stone-room/assets/photo-guided-npc.glb
+          test -s dist/stone-room/vendor/three.module.js
+      - name: Install browser verification tools
+        run: |
+          python -m pip install playwright==1.55.0
+          python -m playwright install --with-deps chromium
+      - name: Verify Stone Room in desktop and Android viewports
+        run: STONE_ROOM_ROOT=dist python tests/stone-room/browser.py
+      - name: Retain Stone Room test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stone-room-verification
+          path: |
+            tests/stone-room/*report.json
+            tests/stone-room/*.png
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
         with:
@@ -66,3 +88,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+

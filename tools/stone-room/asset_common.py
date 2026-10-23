@@ -1,4 +1,4 @@
-"""Blender 4.3: blender -b --python tools/stone-room/build_assets.py
+"""Blender 4.3: blender -b --python tools/stone-room/build_room.py (or build_npc.py)
 Original model; illustrative dimensions. Photo-guided likeness, not photogrammetry.
 """
 import bpy, math, random, json

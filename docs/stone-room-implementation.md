@@ -97,3 +97,33 @@ and exit state restoration. These are mocked XR calls, not spatial tracking evid
 Local Chromium fails before page launch because the sandbox denies IPC sockets.
 Two narrow network-permission attempts were interrupted; there is no browser pass
 or physical-device pass from the local environment.
+
+## 2026-10-23 — viewer integration and deployment gate
+
+AR/dependency commit: 6024bd0367004f925ed919f3c5bb8a1f85e355cf.
+Replaced procedural runtime placeholder generation with the production GLBs. The
+original walkthrough controls remain supported alongside an analogue touch joystick.
+Walking speed, reset, overhead, touch drag, keyboard movement, NPC modes, speed,
+collision toggle and local self-contained GLB import remain available. Added named
+animation selection, wave, browser speech for Talk, gentle turning, avatar separation,
+focus-loss input clearing, loading/retry and visible errors. Settings collapse and
+44px controls preserve the main viewing area; overhead hides the separate ceiling.
+Daylight and cast shadows illuminate the room, with instanced exterior planting.
+The placeholder geometry is removed from the production viewer.
+
+Production GLB ray tests: 48 rays through four window apertures are clear; the east
+wall blocks a test ray. These tests inspect exported triangles, not only source names.
+Structural GLB and seven Node tests pass. JavaScript syntax checks pass. A second
+Blender CPU review render was generated after geometry revision; it is a separate
+asset review, not a browser screenshot or proof of reference-level photorealism.
+
+The existing Vite and Pages deployment workflow is preserved and augmented with
+GLB contracts, Node tests and Playwright tests against dist/ at desktop 1280×800,
+Android portrait 393×852 and landscape 852×393. Screenshots and JSON reports are
+retained as workflow artifacts. Browser results are pending until Actions runs.
+These viewport checks do not emulate the Samsung GPU or ARCore hardware.
+
+The workspace now has an exact shallow Git HEAD/index hydrated from connected Git
+objects. Unrelated files absent locally are marked sparse; they are preserved in
+remote trees and are not staged for deletion. Shell proxy access remains unavailable.
+All remote commits use non-force, expected-head updates preserving existing history.
