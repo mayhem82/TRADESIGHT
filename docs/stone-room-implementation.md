@@ -179,3 +179,22 @@ Previous browser screenshots showed the NPC outside the initial portrait viewpor
 Reset now aims horizontally toward the character, preserving eye height and walking
 controls. Browser tests assert the projected character centre is in view at all
 three viewport sizes. JavaScript syntax passes; browser rerun pending this commit.
+
+## 2026-10-23 — second deployed screenshot review and mortar depth
+
+Commit 54cb21257a1e5b8d3aedb7177d5e7b2d315514ed passed Actions run 39912114126:
+seven unit/mock tests, three browser viewports, and ten live byte-identity checks.
+Screenshots confirm the NPC is centred in portrait. All initial views report a
+1.838 m character, four clips, 25 render calls, and no missing UVs or page errors.
+
+The reviewed wall still showed excessive blank mortar. Source inspection found a
+second cause: backing thickness 0.19 m intersected stones with depth as low as
+0.16 m. Reduced backing thickness to 0.10 m and added a generation assertion that
+both stone faces remain proud of mortar even at minimum central relief. Window
+openings, room dimensions and the FreeCAD structural envelope are unchanged.
+Regenerated the editable Blender model and production GLB; verification follows.
+
+Local verification after mortar correction: generation depth assertion passed;
+production GLB passed 48 window rays, 64 outward-normal checks and east-wall blocking.
+GLB structure/UV/material/rig contracts passed. Runtime byte size and draw count
+remain unchanged. Browser screenshot review and deployment are pending this commit.

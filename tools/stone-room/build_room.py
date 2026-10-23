@@ -15,6 +15,7 @@ for k,tint in enumerate([(1.13,1.05,.89),(.79,.82,.84),(1.04,.93,.77),(.89,.87,.
   for c in range(3):pixels[j+c]=min(1,pixels[j+c]*tint[c])
  im.pixels=pixels;im.filepath_raw=str(T/('limestone-variant-'+str(k)+'.jpg'));im.file_format='JPEG';im.save();im.pack();tex.image=im;stones.append(m)
 room=[];ceil=[]
+MORTAR_DEPTH=.10 # Shallower than every stone face, including centre relief.
 room.append(cube('Floor structural base',(0,0,-.08),(8,6,.12),mortar))
 for row in range(40):
  x=-3.9+row*.2;p=-3-(row%4)*.43
@@ -36,13 +37,14 @@ for side,fixed,length,opens in holes:
   isopen=any(l<(a+b)/2<r for l,r in opens)
   for low,high in ([(0,.7),(2.5,3)] if isopen else [(0,3)]):
    loc=((a+b)/2,fixed,(low+high)/2) if alongx else (fixed,(a+b)/2,(low+high)/2)
-   dims=(b-a,.19,high-low) if alongx else (.19,b-a,high-low)
+   dims=(b-a,MORTAR_DEPTH,high-low) if alongx else (MORTAR_DEPTH,b-a,high-low)
    room.append(cube(side+' mortar backing',loc,dims,mortar,0))
    y=low;course=0
    while y<high-.02:
     h=min(random.uniform(.21,.34),high-y);x=a
     while x<b-.025:
      w=min(random.uniform(.30,.66),b-x);dep=random.uniform(.16,.25);cx=x+w/2;cz=y+h/2
+     assert dep*.5-.015>MORTAR_DEPTH*.5, 'Mortar must remain behind stone relief'
      # Angular fieldstone polygons, varying shoulders and chipped edges; no brick primitive.
      ring=[(-.48,-.28),(-.34,-.48),(.19,-.48),(.48,-.26),(.48,.24),(.25,.48),(-.24,.48),(-.48,.25)]
      vs=[]
