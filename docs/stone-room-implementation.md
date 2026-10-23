@@ -72,3 +72,28 @@ A CPU Blender review render exposed segmented-looking joints in the initial mode
 continuous clothes and blended skinning replaced those forms. No physical mobile
 performance or animation-contact check has yet been performed. GLB skeleton, weights,
 UVs, embedded textures and all four clip names passed independent structural checks.
+
+## 2026-10-23 — dependency and AR module verification
+
+Character asset commit: 3be9140af0409814852d935f4d57ec8bfd2a484a.
+Vendored Three.js r164 core, GLTFLoader and BufferGeometryUtils, with upstream MIT
+license. The loader's utility import is adjusted to the local directory; the
+browser import map resolves its bare `three` import to the same core module.
+
+New AR module uses viewer-space WebXR hit testing in the renderer's local reference
+space. Both XR `select` and DOM Place controls can place. DOM overlay gestures are
+excluded from spatial select. Placement uses fresh hits only; reticle/control state
+clears on lost hits. Floor hits retain their measured height. Wall hits align the
+upright room's rear boundary with the plane and estimate the floor from nominal
+1.65 m viewer eye height. That estimate is explicitly shown; a wall-only hit does
+not measure the floor. Ceiling and steep slopes are rejected. Tracking loss hides
+the model until the viewer pose returns. Exit restores camera, roof, scene and input.
+No persistent anchors are requested or claimed. No virtual movement occurs in AR.
+
+Tests: five pure collision/placement tests and two synthetic XR lifecycle tests
+pass under Node. Synthetic tests cover scan, floor placement, stale-hit rejection,
+wall alignment, reposition, tracking-loss hiding, permission errors, source cancellation,
+and exit state restoration. These are mocked XR calls, not spatial tracking evidence.
+Local Chromium fails before page launch because the sandbox denies IPC sockets.
+Two narrow network-permission attempts were interrupted; there is no browser pass
+or physical-device pass from the local environment.
