@@ -46,3 +46,29 @@ are retained. They are procedural material work, not scanned stone or verified
 photorealism. Reproduction tools are in tools/stone-room/.
 Validation: FreeCAD source generated successfully with Python API. Blender export
 and structural geometry validation are recorded in subsequent entries.
+
+## 2026-10-23 — architecture commit and character assets
+
+Architecture commit: 614f1d3437b966e5d149338b699c1fa8a20aefe1.
+Final room GLB: 12,103,168 bytes, 143,226 triangles, 12 material primitives, 11
+embedded images. GLB structural validation passed. Editable individual stones remain
+in the native Blender source. Mineral variants share normal and roughness maps.
+
+The three original portrait photographs arrived during implementation and were
+visually inspected. The frontal photograph supplies the facial albedo crop.
+The cap, wraparound glasses, handlebar moustache, longer rear hair, face profile,
+navy collar and dark outer layer are modelled in three dimensions. Jeans and boots
+follow the approved illustration. The full body is skinned to a 16-bone skeleton,
+with blended knee/elbow weighting on continuous trouser/sleeve surfaces. Separate
+Idle, Walk, Wave and LookAround clips are exported. Final GLB: 4,187,364 bytes,
+66,192 triangles, 10 material primitives, 10 embedded images.
+
+This is a photo-guided, hand-modelled character. It is not photogrammetry, does not
+establish identity, and is not a verified facial reconstruction. The approved image
+remains a higher photorealistic quality target; the asset's procedural clothing,
+hair geometry, skin and animation quality are material limitations.
+
+A CPU Blender review render exposed segmented-looking joints in the initial model;
+continuous clothes and blended skinning replaced those forms. No physical mobile
+performance or animation-contact check has yet been performed. GLB skeleton, weights,
+UVs, embedded textures and all four clip names passed independent structural checks.
