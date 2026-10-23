@@ -127,3 +127,14 @@ The workspace now has an exact shallow Git HEAD/index hydrated from connected Gi
 objects. Unrelated files absent locally are marked sparse; they are preserved in
 remote trees and are not staged for deletion. Shell proxy access remains unavailable.
 All remote commits use non-force, expected-head updates preserving existing history.
+
+## 2026-10-23 — browser runner compatibility repair
+
+Viewer integration commit: 29097f54c3b518b73a5d0aeaefd03f2a2183342a.
+Actions run 39910220899 successfully installed application dependencies, built Vite,
+verified all existing published pages, passed all seven Node tests, and passed GLB
+contracts. Browser installation failed before browser launch: ubuntu-latest selected
+Ubuntu 26.04, unsupported by Playwright 1.55.0. Pages deployment was correctly skipped.
+Pinned only the build runner to Ubuntu 24.04, which that Playwright release supports.
+Screenshots remain artifacts and JPEG review copies are emitted into test logs so
+visual review is accessible through the connected GitHub API. Rerun pending.

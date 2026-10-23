@@ -4,7 +4,7 @@ Run after installing Playwright and Chromium. CI saves screenshots and JSON.
 """
 from playwright.sync_api import sync_playwright
 from pathlib import Path
-import json,mimetypes,shutil,os
+import json,mimetypes,shutil,os,base64
 REPO=Path(__file__).resolve().parents[2];ROOT=Path(os.environ.get('STONE_ROOM_ROOT',str(REPO/'public'))).resolve();OUT=REPO/'tests/stone-room';results=[]
 with sync_playwright() as p:
  exe=os.environ.get('CHROMIUM_EXECUTABLE') or shutil.which('chromium')
@@ -28,6 +28,7 @@ with sync_playwright() as p:
   b=page.locator('#joystick').bounding_box();page.mouse.move(b['x']+b['width']/2,b['y']+b['height']/2);page.mouse.down();page.mouse.move(b['x']+b['width']/2,b['y']+10);page.wait_for_timeout(250);page.mouse.up();page.wait_for_timeout(100)
   a=page.evaluate('window.stoneRoom.diagnostics.camera');page.wait_for_timeout(200);assert page.evaluate('window.stoneRoom.diagnostics.camera')==a
   page.screenshot(path=str(OUT/(name+'.png')))
+  thumbnail=page.screenshot(type='jpeg',quality=55,scale='css');print('STONE_SCREENSHOT:'+name+':'+base64.b64encode(thumbnail).decode(),flush=True)
   if not page.evaluate("navigator.xr && window.stoneRoom.diagnostics.xrState!=='inactive'"):
    page.click('#ar');page.wait_for_timeout(300);assert page.is_visible('#error');assert page.evaluate('window.stoneRoom.diagnostics.roomVisible')
   assert not errors,errors
