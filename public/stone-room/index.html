@@ -5,7 +5,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101820;col
 #ui{right:auto;max-width:calc(100% - 20px);background:#12232bd9;padding:7px;border-radius:12px}#info{bottom:8px;right:8px;max-width:42vw;font-size:11px;pointer-events:none}#npcpanel{position:fixed;top:105px;right:9px;z-index:4;background:#15232de8;border:1px solid #87949c;border-radius:12px;padding:10px;width:165px;display:grid;gap:7px;font-size:13px}#npcpanel select,#npcpanel button{width:100%;min-height:36px;background:#253d4b;color:white;border-radius:8px}#npcpanel label{display:flex;gap:5px;align-items:center}#npcpanel input[type=range]{width:100%}#npcactions{display:grid;grid-template-columns:1fr 1fr;gap:5px}#npcpanel small{font-size:10px;color:#d1dce0}#pad{bottom:22px}#look{width:48%;right:0;top:305px;bottom:90px}@media(max-width:600px){#npcpanel{top:150px;width:125px;padding:7px}#ui{font-size:12px}#ui button{padding:7px}#info{max-width:35vw}#pad{left:8px;bottom:18px;grid-template-columns:repeat(3,48px)}#pad button{height:48px}} </style></head><body>
 <div id="ui"><button id="mode">Virtual walk</button><button id="ar">Start AR</button><label>Speed <input id="speed" type="range" min=".2" max="5" step=".1" value="1.4"><span id="sv">1.4</span> m/s</label><button id="reset">Reset</button><button id="plan">Top view</button></div>
 <div id="pad"><span></span><button data-move="forward">▲</button><span></span><button data-move="left">◀</button><button data-move="back">▼</button><button data-move="right">▶</button></div><div id="look"></div><div id="npcpanel"><b>NPC · Model viewer</b><label style='display:block'>Import rigged GLB<input id='npcfile' type='file' accept='.glb,.gltf,model/gltf-binary' style='width:100%;font-size:11px'></label><select id="behaviour"><option value="idle">Idle</option><option value="wander">Walk around</option><option value="follow">Follow camera</option><option value="stop">Stop</option></select><label>NPC speed <span id="nsv">1.0</span></label><input id="nspeed" type="range" min=".2" max="2.5" step=".1" value="1"><label><input type="checkbox" id="collision" checked> Collision</label><div id="npcactions"><button id="follow">Follow</button><button id="stop">Stop</button><button id="wave">Wave</button><button id="talk">Talk</button></div><small>Placeholder until a photo-derived rigged GLB is imported. Uploaded files stay on this device.</small></div><div id="info">Drag right side to look. Walk with arrows or WASD. Individual stonework with recessed mortar and staggered timber floorboards. Illustrative 8 × 6 × 3 m room; not measured.</div><div id="error"></div>
-<script type="module">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"}}</script><script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
 
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x94b6ca);
@@ -140,7 +140,7 @@ document.querySelector('#npcfile').addEventListener('change',async event=>{
  const file=event.target.files?.[0];if(!file)return;
  const url=URL.createObjectURL(file);
  try{
-  const {GLTFLoader}=await import('https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/loaders/GLTFLoader.js');
+  const {GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
   const loader=new GLTFLoader();
   const gltf=await loader.loadAsync(url);
   if(importedModel)npc.remove(importedModel);
