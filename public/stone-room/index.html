@@ -4,7 +4,7 @@
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101820;color:white;font:16px system-ui}canvas{display:block;touch-action:none}#ui{position:fixed;top:10px;left:10px;right:10px;z-index:2;display:flex;flex-wrap:wrap;gap:7px;align-items:center}button,input{font:inherit}button{background:#233b48;color:white;border:1px solid #9bb0ba;border-radius:9px;padding:10px}button:disabled{opacity:.4}#speed{width:100px}#pad{position:fixed;bottom:20px;left:20px;display:grid;grid-template-columns:repeat(3,55px);gap:4px;z-index:2}#pad button{height:55px;touch-action:none}#info{position:fixed;bottom:10px;right:10px;background:#10212acc;padding:8px;border-radius:8px;font-size:12px;max-width:45vw}#look{position:fixed;right:0;top:90px;bottom:60px;width:55%;touch-action:none;z-index:1}#error{position:fixed;top:85px;left:10px;color:#ffd3d3;z-index:3}
 </style></head><body>
 <div id="ui"><button id="mode">Virtual walk</button><button id="ar">Start AR</button><label>Speed <input id="speed" type="range" min=".2" max="5" step=".1" value="1.4"><span id="sv">1.4</span> m/s</label><button id="reset">Reset</button><button id="plan">Top view</button></div>
-<div id="pad"><span></span><button data-move="forward">▲</button><span></span><button data-move="left">◀</button><button data-move="back">▼</button><button data-move="right">▶</button></div><div id="look"></div><div id="info">Drag right side to look. Walk with arrows or WASD. Illustrative 8 × 6 × 3 m room; replace with measured FreeCAD geometry.</div><div id="error"></div>
+<div id="pad"><span></span><button data-move="forward">▲</button><span></span><button data-move="left">◀</button><button data-move="back">▼</button><button data-move="right">▶</button></div><div id="look"></div><div id="info">Drag right side to look. Walk with arrows or WASD. Procedural stone PBR: colour, roughness and bump maps. Illustrative 8 × 6 × 3 m room; not measured.</div><div id="error"></div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
 import {ARButton} from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/webxr/ARButton.js';
@@ -16,7 +16,20 @@ const room=new THREE.Group();scene.add(room);
 const stone=new THREE.Group();room.add(stone);
 const floor=new THREE.Mesh(new THREE.BoxGeometry(8,.12,6),new THREE.MeshStandardMaterial({color:0x9c9181,roughness:.85}));floor.position.y=-.06;room.add(floor);
 const mortar=new THREE.MeshStandardMaterial({color:0x77716b,roughness:1});
-const rockColors=[0x999187,0xb2aa9c,0x79746d,0xc0b6a7,0x8d8478].map(color=>new THREE.MeshStandardMaterial({color,roughness:.95}));
+// Deterministic multi-scale stone colour, micro-roughness and relief maps.
+function hash(x,y,seed=0){let n=Math.sin(x*127.1+y*311.7+seed*74.7)*43758.5453;return n-Math.floor(n)}
+function smoothNoise(x,y,seed=0){const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy;const u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy);return THREE.MathUtils.lerp(THREE.MathUtils.lerp(hash(ix,iy,seed),hash(ix+1,iy,seed),u),THREE.MathUtils.lerp(hash(ix,iy+1,seed),hash(ix+1,iy+1,seed),u),v)}
+function stoneMaps(seed){const size=256,albedo=document.createElement('canvas'),height=document.createElement('canvas'),rough=document.createElement('canvas');for(const c of [albedo,height,rough]){c.width=c.height=size}
+const a=albedo.getContext('2d').createImageData(size,size),h=height.getContext('2d').createImageData(size,size),q=rough.getContext('2d').createImageData(size,size);
+const bases=[[151,143,132],[178,167,151],[124,119,110],[190,180,163],[143,133,118]];const base=bases[seed%bases.length];
+for(let y=0;y<size;y++)for(let x=0;x<size;x++){const coarse=smoothNoise(x/57,y/57,seed),mid=smoothNoise(x/17,y/17,seed+11),fine=smoothNoise(x/4,y/4,seed+23),grain=hash(x,y,seed+7);
+const veins=Math.max(0,1-Math.abs(mid-.5)*9)*.22;const n=(coarse-.5)*.33+(mid-.5)*.27+(fine-.5)*.16+(grain-.5)*.11-veins;const k=(y*size+x)*4;
+for(let c=0;c<3;c++)a.data[k+c]=Math.max(0,Math.min(255,base[c]*(1+n)));a.data[k+3]=255;
+const relief=Math.round(128+105*((coarse-.5)*.65+(mid-.5)*.5+(fine-.5)*.35+(grain-.5)*.15));for(let c=0;c<3;c++){h.data[k+c]=relief;q.data[k+c]=Math.max(0,Math.min(255,220+(fine-.5)*42+(grain-.5)*30))}h.data[k+3]=q.data[k+3]=255}
+albedo.getContext('2d').putImageData(a,0,0);height.getContext('2d').putImageData(h,0,0);rough.getContext('2d').putImageData(q,0,0);
+function tex(c,color=false){const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());if(color)t.colorSpace=THREE.SRGBColorSpace;return t}
+return {map:tex(albedo,true),bumpMap:tex(height),roughnessMap:tex(rough)}}
+const rockColors=Array.from({length:10},(_,i)=>new THREE.MeshStandardMaterial({...stoneMaps(i),roughness:.94,bumpScale:.035,metalness:0}));
 function block(w,h,d,x,y,z,mat,parent=stone){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);parent.add(m);return m}
 function wall(axis,fixed,start,end,windows=[]){const length=end-start;const thickness=.18;const base=block(axis==='x'?length:thickness,3,axis==='x'?thickness:length,axis==='x'?(start+end)/2:fixed,1.5,axis==='x'?fixed:(start+end)/2,mortar,room);base.material.side=THREE.DoubleSide;
 const course=.3;for(let row=0;row<10;row++){let p=start+(row%2)*.28;while(p<end){const w=Math.min(.56,end-p);const c=p+w/2;const y=row*course+.14;const open=windows.some(([a,b,lo,hi])=>c>a&&c<b&&y>lo&&y<hi);if(!open){const mat=rockColors[(row*7+Math.floor((p-start)*11))%rockColors.length];block(axis==='x'?w-.018:.22,.275,axis==='x'?.22:w-.018,axis==='x'?c:fixed,y,axis==='x'?fixed:c,mat)}p+=.56}}
