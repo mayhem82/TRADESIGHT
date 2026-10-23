@@ -153,3 +153,21 @@ is not weakened to make a timing assertion pass. Browser rerun pending.
 Added post-deployment verification that all ten required runtime files at the public
 Stone Room URL return HTTP 200 and match source SHA256 byte-for-byte, including both
 GLBs. This checks the published artifact rather than only repository contents.
+
+## 2026-10-23 — deployed verification and exported stone winding repair
+
+Commit f920b406277ddb5e666b7730aa9da88f6524c16d passed Actions run 39910656923:
+all three browser viewports passed, without JavaScript errors, and Pages deployment
+completed. All ten live runtime files returned HTTP 200 and matched source SHA256.
+This is browser automation and deployment evidence, not physical Android/AR testing.
+
+Screenshot review exposed inverted stone faces on north/south walls. An added
+production-GLB normal test reproduced the inward-facing hit before correction.
+Recalculated closed stone mesh normals in Blender before export; the regenerated
+editable source and GLB pass 64 outward-normal checks, 48 unobstructed window rays,
+and the solid east-wall check. GLB structural checks and Node test suites also pass.
+
+Scope audit: unrelated restored workspace files match GitHub byte-for-byte. Remote
+changes are confined to Stone Room and its build/deployment verification workflow.
+Photo-guided character likeness and reference-level photorealism remain unverified;
+physical AR tracking and Samsung device performance remain untested.

@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from asset_common import *
+import bmesh
 stone=material('Weathered limestone',(.6,.55,.45),'limestone');mortar=material('Recessed lime mortar',(.25,.235,.205),rough=1)
 woods=[material('Quarter sawn oak '+str(i),(.45,.29,.13),'oak') for i in range(3)]
 # Six original mineral colour variants, sharing normal and roughness maps.
@@ -57,7 +58,8 @@ for side,fixed,length,opens in holes:
       vs.append((cx,fixed+off,cz) if alongx else (fixed+off,cx,cz))
       for i in range(8):
        f=(centre,layer*8+i,layer*8+(i+1)%8);fs.append(f[::-1] if layer==0 else f)
-     o=mesh(side+' fieldstone %03d %.2f'%(course,x),vs,fs,random.choice(stones));finish(o,.009)
+     o=mesh(side+' fieldstone %03d %.2f'%(course,x),vs,fs,random.choice(stones))
+     bm=bmesh.new();bm.from_mesh(o.data);bmesh.ops.recalc_face_normals(bm,faces=list(bm.faces));bm.to_mesh(o.data);bm.free();finish(o,.009)
      # Position-derived UVs on all faces; fixes previous missing-UV stone textures.
      for poly in o.data.polygons:
       for li in poly.loop_indices:

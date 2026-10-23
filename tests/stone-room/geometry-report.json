@@ -1,5 +1,6 @@
 {
   "windowRaysClear": 48,
   "eastWallSolid": true,
+  "outwardNormalChecks": 64,
   "productionGLB": true
 }
