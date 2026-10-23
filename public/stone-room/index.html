@@ -158,12 +158,46 @@ const look=document.querySelector('#look');let last=null;look.addEventListener('
 document.querySelector('#speed').oninput=e=>document.querySelector('#sv').textContent=Number(e.target.value).toFixed(1);
 document.querySelector('#reset').onclick=()=>{top=false;camera.position.set(0,1.65,2);yaw=pitch=0;updateLook()};
 document.querySelector('#plan').onclick=()=>{top=!top;if(top){camera.position.set(0,12,0);camera.rotation.set(-Math.PI/2,0,0)}else{camera.position.set(0,1.65,2);yaw=pitch=0;updateLook()}};
-const arButton=ARButton.createButton(renderer,{requiredFeatures:['local']});arButton.style.display='none';document.body.append(arButton);
+// Real WebXR hit testing: green placement reticle for floor and vertical wall surfaces.
+const reticle=new THREE.Group();reticle.visible=false;scene.add(reticle);
+const ring=new THREE.Mesh(new THREE.RingGeometry(.085,.105,48),new THREE.MeshBasicMaterial({color:0x20ff65,side:THREE.DoubleSide,depthTest:false}));ring.rotation.x=-Math.PI/2;reticle.add(ring);
+const dot=new THREE.Mesh(new THREE.CircleGeometry(.017,24),new THREE.MeshBasicMaterial({color:0x20ff65,side:THREE.DoubleSide,depthTest:false}));dot.rotation.x=-Math.PI/2;reticle.add(dot);
+const arButton=ARButton.createButton(renderer,{requiredFeatures:['hit-test'],optionalFeatures:['dom-overlay'],domOverlay:{root:document.body}});
+arButton.style.display='none';document.body.append(arButton);
 const arControl=document.querySelector('#ar');arControl.onclick=()=>arButton.click();
-if(!navigator.xr||!isSecureContext){arControl.disabled=true;arControl.title='AR requires HTTPS and compatible WebXR browser'}else{navigator.xr.isSessionSupported('immersive-ar').then(ok=>{arControl.disabled=!ok;if(!ok)arControl.title='Immersive AR not supported by this browser'}).catch(()=>arControl.disabled=true)}
-renderer.xr.addEventListener('sessionstart',()=>{ar=true;scene.background=null;room.position.set(0,0,-3);document.querySelector('#mode').textContent='Real-world AR'});
-renderer.xr.addEventListener('sessionend',()=>{ar=false;scene.background=new THREE.Color(0x94b6ca);room.position.set(0,0,0);document.querySelector('#mode').textContent='Virtual walk'});
+let hitSource=null,referenceSpace=null,placed=false,placementMatrix=new THREE.Matrix4(),hitPoseAvailable=false;
+const viewerSpacePromise={current:null};
+function resetAR(){hitSource?.cancel();hitSource=null;referenceSpace=null;reticle.visible=false;hitPoseAvailable=false;placed=false;room.visible=true;room.matrixAutoUpdate=true;room.position.set(0,0,0);room.quaternion.identity();room.scale.setScalar(1)}
+if(!navigator.xr||!isSecureContext){arControl.disabled=true;arControl.title='AR requires HTTPS and a WebXR-compatible browser'}
+else navigator.xr.isSessionSupported('immersive-ar').then(ok=>{arControl.disabled=!ok;if(!ok)arControl.title='WebXR immersive AR unavailable'}).catch(()=>arControl.disabled=true);
+renderer.xr.addEventListener('sessionstart',async()=>{
+ ar=true;placed=false;scene.background=null;room.visible=false;reticle.visible=false;arControl.textContent='Place model';
+ const session=renderer.xr.getSession();
+ try{
+ const viewer=await session.requestReferenceSpace('viewer');
+ referenceSpace=await session.requestReferenceSpace('local');
+ hitSource=await session.requestHitTestSource({space:viewer});
+ document.querySelector('#info').textContent='Scan a floor or wall. Green circle indicates a detected surface. Tap Place model.';
+ }catch(err){document.querySelector('#error').textContent='AR surface detection unavailable: '+err.message}
+});
+function placeModel(){if(!ar||!hitPoseAvailable)return;
+ room.visible=true;placed=true;reticle.visible=false;
+ const p=new THREE.Vector3(),q=new THREE.Quaternion(),sc=new THREE.Vector3();placementMatrix.decompose(p,q,sc);
+ room.position.copy(p);
+ // Room stays upright for both wall and floor hits; use horizontal placement only.
+ room.position.y=p.y;room.quaternion.identity();
+ arControl.textContent='Reposition';
+ document.querySelector('#info').textContent='Model placed. Tap Reposition to select another surface.';
+}
+arControl.addEventListener('click',()=>{if(ar){if(placed){placed=false;room.visible=false;arControl.textContent='Place model'}else placeModel()}});
+renderer.domElement.addEventListener('click',()=>{if(ar&&!placed)placeModel()});
+renderer.xr.addEventListener('sessionend',()=>{ar=false;resetAR();scene.background=new THREE.Color(0x94b6ca);document.querySelector('#mode').textContent='Virtual walk';arControl.textContent='Start AR'});
+function updateReticle(frame){
+ if(!ar||placed||!frame||!hitSource||!referenceSpace)return;
+ const hits=frame.getHitTestResults(hitSource);hitPoseAvailable=false;reticle.visible=false;
+ if(hits.length){const pose=hits[0].getPose(referenceSpace);if(pose){placementMatrix.fromArray(pose.transform.matrix);reticle.position.setFromMatrixPosition(placementMatrix);reticle.quaternion.setFromRotationMatrix(placementMatrix);reticle.visible=true;hitPoseAvailable=true}}
+}
 document.querySelector('#mode').onclick=()=>{if(ar)arButton.click();else document.querySelector('#info').textContent='Virtual walk active. AR needs supported device and tracking; this prototype has no surface placement calibration.'};
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
-renderer.setAnimationLoop(()=>{const dt=Math.min(clock.getDelta(),.05);move(dt);animateNPC(dt);renderer.render(scene,camera)});
+renderer.setAnimationLoop((time,frame)=>{const dt=Math.min(clock.getDelta(),.05);move(dt);animateNPC(dt);updateReticle(frame);renderer.render(scene,camera)});
 </script></body></html>
