@@ -11,7 +11,7 @@ with sync_playwright() as p:
  browser=p.chromium.launch(**({'executable_path':exe} if exe else {}),headless=True,args=['--no-sandbox','--disable-dev-shm-usage','--use-angle=swiftshader','--enable-unsafe-swiftshader'])
  for name,width,height,touch in [('desktop',1280,800,False),('android-portrait',393,852,True),('android-landscape',852,393,True)]:
   context=browser.new_context(viewport={'width':width,'height':height},device_scale_factor=1,has_touch=touch,is_mobile=touch)
-  page=context.new_page();errors=[];requests=[];page.on('pageerror',lambda e:errors.append(str(e)))
+  page=context.new_page();errors=[];requests=[];page.on('pageerror',lambda e:(errors.append(str(e)),print('PAGE_ERROR:'+str(e),flush=True)))
   def serve(route):
    path=ROOT/route.request.url.split('stone.test/')[1].split('?')[0]
    if path.is_dir():path=path/'index.html'
@@ -19,10 +19,13 @@ with sync_playwright() as p:
    if path.exists():route.fulfill(body=path.read_bytes(),content_type=mimetypes.guess_type(str(path))[0] or 'application/octet-stream')
    else:errors.append('missing '+str(path));route.fulfill(status=404,body='missing')
   page.route('https://stone.test/**',serve);page.goto('https://stone.test/stone-room/');page.wait_for_function('window.stoneRoom?.diagnostics.loaded',timeout=90000);page.wait_for_timeout(600)
-  diag=page.evaluate('window.stoneRoom.diagnostics');assert not diag['uvMissing'];assert 1.6<diag['npcHeight']<2;assert len(diag['animations'])==4;assert diag['ceilingVisible']
-  start=diag['camera'];page.keyboard.down('w');page.wait_for_timeout(400);page.keyboard.up('w');moved=page.evaluate('window.stoneRoom.diagnostics.camera');assert moved!=start
+  diag=page.evaluate('window.stoneRoom.diagnostics');print('INITIAL_DIAGNOSTICS:'+json.dumps(diag),flush=True);assert not diag['uvMissing'];assert 1.6<diag['npcHeight']<2;assert len(diag['animations'])==4;assert diag['ceilingVisible']
+  initial=page.screenshot(type='jpeg',quality=55,scale='css');print('STONE_SCREENSHOT:'+name+'-initial:'+base64.b64encode(initial).decode(),flush=True)
+  start=diag['camera'];page.keyboard.down('w')
+  try:page.wait_for_function('(start)=>JSON.stringify(window.stoneRoom.diagnostics.camera)!==JSON.stringify(start)',arg=start,timeout=30000)
+  finally:page.keyboard.up('w')
   page.click('#reset');page.click('#plan');assert page.evaluate('window.stoneRoom.diagnostics.top');assert not page.evaluate('window.stoneRoom.diagnostics.ceilingVisible');page.click('#plan');assert page.evaluate('window.stoneRoom.diagnostics.camera')==start
-  page.click('#npc-toggle');assert page.is_visible('#npcpanel');page.select_option('#behaviour','wander');page.wait_for_timeout(350);assert 'walk' in page.evaluate('window.stoneRoom.diagnostics.activeAnimation').lower()
+  page.click('#npc-toggle');assert page.is_visible('#npcpanel');page.select_option('#behaviour','wander');page.wait_for_function("window.stoneRoom.diagnostics.activeAnimation?.toLowerCase().includes('walk')",timeout=30000)
   page.click('#wave');page.wait_for_timeout(200);assert 'wave' in page.evaluate('window.stoneRoom.diagnostics.activeAnimation').lower();page.click('#stop');page.click('#npc-close');assert not page.is_visible('#npcpanel')
   # Verify pointer joystick actually moves the camera and releases cleanly.
   b=page.locator('#joystick').bounding_box();page.mouse.move(b['x']+b['width']/2,b['y']+b['height']/2);page.mouse.down();page.mouse.move(b['x']+b['width']/2,b['y']+10);page.wait_for_timeout(250);page.mouse.up();page.wait_for_timeout(100)

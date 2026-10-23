@@ -138,3 +138,18 @@ Ubuntu 26.04, unsupported by Playwright 1.55.0. Pages deployment was correctly s
 Pinned only the build runner to Ubuntu 24.04, which that Playwright release supports.
 Screenshots remain artifacts and JPEG review copies are emitted into test logs so
 visual review is accessible through the connected GitHub API. Rerun pending.
+
+## 2026-10-23 — observed browser frame timing and live deployment verification
+
+Runner compatibility commit: a2337562a73305dd497dfb7959444ac4515668ce.
+Run 39910356450 launched Chromium successfully. Production assets loaded and initial
+UV/scale/animation/roof assertions passed. A fixed 400 ms key-press test observed no
+camera change; this is not recorded as a movement pass. Changed the test to hold
+the key until an actual camera position change is observed (30 s bound), and wait
+for observed animation state rather than a fixed 350 ms interval. Page errors and
+initial render diagnostics are now emitted for diagnosis; source movement behavior
+is not weakened to make a timing assertion pass. Browser rerun pending.
+
+Added post-deployment verification that all ten required runtime files at the public
+Stone Room URL return HTTP 200 and match source SHA256 byte-for-byte, including both
+GLBs. This checks the published artifact rather than only repository contents.
