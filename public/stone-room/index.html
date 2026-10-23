@@ -7,7 +7,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101820;col
 <div id="pad"><span></span><button data-move="forward">▲</button><span></span><button data-move="left">◀</button><button data-move="back">▼</button><button data-move="right">▶</button></div><div id="look"></div><div id="npcpanel"><b>NPC · Prototype</b><select id="behaviour"><option value="idle">Idle</option><option value="wander">Walk around</option><option value="follow">Follow camera</option><option value="stop">Stop</option></select><label>NPC speed <span id="nsv">1.0</span></label><input id="nspeed" type="range" min=".2" max="2.5" step=".1" value="1"><label><input type="checkbox" id="collision" checked> Collision</label><div id="npcactions"><button id="follow">Follow</button><button id="stop">Stop</button><button id="wave">Wave</button><button id="talk">Talk</button></div><small>Photo-referenced placeholder mesh. Not a reconstructed photorealistic character.</small></div><div id="info">Drag right side to look. Walk with arrows or WASD. Individual stonework with recessed mortar and staggered timber floorboards. Illustrative 8 × 6 × 3 m room; not measured.</div><div id="error"></div>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';
-import {ARButton} from 'https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/webxr/ARButton.js';
+
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x94b6ca);
 const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.02,100);camera.position.set(0,1.65,2);
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.xr.enabled=true;document.body.prepend(renderer.domElement);
@@ -162,16 +162,22 @@ document.querySelector('#plan').onclick=()=>{top=!top;if(top){camera.position.se
 const reticle=new THREE.Group();reticle.visible=false;scene.add(reticle);
 const ring=new THREE.Mesh(new THREE.RingGeometry(.085,.105,48),new THREE.MeshBasicMaterial({color:0x20ff65,side:THREE.DoubleSide,depthTest:false}));ring.rotation.x=-Math.PI/2;reticle.add(ring);
 const dot=new THREE.Mesh(new THREE.CircleGeometry(.017,24),new THREE.MeshBasicMaterial({color:0x20ff65,side:THREE.DoubleSide,depthTest:false}));dot.rotation.x=-Math.PI/2;reticle.add(dot);
-const arButton=ARButton.createButton(renderer,{requiredFeatures:['hit-test'],optionalFeatures:['dom-overlay'],domOverlay:{root:document.body}});
-arButton.style.display='none';document.body.append(arButton);
-const arControl=document.querySelector('#ar');arControl.onclick=()=>arButton.click();
+const arControl=document.querySelector('#ar');
+arControl.onclick=async()=>{
+ if(ar){if(placed){placed=false;room.visible=false;reticle.visible=false;arControl.textContent='Place model'}else placeModel();return}
+ if(!navigator.xr){document.querySelector('#error').textContent='This browser does not support WebXR AR. Open this same URL directly in Chrome.';return}
+ try{
+  const session=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['hit-test','local'],optionalFeatures:['dom-overlay'],domOverlay:{root:document.body}});
+  await renderer.xr.setSession(session);
+ }catch(err){document.querySelector('#error').textContent='AR could not start here: '+(err?.message||err?.name||'unknown error')+'. Remain on this page; use Chrome with AR services installed.'}
+};
 let hitSource=null,referenceSpace=null,placed=false,placementMatrix=new THREE.Matrix4(),hitPoseAvailable=false;
 const viewerSpacePromise={current:null};
 function resetAR(){hitSource?.cancel();hitSource=null;referenceSpace=null;reticle.visible=false;hitPoseAvailable=false;placed=false;room.visible=true;room.matrixAutoUpdate=true;room.position.set(0,0,0);room.quaternion.identity();room.scale.setScalar(1)}
 if(!navigator.xr||!isSecureContext){arControl.disabled=true;arControl.title='AR requires HTTPS and a WebXR-compatible browser'}
 else navigator.xr.isSessionSupported('immersive-ar').then(ok=>{arControl.disabled=!ok;if(!ok)arControl.title='WebXR immersive AR unavailable'}).catch(()=>arControl.disabled=true);
 renderer.xr.addEventListener('sessionstart',async()=>{
- ar=true;placed=false;scene.background=null;room.visible=false;reticle.visible=false;arControl.textContent='Place model';
+ ar=true;placed=false;scene.background=null;room.visible=false;reticle.visible=false;arControl.textContent='Place model';document.querySelector('#mode').textContent='Exit AR';
  const session=renderer.xr.getSession();
  try{
  const viewer=await session.requestReferenceSpace('viewer');
@@ -189,7 +195,7 @@ function placeModel(){if(!ar||!hitPoseAvailable)return;
  arControl.textContent='Reposition';
  document.querySelector('#info').textContent='Model placed. Tap Reposition to select another surface.';
 }
-arControl.addEventListener('click',()=>{if(ar){if(placed){placed=false;room.visible=false;arControl.textContent='Place model'}else placeModel()}});
+
 renderer.domElement.addEventListener('click',()=>{if(ar&&!placed)placeModel()});
 renderer.xr.addEventListener('sessionend',()=>{ar=false;resetAR();scene.background=new THREE.Color(0x94b6ca);document.querySelector('#mode').textContent='Virtual walk';arControl.textContent='Start AR'});
 function updateReticle(frame){
@@ -197,7 +203,7 @@ function updateReticle(frame){
  const hits=frame.getHitTestResults(hitSource);hitPoseAvailable=false;reticle.visible=false;
  if(hits.length){const pose=hits[0].getPose(referenceSpace);if(pose){placementMatrix.fromArray(pose.transform.matrix);reticle.position.setFromMatrixPosition(placementMatrix);reticle.quaternion.setFromRotationMatrix(placementMatrix);reticle.visible=true;hitPoseAvailable=true}}
 }
-document.querySelector('#mode').onclick=()=>{if(ar)arButton.click();else document.querySelector('#info').textContent='Virtual walk active. AR needs supported device and tracking; this prototype has no surface placement calibration.'};
+document.querySelector('#mode').onclick=()=>{if(ar)renderer.xr.getSession()?.end();else document.querySelector('#info').textContent='Virtual walk active. AR uses this page only, when WebXR is supported.'};
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 renderer.setAnimationLoop((time,frame)=>{const dt=Math.min(clock.getDelta(),.05);move(dt);animateNPC(dt);updateReticle(frame);renderer.render(scene,camera)});
 </script></body></html>
