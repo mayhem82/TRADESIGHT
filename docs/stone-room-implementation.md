@@ -198,3 +198,21 @@ Local verification after mortar correction: generation depth assertion passed;
 production GLB passed 48 window rays, 64 outward-normal checks and east-wall blocking.
 GLB structure/UV/material/rig contracts passed. Runtime byte size and draw count
 remain unchanged. Browser screenshot review and deployment are pending this commit.
+
+## 2026-10-23 — final published verification
+
+Runtime commit: 0d8e4cf3cd560c3de3fa9e1138deaf8989721ec2.
+Actions run 39912875294 succeeded, including Pages publication and all ten live
+HTTP/SHA256 checks. Seven Node tests and desktop/Android portrait/landscape browser
+checks passed without page errors. Final portrait screenshot was visually reviewed:
+stone faces now cover the backing, and the NPC remains centred. Saved actual CI
+browser and live verification reports under tests/stone-room/.
+
+All changes remain within Stone Room assets/source/tests/documentation and its
+existing deployment workflow. Native FreeCAD and Blender sources are retained.
+The approved photorealistic standard is not attained: especially the character's
+clothing, anatomy, hair and facial likeness require further artistic refinement.
+Physical AR camera, green reticle, tracking, wall detection and Galaxy S25 FE
+performance remain unverified. Mock XR tests verify logic only. Wall placement
+estimates floor height; persistent anchoring is not implemented. User was given
+the live URL and floor-placement instructions for device inspection.

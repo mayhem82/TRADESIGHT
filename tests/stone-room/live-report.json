@@ -1,0 +1,67 @@
+{
+  "url": "https://mayhem82.github.io/TRADESIGHT/stone-room/",
+  "commit": "0d8e4cf3cd560c3de3fa9e1138deaf8989721ec2",
+  "verified": [
+    {
+      "path": "index.html",
+      "bytes": 3286,
+      "sha256": "1cbc410f3136ae6cf95e6c28122fd220f9ed0e14c84d8cf787b60b567811305e",
+      "status": 200
+    },
+    {
+      "path": "room.js",
+      "bytes": 13282,
+      "sha256": "93d9fa9cf85bde5e59ea7c333ec33e375ddd47486cfa02711d9832855921b96b",
+      "status": 200
+    },
+    {
+      "path": "room.css",
+      "bytes": 5127,
+      "sha256": "16dee0a46ad76e1d5757cee39a91b327e40940692f3896d0179a26ee1031950d",
+      "status": 200
+    },
+    {
+      "path": "core.mjs",
+      "bytes": 1242,
+      "sha256": "33816d87fc7ce6a5a62645f996e1baa829853019d248a82c1e493d3cb10ce2a1",
+      "status": 200
+    },
+    {
+      "path": "xr.js",
+      "bytes": 6887,
+      "sha256": "909e5b52bee1ef7ac6418af0be58151fb1c8387963675deffcd9d804dbe137ef",
+      "status": 200
+    },
+    {
+      "path": "vendor/three.module.js",
+      "bytes": 674423,
+      "sha256": "67c2e353a0c6b89d914e97b16104ac2cb75f06247fe4889045dc34e275ffba88",
+      "status": 200
+    },
+    {
+      "path": "vendor/GLTFLoader.js",
+      "bytes": 109775,
+      "sha256": "abb70d8e4420701d0b15f39e3a90202f9e28e7b6b5dd89f524da6fd3d0e60f39",
+      "status": 200
+    },
+    {
+      "path": "vendor/BufferGeometryUtils.js",
+      "bytes": 31555,
+      "sha256": "dccb620b4f9be4e178f01cecbabfeb7a1b6ff08040a36bcdd775db0bea251841",
+      "status": 200
+    },
+    {
+      "path": "assets/stone-room.glb",
+      "bytes": 12103164,
+      "sha256": "d9b39ce97f122640b33f2a988955f1f43f3985df454195077b00b90ab5f02f82",
+      "status": 200
+    },
+    {
+      "path": "assets/photo-guided-npc.glb",
+      "bytes": 4187364,
+      "sha256": "663b5afc7d9a01bead118cc593d6bc07aa118dcac636618e0ddc4699859fdb14",
+      "status": 200
+    }
+  ],
+  "scope": "Live HTTP byte identity; not physical AR or a real-device browser check"
+}

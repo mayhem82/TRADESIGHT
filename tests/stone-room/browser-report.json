@@ -1,0 +1,251 @@
+[
+  {
+    "viewport": "desktop",
+    "dimensions": [
+      1280,
+      800
+    ],
+    "diagnostics": {
+      "loaded": true,
+      "ar": false,
+      "top": false,
+      "camera": [
+        -2.05,
+        1.65,
+        2.05
+      ],
+      "npc": [
+        0.8,
+        0,
+        -0.9
+      ],
+      "npcScreen": [
+        -1.661981234337071e-16,
+        -0.21060312774094297,
+        0.9836465767947516
+      ],
+      "npcHeight": 1.8376277979511995,
+      "animations": [
+        "Idle",
+        "Walk",
+        "Wave",
+        "LookAround"
+      ],
+      "activeAnimation": "LookAround",
+      "meshes": 22,
+      "triangles": 226340,
+      "drawCalls": 25,
+      "uvMissing": [],
+      "ceilingVisible": true,
+      "roomVisible": true,
+      "roomScale": [
+        1,
+        1,
+        1
+      ],
+      "xrState": "inactive"
+    },
+    "assetRequests": [
+      "stone-room/index.html",
+      "stone-room/room.css",
+      "stone-room/room.js",
+      "stone-room/vendor/three.module.js",
+      "stone-room/vendor/GLTFLoader.js",
+      "stone-room/core.mjs",
+      "stone-room/xr.js",
+      "stone-room/vendor/BufferGeometryUtils.js",
+      "stone-room/assets/stone-room.glb",
+      "stone-room/assets/photo-guided-npc.glb"
+    ],
+    "errors": [],
+    "verified": [
+      "load",
+      "embedded assets",
+      "UVs",
+      "NPC scale",
+      "named clips",
+      "walk",
+      "wave",
+      "stop",
+      "keyboard movement",
+      "joystick release",
+      "reset",
+      "overhead roof visibility",
+      "settings collapse",
+      "unsupported AR error"
+    ],
+    "notVerified": [
+      "ARCore camera",
+      "physical hit tests",
+      "tracking stability",
+      "Galaxy S25 FE performance",
+      "photorealistic quality"
+    ]
+  },
+  {
+    "viewport": "android-portrait",
+    "dimensions": [
+      393,
+      852
+    ],
+    "diagnostics": {
+      "loaded": true,
+      "ar": false,
+      "top": false,
+      "camera": [
+        -2.05,
+        1.65,
+        2.05
+      ],
+      "npc": [
+        0.8,
+        0,
+        -0.9
+      ],
+      "npcScreen": [
+        -5.764918113608894e-16,
+        -0.21060312774094297,
+        0.9836465767947516
+      ],
+      "npcHeight": 1.8376277979511995,
+      "animations": [
+        "Idle",
+        "Walk",
+        "Wave",
+        "LookAround"
+      ],
+      "activeAnimation": "LookAround",
+      "meshes": 22,
+      "triangles": 226340,
+      "drawCalls": 25,
+      "uvMissing": [],
+      "ceilingVisible": true,
+      "roomVisible": true,
+      "roomScale": [
+        1,
+        1,
+        1
+      ],
+      "xrState": "inactive"
+    },
+    "assetRequests": [
+      "stone-room/index.html",
+      "stone-room/room.css",
+      "stone-room/room.js",
+      "stone-room/vendor/three.module.js",
+      "stone-room/vendor/GLTFLoader.js",
+      "stone-room/core.mjs",
+      "stone-room/xr.js",
+      "stone-room/vendor/BufferGeometryUtils.js",
+      "stone-room/assets/stone-room.glb",
+      "stone-room/assets/photo-guided-npc.glb"
+    ],
+    "errors": [],
+    "verified": [
+      "load",
+      "embedded assets",
+      "UVs",
+      "NPC scale",
+      "named clips",
+      "walk",
+      "wave",
+      "stop",
+      "keyboard movement",
+      "joystick release",
+      "reset",
+      "overhead roof visibility",
+      "settings collapse",
+      "unsupported AR error"
+    ],
+    "notVerified": [
+      "ARCore camera",
+      "physical hit tests",
+      "tracking stability",
+      "Galaxy S25 FE performance",
+      "photorealistic quality"
+    ]
+  },
+  {
+    "viewport": "android-landscape",
+    "dimensions": [
+      852,
+      393
+    ],
+    "diagnostics": {
+      "loaded": true,
+      "ar": false,
+      "top": false,
+      "camera": [
+        -2.05,
+        1.65,
+        2.05
+      ],
+      "npc": [
+        0.8,
+        0,
+        -0.9
+      ],
+      "npcScreen": [
+        -1.2265889673135568e-16,
+        -0.21060312774094297,
+        0.9836465767947516
+      ],
+      "npcHeight": 1.8376277979511995,
+      "animations": [
+        "Idle",
+        "Walk",
+        "Wave",
+        "LookAround"
+      ],
+      "activeAnimation": "LookAround",
+      "meshes": 22,
+      "triangles": 226340,
+      "drawCalls": 25,
+      "uvMissing": [],
+      "ceilingVisible": true,
+      "roomVisible": true,
+      "roomScale": [
+        1,
+        1,
+        1
+      ],
+      "xrState": "inactive"
+    },
+    "assetRequests": [
+      "stone-room/index.html",
+      "stone-room/room.css",
+      "stone-room/room.js",
+      "stone-room/vendor/three.module.js",
+      "stone-room/vendor/GLTFLoader.js",
+      "stone-room/core.mjs",
+      "stone-room/xr.js",
+      "stone-room/vendor/BufferGeometryUtils.js",
+      "stone-room/assets/stone-room.glb",
+      "stone-room/assets/photo-guided-npc.glb"
+    ],
+    "errors": [],
+    "verified": [
+      "load",
+      "embedded assets",
+      "UVs",
+      "NPC scale",
+      "named clips",
+      "walk",
+      "wave",
+      "stop",
+      "keyboard movement",
+      "joystick release",
+      "reset",
+      "overhead roof visibility",
+      "settings collapse",
+      "unsupported AR error"
+    ],
+    "notVerified": [
+      "ARCore camera",
+      "physical hit tests",
+      "tracking stability",
+      "Galaxy S25 FE performance",
+      "photorealistic quality"
+    ]
+  }
+]
