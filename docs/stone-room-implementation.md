@@ -171,3 +171,11 @@ Scope audit: unrelated restored workspace files match GitHub byte-for-byte. Remo
 changes are confined to Stone Room and its build/deployment verification workflow.
 Photo-guided character likeness and reference-level photorealism remain unverified;
 physical AR tracking and Samsung device performance remain untested.
+
+## 2026-10-23 — portrait starting view
+
+Masonry correction commit: 27e4755e9867bbd3d53be42d84bbb4a9a9c70d38.
+Previous browser screenshots showed the NPC outside the initial portrait viewport.
+Reset now aims horizontally toward the character, preserving eye height and walking
+controls. Browser tests assert the projected character centre is in view at all
+three viewport sizes. JavaScript syntax passes; browser rerun pending this commit.
