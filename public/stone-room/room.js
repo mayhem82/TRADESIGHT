@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
 import {ROOM,clamp,constrain,separate,advanceCompanion} from './core.mjs';
-import {setupAR} from './xr.js';
+import {setupAR} from './xr.js?v=soundwall-1';
 import {createFloorContact} from './floor-contact.js';
 import {createXRGraphics} from './xr-graphics.js';
 import {createARRenderProfile} from './ar-render-profile.js';

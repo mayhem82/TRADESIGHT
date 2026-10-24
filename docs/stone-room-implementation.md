@@ -463,3 +463,11 @@ surface ring; deployment must pass that test and existing browser checks. Local
 Chromium still fails at IPC socket creation, so browser results are pending CI.
 Physical S25 FE reticle/NPC visibility and tracking require the user's re-test.
 Only Stone Room runtime, its tests and this append-only record are changed.
+
+
+### Android cache freshness
+
+Versioned the HTML module entry and changed XR module import for this release so
+reloading the application requests the new Soundwall-based code rather than reusing
+an older fresh browser-cache entry. This changes no movement or placement logic.
+Runtime adaptation commit: 7f5fe10fa0d367ae9b4ab7953162acbe1eb07dac.
