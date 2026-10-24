@@ -13,3 +13,9 @@ export function placement(normal,point,viewer){
  if(nx*(viewer.x-point.x)+nz*(viewer.z-point.z)<0){nx=-nx;nz=-nz}
  return {kind,x:point.x+nx*3.15,y:viewer.y-ROOM.eye,z:point.z+nz*3.15,yaw:Math.atan2(nx,nz),estimatedFloor:true};
 }
+
+// AR movement is in the detected floor's local metres, without virtual-room walls.
+export function advanceCompanion(from,target,speed,dt,stopDistance=.06){
+ const dx=target.x-from.x,dz=target.z-from.z,d=Math.hypot(dx,dz),step=Math.min(Math.max(0,speed)*Math.max(0,dt),Math.max(0,d-stopDistance));
+ return {x:from.x+(d?dx/d*step:0),z:from.z+(d?dz/d*step:0),walking:step>.00001,arrived:d<=stopDistance+.01,heading:Math.atan2(dx,dz)};
+}

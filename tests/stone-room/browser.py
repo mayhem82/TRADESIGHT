@@ -30,6 +30,12 @@ with sync_playwright() as p:
   # Verify pointer joystick actually moves the camera and releases cleanly.
   b=page.locator('#joystick').bounding_box();page.mouse.move(b['x']+b['width']/2,b['y']+b['height']/2);page.mouse.down();page.mouse.move(b['x']+b['width']/2,b['y']+10);page.wait_for_timeout(250);page.mouse.up();page.wait_for_timeout(100)
   a=page.evaluate('window.stoneRoom.diagnostics.camera');page.wait_for_timeout(200);assert page.evaluate('window.stoneRoom.diagnostics.camera')==a
+  if name=='desktop':
+   page.click('#reset');page.keyboard.down('w')
+   try:page.wait_for_function('Math.hypot(window.stoneRoom.diagnostics.camera[0]-window.stoneRoom.diagnostics.npc[0],window.stoneRoom.diagnostics.camera[2]-window.stoneRoom.diagnostics.npc[2])<1.45',timeout=45000)
+   finally:page.keyboard.up('w')
+   close=page.screenshot(type='jpeg',quality=85,scale='css');print('STONE_SCREENSHOT:npc-closeup:'+base64.b64encode(close).decode(),flush=True)
+   page.screenshot(path=str(OUT/'npc-closeup.png'));page.click('#reset')
   page.screenshot(path=str(OUT/(name+'.png')))
   thumbnail=page.screenshot(type='jpeg',quality=55,scale='css');print('STONE_SCREENSHOT:'+name+':'+base64.b64encode(thumbnail).decode(),flush=True)
   if not page.evaluate("navigator.xr && window.stoneRoom.diagnostics.xrState!=='inactive'"):
@@ -37,6 +43,12 @@ with sync_playwright() as p:
   assert not errors,errors
   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),'horizontal overflow'
   results.append({'viewport':name,'dimensions':[width,height],'diagnostics':diag,'assetRequests':requests,'errors':errors,'verified':['load','embedded assets','UVs','NPC scale','named clips','walk','wave','stop','keyboard movement','joystick release','reset','overhead roof visibility','settings collapse','unsupported AR error'],'notVerified':['ARCore camera','physical hit tests','tracking stability','Galaxy S25 FE performance','photorealistic quality']})
+  # Layout-only check: this does not simulate camera passthrough or XR tracking.
+  page.evaluate("document.body.classList.add('in-ar');document.querySelector('#ar-ui').hidden=false;document.querySelector('#ar-motion').hidden=false;document.querySelector('#ar-options').open=true;document.querySelector('#reposition').hidden=false")
+  for selector in ['#ar-content','#ar-speed','#place','#reposition','#exit-ar','#ar-follow','#ar-stop','#ar-wave']:
+   box=page.locator(selector).bounding_box();assert box and box['x']>=0 and box['y']>=0 and box['x']+box['width']<=width+1 and box['y']+box['height']<=height+1,('AR control out of viewport',selector,box)
+  options=page.locator('#ar-options').bounding_box();actions=page.locator('.ar-actions').first.bounding_box();assert options['y']+options['height']<=actions['y'] or options['x']+options['width']<=actions['x'],'AR panels overlap'
+  results[-1]['verified'].append('AR control layout only; no physical XR')
   context.close()
  browser.close()
 (OUT/'browser-report.json').write_text(json.dumps(results,indent=2)+'\n');print(json.dumps(results))

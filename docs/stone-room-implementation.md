@@ -268,3 +268,30 @@ mismatch during mesh joining initially made the baked face dark. Standardized th
 joined UV layer name and added a non-degenerate material-UV contract to detect that
 failure. Reviewed the corrected studio close-up before upload. No physical-device
 performance, gait ground-contact or verified likeness result is claimed.
+
+## 2026-10-24 — removable AR environment and live companion movement
+
+Character revision commit: 3a78a74ca56bb91272328f9a8ea68646316ac03b.
+User requested a removable environment and a character walking on real ground in
+live AR. Added NPC-only mode as the default. Environment selection is available
+inside the AR session; selecting the full room preserves the existing floor/wall
+placement workflow. Switching modes requires fresh placement. Virtual camera, NPC
+position/orientation and architecture visibility are restored on exit.
+
+NPC-only mode accepts measured floor hits, centres the companion at the hit, and
+uses subsequent floor hits as walk destinations. Follow consumes live XR viewer
+poses and stops 1.25 m away. Walking does not clamp to the virtual room's boundaries.
+Stop cancels movement/waving; Wave and speed remain accessible in AR. A transparent
+shadow receiver leaves real camera surroundings visible. Session tracking loss
+pauses motion and hides virtual content until tracking returns.
+
+Explicit limits: motion assumes the placed flat floor plane; destinations differing
+by over 12 cm in height are rejected. Obstacles, stairs and real-world collision are
+not reconstructed. No persistent anchors are claimed. AR camera passthrough, hit
+availability and tracking stability still require physical-device verification.
+
+Local JavaScript syntax, geometry/GLB contracts and unit/mock tests pass. Added tests
+cover NPC-only wall rejection, measured floor placement, destination selection,
+live-viewer following, tracking-loss pause, Stop, mode switching and exit restore.
+Added browser checks for all AR controls fitting portrait/landscape without panel
+overlap. Those layout checks do not simulate a physical AR session. CI pending.

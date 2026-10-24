@@ -46,3 +46,19 @@ baked eyewear/lighting. Eyes underneath the 3D glasses are generated, not observ
 The original supplied `face-albedo.jpg` remains retained. Head/hand topology now
 uses CC0 MakeHuman data (see anatomy/README.md), superseding the earlier original-only
 character statement. Facial likeness remains an artistic interpretation.
+
+## NPC-only live AR
+
+Start AR defaults to **NPC only · real surroundings**. The architectural environment
+can be restored via **AR settings → Environment → Stone Room + NPC**. Switching
+content asks for a new placement. Floor hits place the companion at the detected
+surface; subsequent valid floor hits provide walking destinations. Follow uses the
+live XR viewer pose projected onto that floor plane, with 1.25 m stopping distance.
+Stop, Wave, speed, Reposition and Exit remain available within the AR overlay.
+
+This is session-relative WebXR tracking, not persistent anchoring. NPC-only mode
+rejects walls and destinations more than 12 cm above/below the placement floor.
+Walking assumes a flat connected floor between hit points; it does not reconstruct
+obstacles, stairs, furniture or physical collisions. Tracking loss hides the content
+and pauses movement until a viewer pose returns. Physical-device verification remains
+outstanding; automated XR tests exercise simulated poses and lifecycle events only.
