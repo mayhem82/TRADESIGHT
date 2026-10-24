@@ -33,3 +33,16 @@ AR uses WebXR hit testing and session-relative placement. Wall placement estimat
 floor height from a nominal 1.65 m viewer eye level; floor hits provide the measured
 surface elevation. Persistent anchors and cross-session relocalization are absent.
 Physical ARCore tracking and Samsung Galaxy S25 FE performance remain unverified.
+
+## 2026-10-24 visual revision
+
+Run `blender -b --python tools/stone-room/prepare_textures.py` before rebuilding.
+Generated color-map masters are retained in `reference-textures/`; optimized JPEGs
+are used by the GLBs/runtime. The countryside is a distant equirectangular background,
+not measured terrain or a real AR view. Real camera passthrough replaces it in AR.
+
+The face-neutral color map is generated from the supplied frontal photo to remove
+baked eyewear/lighting. Eyes underneath the 3D glasses are generated, not observed.
+The original supplied `face-albedo.jpg` remains retained. Head/hand topology now
+uses CC0 MakeHuman data (see anatomy/README.md), superseding the earlier original-only
+character statement. Facial likeness remains an artistic interpretation.

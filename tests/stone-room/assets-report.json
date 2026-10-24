@@ -1,14 +1,14 @@
 {
   "room": {
-    "bytes": 12103164,
+    "bytes": 12367236,
     "triangles": 143226,
     "drawCalls": 12,
     "textures": 11
   },
   "npc": {
-    "bytes": 4187364,
-    "triangles": 66192,
-    "drawCalls": 10,
+    "bytes": 5570972,
+    "triangles": 96378,
+    "drawCalls": 11,
     "textures": 10
   },
   "verified": "GLB structure, embedded images, UVs, normals, named clips, skeleton and weights; not visual quality or physical-device performance"

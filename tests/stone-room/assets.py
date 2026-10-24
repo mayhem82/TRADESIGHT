@@ -10,6 +10,15 @@ def inspect(path):
  assert all('TEXCOORD_0' in p['attributes'] for p in prims),'UV missing'
  assert all('NORMAL' in p['attributes'] for p in prims),'Normals missing'
  assert all('uri' not in im for im in d.get('images',[])),'Textures must be embedded'
+ # A present-but-zero UV channel can blacken a baked head after mesh joining.
+ for prim in prims:
+  material=d.get('materials',[])[prim.get('material',0)];texture=material.get('pbrMetallicRoughness',{}).get('baseColorTexture')
+  if texture:
+   accessor=d['accessors'][prim['attributes']['TEXCOORD_'+str(texture.get('texCoord',0))]];view=d['bufferViews'][accessor['bufferView']]
+   assert accessor['componentType']==5126
+   start=28+n+view.get('byteOffset',0)+accessor.get('byteOffset',0);stride=view.get('byteStride',8)
+   points=[struct.unpack_from('<ff',b,start+i*stride) for i in range(accessor['count'])]
+   assert all(max(p[k] for p in points)-min(p[k] for p in points)>1e-5 for k in [0,1]),'Degenerate material UVs'
  tris=sum(d['accessors'][p['indices']]['count']//3 for p in prims)
  return d,{'bytes':len(b),'triangles':tris,'drawCalls':len(prims),'textures':len(d.get('images',[]))}
 a,room=inspect(ROOT/'public/stone-room/assets/stone-room.glb');n,npc=inspect(ROOT/'public/stone-room/assets/photo-guided-npc.glb')

@@ -237,3 +237,34 @@ stone-normal checks, and the solid east-wall check pass. New runtime background
 is included in live byte verification. Browser tests now additionally walk toward
 the character and retain a close-up, preventing distant screenshots from being
 the only visual review. Browser and deployment rerun pending.
+
+## 2026-10-24 — anatomical character and close-up remediation
+
+Material/source asset commit: 74b933a38621b31f7743acc4b324ac0ac8bffde4.
+The old sphere-based face and separate primitive fingers were inadequate in captures.
+Added CC0 MakeHuman base/shape data for anatomical head and hands; asset license
+and provenance are retained under design/stone-room/anatomy/. Upstream asset names
+are not demographic claims about the photographed person. No MakeHuman program
+code is included. This supersedes earlier statements that no third-party anatomy
+was incorporated.
+
+Reworked continuous garment sections, gathered cloth folds, open shirt neckline,
+shaped collars, jacket thickness, joined jeans seat, rounded boot soles, thinner
+curved glasses, embroidered cap, fine moustache tips and layered rear hair. Retained
+the 16-bone rig and Idle/Walk/Wave/LookAround clips. Studio close-up renders exposed
+neck/shoulder intersections and cord-like facial hair; those were iteratively repaired
+before committing. A UV bake blends the generated photo-guided face into surrounding
+skin to eliminate the hard projection boundary. The generated eye detail is inferred
+and covered by the glasses; neither reconstruction nor likeness is verified.
+
+Blender source retains editable geometry, rig and packed textures. Source scripts,
+original frontal crop, generated color master and baked UV atlas are retained.
+The mannequin-like silhouette is improved, but photorealism and exact likeness are
+not established by structural tests. Browser visual review remains required.
+
+Final character GLB contracts pass: 96,378 triangles, 11 material primitives and
+all four skinned clips, within the existing mobile geometry budget. A UV-layer name
+mismatch during mesh joining initially made the baked face dark. Standardized the
+joined UV layer name and added a non-degenerate material-UV contract to detect that
+failure. Reviewed the corrected studio close-up before upload. No physical-device
+performance, gait ground-contact or verified likeness result is claimed.
