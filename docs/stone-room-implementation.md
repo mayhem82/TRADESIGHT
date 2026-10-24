@@ -402,3 +402,28 @@ GLB contracts, production build and diff whitespace checks pass. The browser pix
 and compatibility assertions are pending CI; this workspace still cannot launch
 Chromium through its IPC restriction. Physical rendering remains unresolved until
 the deliberate comparison is observed on the phone.
+
+
+## 2026-10-25 — recovered session and deployment evidence
+
+Resumed after the reported cloud-turn failure. Read current main before making
+changes; preserved newer commits 66beccca890a8aa6535802cf019ea53a3eec1100,
+290ec7b84ef546a466b0eae7bfe2cd7aa7a4c7c9 and
+97e369b35bf3a473ca3f079af630935477115a8a. The screenshot alone does not
+establish the cause of the cloud-turn failure.
+
+GitHub Actions run 40075938210 completed successfully for runtime commit
+97e369b35bf3a473ca3f079af630935477115a8a: twenty unit/mock tests passed,
+all three browser viewports completed without page errors, the close-up movement
+check completed, and Pages deployed successfully. The deploy job verified HTTP 200
+and SHA-256 identity for all thirteen runtime files, including both GLB assets,
+the countryside image and xr-graphics.js. Saved the actual browser and live reports.
+Evidence: https://github.com/mayhem82/TRADESIGHT/actions/runs/40075938210
+
+These results close the pending CI checks in the preceding entry. They do not
+resolve the recorded physical-phone rendering failure. The next required evidence
+is whether the optional magenta graphics-test square is visible during AR and
+whether disabling antialiasing via compatibility mode makes the real reticle/NPC
+visible. No verified physical AR, photorealistic likeness, real obstacle detection
+or persistent anchoring is claimed. This evidence-only update changes no runtime
+files or unrelated project functionality.

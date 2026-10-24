@@ -7,7 +7,21 @@
     ],
     "diagnostics": {
       "loaded": true,
+      "graphicsMode": "standard",
+      "antialias": true,
+      "input": {
+        "keys": [],
+        "joystick": {
+          "x": 0,
+          "y": 0
+        },
+        "joyId": null
+      },
       "ar": false,
+      "arPlaced": false,
+      "arCompanionOnly": true,
+      "architectureVisible": true,
+      "arMoving": false,
       "top": false,
       "camera": [
         -2.05,
@@ -24,7 +38,9 @@
         -0.21060312774094297,
         0.9836465767947516
       ],
-      "npcHeight": 1.8376277979511995,
+      "floorContactSamples": 94,
+      "groundClearance": 7.343122180010867e-17,
+      "npcHeight": 1.8380000759401587,
       "animations": [
         "Idle",
         "Walk",
@@ -32,9 +48,9 @@
         "LookAround"
       ],
       "activeAnimation": "LookAround",
-      "meshes": 22,
-      "triangles": 226340,
-      "drawCalls": 25,
+      "meshes": 24,
+      "triangles": 239616,
+      "drawCalls": 24,
       "uvMissing": [],
       "ceilingVisible": true,
       "roomVisible": true,
@@ -43,7 +59,21 @@
         1,
         1
       ],
-      "xrState": "inactive"
+      "xrState": "inactive",
+      "xrDiagnostics": {
+        "stage": "inactive",
+        "frames": 0,
+        "pose": false,
+        "hits": 0,
+        "rejected": "",
+        "target": false,
+        "lastError": "",
+        "draws": 0,
+        "views": 0,
+        "contextLost": false,
+        "xrTarget": false,
+        "rendered": 0
+      }
     },
     "assetRequests": [
       "stone-room/index.html",
@@ -53,9 +83,12 @@
       "stone-room/vendor/GLTFLoader.js",
       "stone-room/core.mjs",
       "stone-room/xr.js",
+      "stone-room/floor-contact.js",
+      "stone-room/xr-graphics.js",
       "stone-room/vendor/BufferGeometryUtils.js",
       "stone-room/assets/stone-room.glb",
-      "stone-room/assets/photo-guided-npc.glb"
+      "stone-room/assets/photo-guided-npc.glb",
+      "stone-room/assets/countryside.jpg"
     ],
     "errors": [],
     "verified": [
@@ -72,7 +105,10 @@
       "reset",
       "overhead roof visibility",
       "settings collapse",
-      "unsupported AR error"
+      "unsupported AR error",
+      "AR control layout only; no physical XR",
+      "joystick blur cancellation",
+      "canvas context-loss message"
     ],
     "notVerified": [
       "ARCore camera",
@@ -90,7 +126,21 @@
     ],
     "diagnostics": {
       "loaded": true,
+      "graphicsMode": "standard",
+      "antialias": true,
+      "input": {
+        "keys": [],
+        "joystick": {
+          "x": 0,
+          "y": 0
+        },
+        "joyId": null
+      },
       "ar": false,
+      "arPlaced": false,
+      "arCompanionOnly": true,
+      "architectureVisible": true,
+      "arMoving": false,
       "top": false,
       "camera": [
         -2.05,
@@ -107,7 +157,9 @@
         -0.21060312774094297,
         0.9836465767947516
       ],
-      "npcHeight": 1.8376277979511995,
+      "floorContactSamples": 94,
+      "groundClearance": -3.7591080662406984e-17,
+      "npcHeight": 1.8380000759401587,
       "animations": [
         "Idle",
         "Walk",
@@ -115,9 +167,9 @@
         "LookAround"
       ],
       "activeAnimation": "LookAround",
-      "meshes": 22,
-      "triangles": 226340,
-      "drawCalls": 25,
+      "meshes": 24,
+      "triangles": 239616,
+      "drawCalls": 24,
       "uvMissing": [],
       "ceilingVisible": true,
       "roomVisible": true,
@@ -126,7 +178,21 @@
         1,
         1
       ],
-      "xrState": "inactive"
+      "xrState": "inactive",
+      "xrDiagnostics": {
+        "stage": "inactive",
+        "frames": 0,
+        "pose": false,
+        "hits": 0,
+        "rejected": "",
+        "target": false,
+        "lastError": "",
+        "draws": 0,
+        "views": 0,
+        "contextLost": false,
+        "xrTarget": false,
+        "rendered": 0
+      }
     },
     "assetRequests": [
       "stone-room/index.html",
@@ -136,9 +202,12 @@
       "stone-room/vendor/GLTFLoader.js",
       "stone-room/core.mjs",
       "stone-room/xr.js",
+      "stone-room/floor-contact.js",
+      "stone-room/xr-graphics.js",
       "stone-room/vendor/BufferGeometryUtils.js",
       "stone-room/assets/stone-room.glb",
-      "stone-room/assets/photo-guided-npc.glb"
+      "stone-room/assets/photo-guided-npc.glb",
+      "stone-room/assets/countryside.jpg"
     ],
     "errors": [],
     "verified": [
@@ -155,7 +224,10 @@
       "reset",
       "overhead roof visibility",
       "settings collapse",
-      "unsupported AR error"
+      "unsupported AR error",
+      "AR control layout only; no physical XR",
+      "joystick blur cancellation",
+      "canvas context-loss message"
     ],
     "notVerified": [
       "ARCore camera",
@@ -173,7 +245,21 @@
     ],
     "diagnostics": {
       "loaded": true,
+      "graphicsMode": "standard",
+      "antialias": true,
+      "input": {
+        "keys": [],
+        "joystick": {
+          "x": 0,
+          "y": 0
+        },
+        "joyId": null
+      },
       "ar": false,
+      "arPlaced": false,
+      "arCompanionOnly": true,
+      "architectureVisible": true,
+      "arMoving": false,
       "top": false,
       "camera": [
         -2.05,
@@ -190,7 +276,9 @@
         -0.21060312774094297,
         0.9836465767947516
       ],
-      "npcHeight": 1.8376277979511995,
+      "floorContactSamples": 94,
+      "groundClearance": 7.343122180010867e-17,
+      "npcHeight": 1.8380000759401587,
       "animations": [
         "Idle",
         "Walk",
@@ -198,9 +286,9 @@
         "LookAround"
       ],
       "activeAnimation": "LookAround",
-      "meshes": 22,
-      "triangles": 226340,
-      "drawCalls": 25,
+      "meshes": 24,
+      "triangles": 239616,
+      "drawCalls": 24,
       "uvMissing": [],
       "ceilingVisible": true,
       "roomVisible": true,
@@ -209,7 +297,21 @@
         1,
         1
       ],
-      "xrState": "inactive"
+      "xrState": "inactive",
+      "xrDiagnostics": {
+        "stage": "inactive",
+        "frames": 0,
+        "pose": false,
+        "hits": 0,
+        "rejected": "",
+        "target": false,
+        "lastError": "",
+        "draws": 0,
+        "views": 0,
+        "contextLost": false,
+        "xrTarget": false,
+        "rendered": 0
+      }
     },
     "assetRequests": [
       "stone-room/index.html",
@@ -219,9 +321,35 @@
       "stone-room/vendor/GLTFLoader.js",
       "stone-room/core.mjs",
       "stone-room/xr.js",
+      "stone-room/floor-contact.js",
+      "stone-room/xr-graphics.js",
       "stone-room/vendor/BufferGeometryUtils.js",
       "stone-room/assets/stone-room.glb",
-      "stone-room/assets/photo-guided-npc.glb"
+      "stone-room/assets/photo-guided-npc.glb",
+      "stone-room/assets/countryside.jpg",
+      "stone-room/index.html",
+      "stone-room/room.css",
+      "stone-room/room.js",
+      "stone-room/vendor/three.module.js",
+      "stone-room/vendor/GLTFLoader.js",
+      "stone-room/core.mjs",
+      "stone-room/xr.js",
+      "stone-room/floor-contact.js",
+      "stone-room/xr-graphics.js",
+      "stone-room/vendor/BufferGeometryUtils.js",
+      "stone-room/assets/stone-room.glb",
+      "stone-room/assets/photo-guided-npc.glb",
+      "stone-room/assets/countryside.jpg",
+      "stone-room/index.html",
+      "stone-room/room.css",
+      "stone-room/room.js",
+      "stone-room/vendor/three.module.js",
+      "stone-room/vendor/GLTFLoader.js",
+      "stone-room/core.mjs",
+      "stone-room/xr.js",
+      "stone-room/floor-contact.js",
+      "stone-room/xr-graphics.js",
+      "stone-room/vendor/BufferGeometryUtils.js"
     ],
     "errors": [],
     "verified": [
@@ -238,7 +366,10 @@
       "reset",
       "overhead roof visibility",
       "settings collapse",
-      "unsupported AR error"
+      "unsupported AR error",
+      "AR control layout only; no physical XR",
+      "joystick blur cancellation",
+      "canvas context-loss message"
     ],
     "notVerified": [
       "ARCore camera",
@@ -246,6 +377,31 @@
       "tracking stability",
       "Galaxy S25 FE performance",
       "photorealistic quality"
+    ]
+  },
+  {
+    "scenario": "explicit compatibility and optional graphics probe",
+    "verified": [
+      "antialias disabled only when requested",
+      "probe defaults off",
+      "real magenta test pixels",
+      "test can be switched off"
+    ],
+    "notVerified": [
+      "XR compositor",
+      "physical device"
+    ]
+  },
+  {
+    "scenario": "WebGL creation unavailable",
+    "verified": [
+      "visible startup error",
+      "loading dismissed",
+      "AR disabled"
+    ],
+    "notVerified": [
+      "GPU recovery",
+      "physical device"
     ]
   }
 ]
