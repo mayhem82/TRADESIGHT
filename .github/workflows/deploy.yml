@@ -45,7 +45,7 @@ jobs:
           grep -q 'Model Library' dist/model-library.html
       - name: Verify Stone Room contracts
         run: |
-          node --test tests/stone-room/core.test.mjs tests/stone-room/xr.test.mjs
+          node --test tests/stone-room/core.test.mjs tests/stone-room/xr.test.mjs tests/stone-room/graphics.test.mjs
           python tests/stone-room/assets.py
           test -s dist/stone-room/index.html
           test -s dist/stone-room/assets/stone-room.glb

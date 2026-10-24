@@ -78,3 +78,11 @@ test('XR uses the dedicated controls overlay and exposes actual render submissio
  f.api.renderError(Error('test framebuffer failure'));assert.match(f.e('#ar-status').textContent,/test framebuffer failure/);
  await f.e('#exit-ar').onclick();assert.equal(f.e('#ar-overlay').hidden,true);
 });
+
+test('real floor target diagnostics project against the current XR view camera',async()=>{
+ const f=fixture(false,'companion');await f.e('#ar').onclick();f.api.update(frame(pose(0,0,-2)));
+ const view=new THREE.PerspectiveCamera(60,1,.035,120);view.position.set(0,1.65,0);view.lookAt(0,0,-2);view.updateMatrixWorld(true);
+ f.api.rendered({}, {cameras:[view]});assert.equal(f.api.diagnostics.targetInView,true);assert.ok(Math.abs(f.api.diagnostics.targetNDC[0])<.01);assert.ok(Math.abs(f.api.diagnostics.targetNDC[1])<.01);
+ view.lookAt(0,1.65,2);view.updateMatrixWorld(true);f.api.rendered({}, {cameras:[view]});assert.equal(f.api.diagnostics.targetInView,false);
+ f.api.update(frame(null));f.api.rendered({}, {cameras:[view]});assert.equal(f.api.diagnostics.targetNDC,null);await f.e('#exit-ar').onclick();
+});

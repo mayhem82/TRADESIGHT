@@ -8,11 +8,16 @@ export function setupAR({renderer,scene,camera,room,exterior,snapshot,restore,me
  const material=new THREE.MeshBasicMaterial({color:0x35ff68,side:THREE.DoubleSide,depthTest:false,depthWrite:false});
  const ring=new THREE.Mesh(new THREE.RingGeometry(.09,.115,48),material);ring.rotation.x=-Math.PI/2;ring.renderOrder=1000;reticle.add(ring);
  const cross1=new THREE.Mesh(new THREE.PlaneGeometry(.12,.008),material);cross1.rotation.x=-Math.PI/2;cross1.renderOrder=1001;reticle.add(cross1);const cross2=cross1.clone();cross2.rotation.z=Math.PI/2;reticle.add(cross2);
+ const projected=new THREE.Vector3();
  const mat=new THREE.Matrix4(),pos=new THREE.Vector3(),rot=new THREE.Quaternion(),scale=new THREE.Vector3(),normal=new THREE.Vector3(),viewer=new THREE.Vector3();
  let metrics={stage:'inactive',frames:0,pose:false,hits:0,rejected:'',target:false,lastError:'',draws:0,views:0,contextLost:false,xrTarget:false,rendered:0};
  function diagnostics(force=false){
   const element=$('#ar-diagnostics');if(!element||(!force&&metrics.frames%30!==0))return;
   element.textContent=`AR ${metrics.stage} · frames ${metrics.frames} · pose ${metrics.pose?'yes':'no'} · hits ${metrics.hits} · target ${metrics.target?'yes':'no'}${metrics.rejected?' · '+metrics.rejected:''} · draws ${metrics.draws} · views ${metrics.views} · XR ${metrics.xrTarget?'yes':'no'} · GL ${metrics.contextLost?'lost':'ok'}${metrics.lastError?' · '+metrics.lastError:''}`;
+  const graphicsElement=$('#ar-graphics'),g=metrics.graphics;if(graphicsElement){
+   const target=metrics.targetNDC?`${metrics.targetInView?'in':'out'} ${metrics.targetNDC.join('/')}`:'none';
+   graphicsElement.textContent=g?`${metrics.graphicsMode} · ${g.layer} · AA ${g.samples} · FBO ${g.fbo.replace('FRAMEBUFFER_','')} · bound ${g.framebufferBound?'yes':'no'}${g.baseFramebufferMatches===null?'':'/XR-match '+(g.baseFramebufferMatches?'yes':'no')} · errors ${g.errors.join(',')||'none'} · viewport ${g.viewport.join('/')} · probe ${g.probeEnabled?g.probeFrameDraws+' draws, '+g.probeFbo.replace('FRAMEBUFFER_','')+', '+(g.probeErrors.join(',')||'no errors'):'off'} · target ${target}`:'Graphics diagnostics waiting for XR render';
+  }
  }
  const setStatus=t=>{if($('#ar-status').textContent!==t)$('#ar-status').textContent=t};
  function motionButtons(){
@@ -103,5 +108,6 @@ export function setupAR({renderer,scene,camera,room,exterior,snapshot,restore,me
   if(!current&&!placed){tracking='scanning';setStatus(metrics.rejected==='wall'?'Wall detected · aim the phone down at the floor.':metrics.rejected==='slope'?'Surface is not level · aim at a flat floor.':mode==='companion'?'No floor hit yet · aim down and move slowly over a well-lit, textured floor.':'No surface hit yet · move slowly across a well-lit floor or wall.')}
   diagnostics();
  }
- return {rendered(stats){Object.assign(metrics,stats);metrics.rendered++;diagnostics()},renderError(e){metrics.lastError='Render: '+(e.message||String(e));diagnostics(true);setStatus('AR graphics error: '+metrics.lastError)},get diagnostics(){return {...metrics}},get active(){return active||starting},get state(){return tracking},get placed(){return placed},get companionOnly(){return mode==='companion'},get motion(){return active&&placed&&tracking!=='tracking-lost'&&tracking!=='tracking-error'&&mode==='companion'?(following?{target:{x:viewer.x,y:floorY,z:viewer.z},follow:true}:destination?{target:{...destination},follow:false}:null):null},arrived(){if(!following){destination=null;setStatus('Companion stopped at the floor target. Tap another point to walk.')}},stop,update};
+ return {rendered(stats,xrCamera){Object.assign(metrics,stats);metrics.rendered++;
+   const view=xrCamera?.cameras?.[0];if(view&&reticle.visible){reticle.getWorldPosition(projected).project(view);metrics.targetNDC=projected.toArray().map(v=>Number.isFinite(v)?+v.toFixed(2):null);metrics.targetInView=metrics.targetNDC.every(v=>v!==null)&&Math.abs(projected.x)<=1&&Math.abs(projected.y)<=1&&Math.abs(projected.z)<=1}else{metrics.targetNDC=null;metrics.targetInView=null}diagnostics()},renderError(e){metrics.lastError='Render: '+(e.message||String(e));diagnostics(true);setStatus('AR graphics error: '+metrics.lastError)},get diagnostics(){return {...metrics}},get active(){return active||starting},get state(){return tracking},get placed(){return placed},get companionOnly(){return mode==='companion'},get motion(){return active&&placed&&tracking!=='tracking-lost'&&tracking!=='tracking-error'&&mode==='companion'?(following?{target:{x:viewer.x,y:floorY,z:viewer.z},follow:true}:destination?{target:{...destination},follow:false}:null):null},arrived(){if(!following){destination=null;setStatus('Companion stopped at the floor target. Tap another point to walk.')}},stop,update};
 }

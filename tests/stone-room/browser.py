@@ -73,6 +73,25 @@ with sync_playwright() as p:
   assert 'Graphics context lost' in page.locator('#error').inner_text()
   results[-1]['verified'].extend(['joystick blur cancellation','canvas context-loss message'])
   context.close()
+ # Compatibility is explicit and changes context antialiasing, not assets/placement.
+ compatibility=browser.new_context();compat=compatibility.new_page();compat.route('https://stone.test/**',serve);compat.goto('https://stone.test/stone-room/?graphics=compat')
+ compat.wait_for_function('window.stoneRoom?.diagnostics.loaded',timeout=90000)
+ assert compat.evaluate('window.stoneRoom.diagnostics.graphicsMode')=='compat'
+ assert compat.evaluate('window.stoneRoom.diagnostics.antialias') is False
+ assert not compat.locator('#ar-probe').is_checked(),'graphics test must default off'
+ # Verify actual optional probe pixels in an ordinary test framebuffer, never XR/camera pixels.
+ pixels=compat.evaluate("""async()=>{
+  const THREE=await import('./vendor/three.module.js'),{createXRGraphics}=await import('./xr-graphics.js');
+  const canvas=document.createElement('canvas'),renderer=new THREE.WebGLRenderer({canvas,antialias:false,alpha:true});renderer.setSize(32,32);
+  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(),graphics=createXRGraphics(renderer,scene),gl=renderer.getContext(),pixel=new Uint8Array(4);
+  graphics.beforeFrame(false);renderer.render(scene,camera);gl.readPixels(4,28,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);const off=[...pixel];
+  graphics.beforeFrame(true);renderer.render(scene,camera);gl.readPixels(4,28,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);const on=[...pixel];
+  graphics.beforeFrame(false);renderer.render(scene,camera);gl.readPixels(4,28,1,1,gl.RGBA,gl.UNSIGNED_BYTE,pixel);const restored=[...pixel];
+  graphics.dispose();renderer.dispose();return {off,on,restored};
+ }""")
+ assert pixels['off'][3]==0 and pixels['on']==[255,0,255,255] and pixels['restored'][3]==0,pixels
+ results.append({'scenario':'explicit compatibility and optional graphics probe','verified':['antialias disabled only when requested','probe defaults off','real magenta test pixels','test can be switched off'],'notVerified':['XR compositor','physical device']})
+ compatibility.close()
  # Explicitly exercise unavailable graphics: no infinite loading screen or AR launch.
  unavailable=browser.new_context();unavailable.add_init_script("""
  const getContext=HTMLCanvasElement.prototype.getContext;

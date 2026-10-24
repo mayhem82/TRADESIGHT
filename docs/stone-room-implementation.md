@@ -373,3 +373,32 @@ are now distinguished without relaxing measured-floor placement. New synthetic
 regressions cover diagnostic branches, error recovery, dedicated overlay selection
 and render-submission reporting. Browser checks retain all existing assertions and
 add canvas exclusion from the overlay. Physical re-test remains required.
+
+## 2026-10-24 — bounded graphics-path comparison after second physical failure
+
+Commit 290ec7b84ef546a466b0eae7bfe2cd7aa7a4c7c9 passed browser/contract checks,
+Pages deployment and live byte verification in run 40070842005. The user again
+reported no AR model. Their new phone screenshot shows 630 XR frames, a viewer
+pose, one accepted hit, a target, 15 main-scene draw calls, one XR view, an XR render
+target and no lost context. The overlay separation did not establish a repair.
+“GL ok” only meant context-not-lost; it did not test GL errors or framebuffer health.
+
+Added an optional, explicitly labelled magenta graphics-test square, OFF by default.
+It uses clip-space positions in the same main render pass, bypassing model/camera
+transforms, lighting and depth. It is not a floor target, model or simulated AR.
+Bounded framebuffer/layer/error/viewport diagnostics and real target projection
+coordinates distinguish GPU submission/presentation from world-space projection.
+No camera-image pixels are read or sent by these diagnostics.
+
+The explicit compatibility option reloads the page with antialiasing disabled,
+then requires Start AR again. Standard rendering remains the default. This isolates
+multisampling without changing NPC assets, hit detection, movement, shadows, native
+layer selection or vendored Three.js. A compatibility result is still a phone
+observation to obtain, not a claimed fix. Existing tests remain mandatory, with
+additional graphics diagnostics, projection and compatibility coverage.
+
+Local checks for this change: twenty unit/mock tests, JavaScript/Python syntax,
+GLB contracts, production build and diff whitespace checks pass. The browser pixel
+and compatibility assertions are pending CI; this workspace still cannot launch
+Chromium through its IPC restriction. Physical rendering remains unresolved until
+the deliberate comparison is observed on the phone.

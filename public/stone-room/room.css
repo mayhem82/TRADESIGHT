@@ -6,3 +6,6 @@
 
 /* Keep the DOM overlay separate from the XR projection canvas. */
 #ar-overlay{position:fixed;inset:0;background:transparent;pointer-events:none}#ar-overlay:xr-overlay{background:transparent}#ar-diagnostics{font:10px/1.4 monospace;overflow-wrap:anywhere;max-width:100%;background:#14201eb8;border-radius:5px;padding:4px}
+
+#ar-options .check{display:flex;align-items:center;gap:8px;font-size:11px}#ar-options .check input{width:20px;min-height:20px;flex:none}#ar-compat{font-size:11px;width:100%}#ar-graphics{font:10px/1.4 monospace;overflow-wrap:anywhere;background:#14201eb8;padding:4px;border-radius:5px}
+@media(min-height:501px){#ar-options{max-height:45dvh;overflow:auto}}
