@@ -62,8 +62,9 @@ with sync_playwright() as p:
   assert not errors,errors
   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),'horizontal overflow'
   results.append({'viewport':name,'dimensions':[width,height],'diagnostics':diag,'assetRequests':requests,'errors':errors,'verified':['load','embedded assets','UVs','NPC scale','named clips','walk','wave','stop','keyboard movement','joystick release','reset','overhead roof visibility','settings collapse','unsupported AR error'],'notVerified':['ARCore camera','physical hit tests','tracking stability','Galaxy S25 FE performance','photorealistic quality']})
+  assert page.evaluate("!document.querySelector('#ar-overlay').contains(document.querySelector('#view'))"),'XR projection canvas must not be part of DOM overlay'
   # Layout-only check: this does not simulate camera passthrough or XR tracking.
-  page.evaluate("document.body.classList.add('in-ar');document.querySelector('#ar-ui').hidden=false;document.querySelector('#ar-motion').hidden=false;document.querySelector('#ar-options').open=true;document.querySelector('#reposition').hidden=false")
+  page.evaluate("document.body.classList.add('in-ar');document.querySelector('#ar-overlay').hidden=false;document.querySelector('#ar-ui').hidden=false;document.querySelector('#ar-motion').hidden=false;document.querySelector('#ar-options').open=true;document.querySelector('#reposition').hidden=false")
   for selector in ['#ar-content','#ar-speed','#place','#reposition','#exit-ar','#ar-follow','#ar-stop','#ar-wave']:
    box=page.locator(selector).bounding_box();assert box and box['x']>=0 and box['y']>=0 and box['x']+box['width']<=width+1 and box['y']+box['height']<=height+1,('AR control out of viewport',selector,box)
   options=page.locator('#ar-options').bounding_box();actions=page.locator('.ar-actions').first.bounding_box();assert options['y']+options['height']<=actions['y'] or options['x']+options['width']<=actions['x'],'AR panels overlap'

@@ -347,3 +347,29 @@ and remained on its loading screen. Added a renderer-construction failure messag
 dismissed loading and disabled AR for that case. A separate browser regression
 forces getContext to return null and checks this recovery guidance. That regression
 is pending CI; the cloud browser limitation is not evidence of a phone failure.
+
+## 2026-10-24 — physical phone rendering failure after successful browser CI
+
+Commit 66beccca890a8aa6535802cf019ea53a3eec1100 passed run 40065124494,
+including all three browser viewports, twelve unit/mock tests, screenshot captures,
+Pages deployment and live byte checks. That was not a physical AR pass.
+
+The user then supplied a phone screenshot showing camera passthrough, enabled
+Walk here, and “Companion stopped at the floor target”. Neither the character nor
+green target was visible. This demonstrates accepted floor hits and running motion
+logic, narrowing the failure to rendering/compositing rather than permission or
+missing surface detection. No root cause is yet physically confirmed.
+
+Isolated DOM controls into a dedicated transparent overlay root, excluding the
+WebGL canvas, matching the separation used by Three r164 ARButton. This removes
+an avoidable compositor overlap; it is a compatibility correction, not a claim
+that the phone is fixed. Actual target geometry remains in the XR scene and no
+screen-space target, arbitrary placement or fabricated floor was added.
+
+Added on-phone startup stages and real frame/pose/hit/target, draw-call, XR-view,
+XR-render-target and context-loss diagnostics. Frame/render exceptions are visible;
+tracking errors pause companion motion. Missing hits and rejected wall/slope hits
+are now distinguished without relaxing measured-floor placement. New synthetic
+regressions cover diagnostic branches, error recovery, dedicated overlay selection
+and render-submission reporting. Browser checks retain all existing assertions and
+add canvas exclusion from the overlay. Physical re-test remains required.

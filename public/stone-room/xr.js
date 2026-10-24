@@ -1,7 +1,7 @@
 import * as THREE from './vendor/three.module.js';
 import {placement,surfaceKind} from './core.mjs';
 export function setupAR({renderer,scene,camera,room,exterior,snapshot,restore,message,error,clearInput,ready,setContent=()=>{}}){
- const $=s=>document.querySelector(s),button=$('#ar'),overlay=$('#ar-ui');
+ const $=s=>document.querySelector(s),button=$('#ar'),overlay=$('#ar-ui'),overlayRoot=$('#ar-overlay');
  let session=null,source=null,space=null,active=false,starting=false,placed=false,current=null,saved=null,background=null,fog=null,tracking='inactive',ended=false;
  let mode='companion',destination=null,following=false,floorY=0,attempt=0;
  const reticle=new THREE.Group();reticle.visible=false;scene.add(reticle);
@@ -9,7 +9,12 @@ export function setupAR({renderer,scene,camera,room,exterior,snapshot,restore,me
  const ring=new THREE.Mesh(new THREE.RingGeometry(.09,.115,48),material);ring.rotation.x=-Math.PI/2;ring.renderOrder=1000;reticle.add(ring);
  const cross1=new THREE.Mesh(new THREE.PlaneGeometry(.12,.008),material);cross1.rotation.x=-Math.PI/2;cross1.renderOrder=1001;reticle.add(cross1);const cross2=cross1.clone();cross2.rotation.z=Math.PI/2;reticle.add(cross2);
  const mat=new THREE.Matrix4(),pos=new THREE.Vector3(),rot=new THREE.Quaternion(),scale=new THREE.Vector3(),normal=new THREE.Vector3(),viewer=new THREE.Vector3();
- const setStatus=t=>$('#ar-status').textContent=t;
+ let metrics={stage:'inactive',frames:0,pose:false,hits:0,rejected:'',target:false,lastError:'',draws:0,views:0,contextLost:false,xrTarget:false,rendered:0};
+ function diagnostics(force=false){
+  const element=$('#ar-diagnostics');if(!element||(!force&&metrics.frames%30!==0))return;
+  element.textContent=`AR ${metrics.stage} · frames ${metrics.frames} · pose ${metrics.pose?'yes':'no'} · hits ${metrics.hits} · target ${metrics.target?'yes':'no'}${metrics.rejected?' · '+metrics.rejected:''} · draws ${metrics.draws} · views ${metrics.views} · XR ${metrics.xrTarget?'yes':'no'} · GL ${metrics.contextLost?'lost':'ok'}${metrics.lastError?' · '+metrics.lastError:''}`;
+ }
+ const setStatus=t=>{if($('#ar-status').textContent!==t)$('#ar-status').textContent=t};
  function motionButtons(){
   $('#ar-motion').hidden=!(placed&&mode==='companion');
   $('#place').textContent=mode==='room'?'Place room':placed?'Walk here':'Place companion';
@@ -17,30 +22,37 @@ export function setupAR({renderer,scene,camera,room,exterior,snapshot,restore,me
  }
  function stop(){destination=null;following=false;motionButtons()}
  function cleanup(){
-  if(ended)return;ended=true;source?.cancel();source=null;space=null;session=null;active=false;starting=false;placed=false;current=null;destination=null;following=false;tracking='inactive';reticle.visible=false;
+  if(ended)return;ended=true;metrics.stage='inactive';diagnostics(true);source?.cancel();source=null;space=null;session=null;active=false;starting=false;placed=false;current=null;destination=null;following=false;tracking='inactive';reticle.visible=false;
   room.visible=true;room.position.set(0,0,0);room.quaternion.identity();room.scale.setScalar(1);exterior.visible=true;scene.background=background??scene.background;scene.fog=fog;
-  setContent('virtual',saved);overlay.hidden=true;document.body.classList.remove('in-ar');button.disabled=false;button.textContent='Start AR';if(saved)restore(saved);saved=null;clearInput();message('Virtual walkthrough restored');
+  setContent('virtual',saved);overlay.hidden=true;overlayRoot.hidden=true;document.body.classList.remove('in-ar');button.disabled=false;button.textContent='Start AR';if(saved)restore(saved);saved=null;clearInput();message('Virtual walkthrough restored');
  }
  async function start(){
   if(starting||active)return;if(!ready()){error('Wait for the room assets to finish loading.');return}
   if(!isSecureContext){error('AR requires a secure HTTPS connection.');return}
   if(!navigator.xr){error('WebXR AR is unavailable in this browser. Use Chrome on an ARCore-supported Android device.');return}
   const token=++attempt;let openingSession=null;const stale=()=>token!==attempt||ended;
+  metrics={stage:'opening',frames:0,pose:false,hits:0,rejected:'',target:false,lastError:'',draws:0,views:0,contextLost:false,xrTarget:false,rendered:0};diagnostics(true);
   starting=true;ended=false;mode=$('#ar-content').value||'companion';button.disabled=true;button.textContent='Opening AR…';saved=snapshot();background=scene.background;fog=scene.fog;$('#error').hidden=true;
   try{
    // Request within the user gesture; the capability probe must not delay launch.
-   openingSession=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['hit-test','dom-overlay'],optionalFeatures:['local-floor'],domOverlay:{root:document.body}});
+   openingSession=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['hit-test','dom-overlay'],optionalFeatures:['local-floor'],domOverlay:{root:overlayRoot}});
    if(stale()){await openingSession.end();return}session=openingSession;
+   // Show real startup progress as soon as the camera opens, including slow setup.
+   document.body.classList.add('in-ar');overlay.hidden=false;overlayRoot.hidden=false;$('#place').disabled=true;$('#place').hidden=false;$('#reposition').hidden=true;$('#ar-motion').hidden=true;
+   metrics.stage='graphics';diagnostics(true);setStatus('Camera opened · starting AR graphics…');
    session.addEventListener('end',()=>{if(token===attempt)cleanup()},{once:true});session.addEventListener('select',()=>{if(!stale())place()});
    camera.position.set(0,0,0);camera.quaternion.identity();await renderer.xr.setSession(openingSession);if(stale())return;
+   metrics.stage='viewer-space';diagnostics(true);setStatus('Starting device tracking…');
    const referenceSpace=renderer.xr.getReferenceSpace(),v=await openingSession.requestReferenceSpace('viewer');if(stale())return;
    // An ended session can resolve after a new session has already started. Never
    // let its late source (or rejection) overwrite or close the new session.
+   metrics.stage='hit-test';diagnostics(true);setStatus('Starting floor detection…');
    const hitSource=await openingSession.requestHitTestSource({space:v});
    if(stale()){hitSource?.cancel();return}if(!hitSource)throw Error('The device did not provide a hit-test source');
-   space=referenceSpace;source=hitSource;
+   if(!referenceSpace)throw Error('The renderer did not provide an AR reference space');
+   space=referenceSpace;source=hitSource;metrics.stage='ready';diagnostics(true);
    active=true;starting=false;tracking='scanning';clearInput();scene.background=null;scene.fog=null;setContent(mode,saved);room.visible=false;exterior.visible=false;
-   document.body.classList.add('in-ar');overlay.hidden=false;$('#place').hidden=false;$('#place').disabled=true;$('#reposition').hidden=true;motionButtons();setStatus(mode==='companion'?'Scan a floor. Place the companion at the green target.':'Move slowly to scan a floor or wall. Find the green target.');
+   document.body.classList.add('in-ar');overlay.hidden=false;overlayRoot.hidden=false;$('#place').hidden=false;$('#place').disabled=true;$('#reposition').hidden=true;motionButtons();setStatus(mode==='companion'?'Scan a floor. Place the companion at the green target.':'Move slowly to scan a floor or wall. Find the green target.');
   }catch(e){if(stale())return;try{await openingSession?.end()}catch{}if(token!==attempt)return;cleanup();const reason=e.name==='NotAllowedError'?'Camera or AR permission was denied. Allow it in Chrome site settings.':e.name==='NotSupportedError'?'Required WebXR hit testing or AR controls are unavailable. Check ARCore and Chrome support.':e.message||String(e);error('AR could not start: '+reason)}
  }
  function place(){
@@ -64,22 +76,32 @@ export function setupAR({renderer,scene,camera,room,exterior,snapshot,restore,me
  document.body.addEventListener('beforexrselect',e=>{if(e.target.closest('button,input,select,summary,aside,label'))e.preventDefault()});
  if(!isSecureContext)button.title='AR requires HTTPS';else if(!navigator.xr)button.title='WebXR is unavailable in this browser';else navigator.xr.isSessionSupported('immersive-ar').then(ok=>{button.dataset.supported=String(ok);button.title=ok?'Start tracked AR placement':'This device reports immersive AR is unavailable';if(!ok)message('AR unavailable on this device · virtual walkthrough available')}).catch(e=>{button.title='AR capability check failed: '+e.message});
  function update(frame){
+  if(frame){metrics.frames++;diagnostics()}
   if(!active||!frame||!source||!space)return;
-  const viewPose=frame.getViewerPose(space);
-  if(!viewPose){current=null;reticle.visible=false;$('#place').disabled=true;room.visible=false;tracking='tracking-lost';setStatus('Tracking paused. Move slowly back toward the scanned area.');return}
+  try{updateFrame(frame)}catch(e){
+   metrics.lastError=e.name+': '+(e.message||String(e));metrics.target=false;current=null;reticle.visible=false;$('#place').disabled=true;room.visible=false;tracking='tracking-error';
+   diagnostics(true);setStatus('AR tracking error. Exit AR and try again. '+metrics.lastError);
+  }
+ }
+ function updateFrame(frame){
+  metrics.lastError='';metrics.hits=0;metrics.rejected='';metrics.target=false;
+  const viewPose=frame.getViewerPose(space);metrics.pose=!!viewPose;
+  if(!viewPose){diagnostics(true);current=null;reticle.visible=false;$('#place').disabled=true;room.visible=false;tracking='tracking-lost';setStatus('Tracking paused. Move slowly back toward the scanned area.');return}
   viewer.set(viewPose.transform.position.x,viewPose.transform.position.y,viewPose.transform.position.z);
-  if(placed){room.visible=true;if(tracking==='tracking-lost')setStatus('Tracking restored · session placement');tracking='placed';if(mode==='room')return}
+  if(placed){room.visible=true;if(tracking==='tracking-lost'||tracking==='tracking-error')setStatus('Tracking restored · session placement');tracking='placed';if(mode==='room')return}
   current=null;reticle.visible=false;$('#place').disabled=true;
-  for(const hit of frame.getHitTestResults(source)){
-   const pose=hit.getPose(space);if(!pose)continue;mat.fromArray(pose.transform.matrix);mat.decompose(pos,rot,scale);normal.set(0,1,0).applyQuaternion(rot);const kind=surfaceKind(normal);
-   if(kind==='slope'||(mode==='companion'&&kind!=='floor'))continue;
+  const hits=frame.getHitTestResults(source);metrics.hits=hits.length;
+  for(const hit of hits){
+   const pose=hit.getPose(space);if(!pose){metrics.rejected='no hit pose';continue;}mat.fromArray(pose.transform.matrix);mat.decompose(pos,rot,scale);normal.set(0,1,0).applyQuaternion(rot);const kind=surfaceKind(normal);
+   if(kind==='slope'||(mode==='companion'&&kind!=='floor')){metrics.rejected=kind;continue;}
    current=placement(normal,pos,viewer);if(!current)continue;
-   if(placed&&Math.abs(current.y-floorY)>.12){current=null;continue}
-   reticle.position.copy(pos);reticle.quaternion.copy(rot);reticle.visible=true;$('#place').disabled=false;
+   if(placed&&Math.abs(current.y-floorY)>.12){metrics.rejected='different floor height';current=null;continue}
+   metrics.target=true;metrics.rejected='';reticle.position.copy(pos);reticle.quaternion.copy(rot);reticle.visible=true;$('#place').disabled=false;
    if(!placed){tracking='surface';setStatus(kind==='floor'?'Floor detected · tap to place at full size':'Wall detected · tap to align the rear wall. Floor height will be estimated.')}
    break;
   }
-  if(!current&&!placed){tracking='scanning';setStatus(mode==='companion'?'Scanning for a floor… move slowly until the green target appears.':'Scanning… move slowly until a green floor or wall target appears.')}
+  if(!current&&!placed){tracking='scanning';setStatus(metrics.rejected==='wall'?'Wall detected · aim the phone down at the floor.':metrics.rejected==='slope'?'Surface is not level · aim at a flat floor.':mode==='companion'?'No floor hit yet · aim down and move slowly over a well-lit, textured floor.':'No surface hit yet · move slowly across a well-lit floor or wall.')}
+  diagnostics();
  }
- return {get active(){return active||starting},get state(){return tracking},get placed(){return placed},get companionOnly(){return mode==='companion'},get motion(){return active&&placed&&tracking!=='tracking-lost'&&mode==='companion'?(following?{target:{x:viewer.x,y:floorY,z:viewer.z},follow:true}:destination?{target:{...destination},follow:false}:null):null},arrived(){if(!following){destination=null;setStatus('Companion stopped at the floor target. Tap another point to walk.')}},stop,update};
+ return {rendered(stats){Object.assign(metrics,stats);metrics.rendered++;diagnostics()},renderError(e){metrics.lastError='Render: '+(e.message||String(e));diagnostics(true);setStatus('AR graphics error: '+metrics.lastError)},get diagnostics(){return {...metrics}},get active(){return active||starting},get state(){return tracking},get placed(){return placed},get companionOnly(){return mode==='companion'},get motion(){return active&&placed&&tracking!=='tracking-lost'&&tracking!=='tracking-error'&&mode==='companion'?(following?{target:{x:viewer.x,y:floorY,z:viewer.z},follow:true}:destination?{target:{...destination},follow:false}:null):null},arrived(){if(!following){destination=null;setStatus('Companion stopped at the floor target. Tap another point to walk.')}},stop,update};
 }
