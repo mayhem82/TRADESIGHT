@@ -471,3 +471,16 @@ Versioned the HTML module entry and changed XR module import for this release so
 reloading the application requests the new Soundwall-based code rather than reusing
 an older fresh browser-cache entry. This changes no movement or placement logic.
 Runtime adaptation commit: 7f5fe10fa0d367ae9b4ab7953162acbe1eb07dac.
+
+
+### Verified deployment of the Soundwall adaptation
+
+Runtime commit 5026d6443a57a6aeae3ffc8443e776ba8bcf099a passed Actions run
+40132359798: all 22 unit/mock tests, GLB contracts, three browser viewports,
+compatibility tests and the production-character/surface-ring pixel regression.
+The latter rendered 12,852 opaque pixels including 663 green ring pixels, with no
+GL errors, in an ordinary WebGL framebuffer. It does not test the XR compositor.
+Pages deployment succeeded and all 15 live runtime files returned HTTP 200 with
+matching SHA-256 hashes. Actual browser/live reports retained with this evidence.
+User offered immediate phone testing and received the deployed URL with a release
+query. Physical-device result remains pending; no phone fix is claimed yet.

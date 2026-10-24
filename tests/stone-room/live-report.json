@@ -1,17 +1,17 @@
 {
   "url": "https://mayhem82.github.io/TRADESIGHT/stone-room/",
-  "commit": "97e369b35bf3a473ca3f079af630935477115a8a",
+  "commit": "5026d6443a57a6aeae3ffc8443e776ba8bcf099a",
   "verified": [
     {
       "path": "index.html",
-      "bytes": 4424,
-      "sha256": "f57a01f99e8e67cc34789f888c76785683a55c025630881c51cb5fe57e7349e5",
+      "bytes": 4438,
+      "sha256": "7448ec0328a53bee51efcfa0ddc418cabae382642e4f87385f976fa8e91a79c3",
       "status": 200
     },
     {
       "path": "room.js",
-      "bytes": 17030,
-      "sha256": "ae2a1530d44070a050dc33d8757c9fd198bb9264a7410b9160448ee616740da4",
+      "bytes": 17261,
+      "sha256": "1dc0c6a930983cecc0aad0164510ec4a18de26b53989858ca88de89dc332a03f",
       "status": 200
     },
     {
@@ -28,8 +28,8 @@
     },
     {
       "path": "xr.js",
-      "bytes": 13775,
-      "sha256": "20c581d09d2272909edd4cecc1a6254de0dab5db850f74f462b6cbb1d900cfa5",
+      "bytes": 13475,
+      "sha256": "eb55927258d43f972bdfed8efb548b20a5263e205f32cd82117c51d6b35f1aea",
       "status": 200
     },
     {
@@ -42,6 +42,18 @@
       "path": "xr-graphics.js",
       "bytes": 3007,
       "sha256": "2311929f247f9e870f7a59bfbb789d7fd62e000e9d4f6e1182d4e99c748040d5",
+      "status": 200
+    },
+    {
+      "path": "ar-render-profile.js",
+      "bytes": 1563,
+      "sha256": "d94744b82f5e06e54caccbe938e8cae9a07e5779185df87aa8711cd143961ebd",
+      "status": 200
+    },
+    {
+      "path": "surface-reticle.js",
+      "bytes": 583,
+      "sha256": "86edee8db332535b04fc9a3126a4d9f00f7c9d80ed3a1924ac26f027f99223f4",
       "status": 200
     },
     {

@@ -18,6 +18,7 @@
         "joyId": null
       },
       "ar": false,
+      "arDirectLighting": false,
       "arPlaced": false,
       "arCompanionOnly": true,
       "architectureVisible": true,
@@ -85,7 +86,9 @@
       "stone-room/xr.js",
       "stone-room/floor-contact.js",
       "stone-room/xr-graphics.js",
+      "stone-room/ar-render-profile.js",
       "stone-room/vendor/BufferGeometryUtils.js",
+      "stone-room/surface-reticle.js",
       "stone-room/assets/stone-room.glb",
       "stone-room/assets/photo-guided-npc.glb",
       "stone-room/assets/countryside.jpg"
@@ -137,6 +140,7 @@
         "joyId": null
       },
       "ar": false,
+      "arDirectLighting": false,
       "arPlaced": false,
       "arCompanionOnly": true,
       "architectureVisible": true,
@@ -158,7 +162,7 @@
         0.9836465767947516
       ],
       "floorContactSamples": 94,
-      "groundClearance": -3.7591080662406984e-17,
+      "groundClearance": 7.343122180010867e-17,
       "npcHeight": 1.8380000759401587,
       "animations": [
         "Idle",
@@ -204,7 +208,9 @@
       "stone-room/xr.js",
       "stone-room/floor-contact.js",
       "stone-room/xr-graphics.js",
+      "stone-room/ar-render-profile.js",
       "stone-room/vendor/BufferGeometryUtils.js",
+      "stone-room/surface-reticle.js",
       "stone-room/assets/stone-room.glb",
       "stone-room/assets/photo-guided-npc.glb",
       "stone-room/assets/countryside.jpg"
@@ -256,6 +262,7 @@
         "joyId": null
       },
       "ar": false,
+      "arDirectLighting": false,
       "arPlaced": false,
       "arCompanionOnly": true,
       "architectureVisible": true,
@@ -323,6 +330,8 @@
       "stone-room/xr.js",
       "stone-room/floor-contact.js",
       "stone-room/xr-graphics.js",
+      "stone-room/ar-render-profile.js",
+      "stone-room/surface-reticle.js",
       "stone-room/vendor/BufferGeometryUtils.js",
       "stone-room/assets/stone-room.glb",
       "stone-room/assets/photo-guided-npc.glb",
@@ -336,10 +345,13 @@
       "stone-room/xr.js",
       "stone-room/floor-contact.js",
       "stone-room/xr-graphics.js",
+      "stone-room/ar-render-profile.js",
+      "stone-room/surface-reticle.js",
       "stone-room/vendor/BufferGeometryUtils.js",
       "stone-room/assets/stone-room.glb",
       "stone-room/assets/photo-guided-npc.glb",
       "stone-room/assets/countryside.jpg",
+      "stone-room/assets/photo-guided-npc.glb",
       "stone-room/index.html",
       "stone-room/room.css",
       "stone-room/room.js",
@@ -349,7 +361,9 @@
       "stone-room/xr.js",
       "stone-room/floor-contact.js",
       "stone-room/xr-graphics.js",
-      "stone-room/vendor/BufferGeometryUtils.js"
+      "stone-room/ar-render-profile.js",
+      "stone-room/vendor/BufferGeometryUtils.js",
+      "stone-room/surface-reticle.js"
     ],
     "errors": [],
     "verified": [
@@ -390,6 +404,20 @@
     "notVerified": [
       "XR compositor",
       "physical device"
+    ]
+  },
+  {
+    "scenario": "direct-lit AR scene rendering",
+    "evidence": {
+      "coloured": 12852,
+      "green": 663,
+      "errors": [],
+      "scope": "Ordinary WebGL framebuffer with animated production GLB and world-space ring; not physical XR"
+    },
+    "notVerified": [
+      "XR compositor",
+      "physical ground hit",
+      "Samsung GPU"
     ]
   },
   {
