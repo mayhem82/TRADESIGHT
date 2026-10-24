@@ -484,3 +484,27 @@ Pages deployment succeeded and all 15 live runtime files returned HTTP 200 with
 matching SHA-256 hashes. Actual browser/live reports retained with this evidence.
 User offered immediate phone testing and received the deployed URL with a release
 query. Physical-device result remains pending; no phone fix is claimed yet.
+
+
+## 2026-10-25 — physical retest still fails; identify the actual working deployment
+
+User reports no green aiming circle after release 5026d6443a57a6aeae3ffc8443e776ba8bcf099a.
+When asked for the live status, user selected “Floor detected · tap to place”.
+Thus the application accepts a floor hit, but the visible reticle is not confirmed.
+The Soundwall-style ring/material adaptation has NOT established a phone repair.
+Prior CI framebuffer tests remain valid only for their stated non-XR scope.
+
+User subsequently suggested Cloudflare and said they do not think WebXR has worked
+in any workflow. Inspected current public/sound-wall-cube-ar.html: it imports Three
+0.164.1 and ARButton and requests WebXR hit testing. No Cloudflare deployment address
+was found in the inspected repository files/search. Current public/c03/index.html
+also wires its Android-labelled control to startContainerAR (browser XR), despite
+older documentation describing a native Scene Viewer launch. Labels and historical
+documentation therefore do not establish the runtime used by a remembered page.
+Requested the exact working URL to identify its real deployed implementation.
+
+Prepared but did not deploy a separate stock-ARButton viewer in local repair
+workspace /workspace/stone-ar-repair. It is a draft, not a verified remedy. No new
+runtime change is committed in this evidence-only update. Await the working URL
+before selecting a replacement tracking/rendering path. Physical reticle visibility,
+NPC visibility and live AR walking remain unresolved.
