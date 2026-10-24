@@ -91,6 +91,11 @@ with sync_playwright() as p:
  }""")
  assert pixels['off'][3]==0 and pixels['on']==[255,0,255,255] and pixels['restored'][3]==0,pixels
  results.append({'scenario':'explicit compatibility and optional graphics probe','verified':['antialias disabled only when requested','probe defaults off','real magenta test pixels','test can be switched off'],'notVerified':['XR compositor','physical device']})
+ # Render the real animated character and a world-space ring with the AR profile.
+ direct=compat.evaluate((OUT/'ar-render-check.js').read_text())
+ assert direct['coloured']>1000 and direct['green']>20 and not direct['errors'],{k:v for k,v in direct.items() if k!='screenshot'}
+ (OUT/'ar-render-profile.png').write_bytes(base64.b64decode(direct.pop('screenshot').split(',')[1]))
+ results.append({'scenario':'direct-lit AR scene rendering','evidence':direct,'notVerified':['XR compositor','physical ground hit','Samsung GPU']})
  compatibility.close()
  # Explicitly exercise unavailable graphics: no infinite loading screen or AR launch.
  unavailable=browser.new_context();unavailable.add_init_script("""

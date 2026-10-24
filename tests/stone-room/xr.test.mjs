@@ -7,8 +7,8 @@ function fixture(denied=false,mode='room'){
  Object.defineProperty(globalThis,'navigator',{configurable:true,value:{xr:{isSessionSupported:async()=>true,requestSession:async(type,options)=>{requestedOptions=options;if(denied)throw Object.assign(new Error('denied'),{name:'NotAllowedError'});return session}}}});
  const camera=new THREE.PerspectiveCamera();camera.position.set(-2,1.65,2);const saved=camera.position.clone();const room=new THREE.Group(),exterior=new THREE.Group(),scene=new THREE.Scene();let lastError='',restored=false;
  document.querySelector('#ar-content').value=mode;const contentModes=[];
- const api=setupAR({renderer:{xr:{setSession:async()=>{},getReferenceSpace:()=>({})}},scene,camera,room,exterior,snapshot:()=>saved,restore:s=>{restored=true;camera.position.copy(s)},message(){},error:s=>lastError=s,clearInput(){},ready:()=>true,setContent:m=>contentModes.push(m)});
- return {get requestedOptions(){return requestedOptions},api,contentModes,session,camera,room,exterior,e:s=>document.querySelector(s),get cancelled(){return cancelled},get restored(){return restored},get error(){return lastError}};
+ const api=setupAR({renderer:{xr:{setReferenceSpaceType(type){assert.equal(type,'local')},setSession:async()=>{},getReferenceSpace:()=>({})}},scene,camera,room,exterior,snapshot:()=>saved,restore:s=>{restored=true;camera.position.copy(s)},message(){},error:s=>lastError=s,clearInput(){},ready:()=>true,setContent:m=>contentModes.push(m)});
+ return {scene,get requestedOptions(){return requestedOptions},api,contentModes,session,camera,room,exterior,e:s=>document.querySelector(s),get cancelled(){return cancelled},get restored(){return restored},get error(){return lastError}};
 }
 const pose=(x,y,z,q=new THREE.Quaternion())=>{const m=new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),q,new THREE.Vector3(1,1,1));return {transform:{matrix:m.toArray()}}};
 function frame(p,viewer={x:0,y:1.65,z:5}){return {getViewerPose:()=>({transform:{position:viewer}}),getHitTestResults:()=>p?[{getPose:()=>p}]:[]}}
@@ -85,4 +85,14 @@ test('real floor target diagnostics project against the current XR view camera',
  f.api.rendered({}, {cameras:[view]});assert.equal(f.api.diagnostics.targetInView,true);assert.ok(Math.abs(f.api.diagnostics.targetNDC[0])<.01);assert.ok(Math.abs(f.api.diagnostics.targetNDC[1])<.01);
  view.lookAt(0,1.65,2);view.updateMatrixWorld(true);f.api.rendered({}, {cameras:[view]});assert.equal(f.api.diagnostics.targetInView,false);
  f.api.update(frame(null));f.api.rendered({}, {cameras:[view]});assert.equal(f.api.diagnostics.targetNDC,null);await f.e('#exit-ar').onclick();
+});
+
+test('Soundwall ring uses raw floor and wall hit matrices; wall cannot place a walking NPC',async()=>{
+ const f=fixture(false,'companion');await f.e('#ar').onclick();
+ assert.deepEqual(f.requestedOptions.optionalFeatures,['hit-test','dom-overlay']);
+ const ring=f.scene.getObjectByName('WebXR surface ring');assert.equal(ring.matrixAutoUpdate,false);
+ const wall=pose(1,1,-2,new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),Math.PI/2));
+ f.api.update(frame(wall));assert.equal(ring.visible,true);assert.deepEqual(ring.matrix.toArray(),wall.transform.matrix);assert.equal(f.e('#place').disabled,true);f.e('#place').onclick();assert.equal(f.api.placed,false);
+ const floor=pose(2,.3,-3);f.api.update(frame(floor));assert.deepEqual(ring.matrix.toArray(),floor.transform.matrix);assert.equal(f.e('#place').disabled,false);f.e('#place').onclick();assert.deepEqual(f.room.position.toArray(),[2,.3,-3]);
+ f.api.update(frame(null));assert.equal(ring.visible,false);await f.e('#exit-ar').onclick();
 });

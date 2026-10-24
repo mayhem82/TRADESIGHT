@@ -1,13 +1,11 @@
 import * as THREE from './vendor/three.module.js';
 import {placement,surfaceKind} from './core.mjs';
+import {createSurfaceReticle} from './surface-reticle.js';
 export function setupAR({renderer,scene,camera,room,exterior,snapshot,restore,message,error,clearInput,ready,setContent=()=>{}}){
  const $=s=>document.querySelector(s),button=$('#ar'),overlay=$('#ar-ui'),overlayRoot=$('#ar-overlay');
  let session=null,source=null,space=null,active=false,starting=false,placed=false,current=null,saved=null,background=null,fog=null,tracking='inactive',ended=false;
  let mode='companion',destination=null,following=false,floorY=0,attempt=0;
- const reticle=new THREE.Group();reticle.visible=false;scene.add(reticle);
- const material=new THREE.MeshBasicMaterial({color:0x35ff68,side:THREE.DoubleSide,depthTest:false,depthWrite:false});
- const ring=new THREE.Mesh(new THREE.RingGeometry(.09,.115,48),material);ring.rotation.x=-Math.PI/2;ring.renderOrder=1000;reticle.add(ring);
- const cross1=new THREE.Mesh(new THREE.PlaneGeometry(.12,.008),material);cross1.rotation.x=-Math.PI/2;cross1.renderOrder=1001;reticle.add(cross1);const cross2=cross1.clone();cross2.rotation.z=Math.PI/2;reticle.add(cross2);
+ const reticle=createSurfaceReticle();scene.add(reticle);
  const projected=new THREE.Vector3();
  const mat=new THREE.Matrix4(),pos=new THREE.Vector3(),rot=new THREE.Quaternion(),scale=new THREE.Vector3(),normal=new THREE.Vector3(),viewer=new THREE.Vector3();
  let metrics={stage:'inactive',frames:0,pose:false,hits:0,rejected:'',target:false,lastError:'',draws:0,views:0,contextLost:false,xrTarget:false,rendered:0};
@@ -40,13 +38,14 @@ export function setupAR({renderer,scene,camera,room,exterior,snapshot,restore,me
   starting=true;ended=false;mode=$('#ar-content').value||'companion';button.disabled=true;button.textContent='Opening AR…';saved=snapshot();background=scene.background;fog=scene.fog;$('#error').hidden=true;
   try{
    // Request within the user gesture; the capability probe must not delay launch.
-   openingSession=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['hit-test','dom-overlay'],optionalFeatures:['local-floor'],domOverlay:{root:overlayRoot}});
+   openingSession=await navigator.xr.requestSession('immersive-ar',{optionalFeatures:['hit-test','dom-overlay'],domOverlay:{root:overlayRoot}});
    if(stale()){await openingSession.end();return}session=openingSession;
    // Show real startup progress as soon as the camera opens, including slow setup.
    document.body.classList.add('in-ar');overlay.hidden=false;overlayRoot.hidden=false;$('#place').disabled=true;$('#place').hidden=false;$('#reposition').hidden=true;$('#ar-motion').hidden=true;
    metrics.stage='graphics';diagnostics(true);setStatus('Camera opened · starting AR graphics…');
    session.addEventListener('end',()=>{if(token===attempt)cleanup()},{once:true});session.addEventListener('select',()=>{if(!stale())place()});
-   camera.position.set(0,0,0);camera.quaternion.identity();await renderer.xr.setSession(openingSession);if(stale())return;
+   clearInput();scene.background=null;scene.fog=null;setContent(mode,saved);room.visible=false;exterior.visible=false;
+   camera.position.set(0,0,0);camera.quaternion.identity();renderer.xr.setReferenceSpaceType('local');await renderer.xr.setSession(openingSession);if(stale())return;
    metrics.stage='viewer-space';diagnostics(true);setStatus('Starting device tracking…');
    const referenceSpace=renderer.xr.getReferenceSpace(),v=await openingSession.requestReferenceSpace('viewer');if(stale())return;
    // An ended session can resolve after a new session has already started. Never
@@ -56,7 +55,7 @@ export function setupAR({renderer,scene,camera,room,exterior,snapshot,restore,me
    if(stale()){hitSource?.cancel();return}if(!hitSource)throw Error('The device did not provide a hit-test source');
    if(!referenceSpace)throw Error('The renderer did not provide an AR reference space');
    space=referenceSpace;source=hitSource;metrics.stage='ready';diagnostics(true);
-   active=true;starting=false;tracking='scanning';clearInput();scene.background=null;scene.fog=null;setContent(mode,saved);room.visible=false;exterior.visible=false;
+   active=true;starting=false;tracking='scanning';clearInput();
    document.body.classList.add('in-ar');overlay.hidden=false;overlayRoot.hidden=false;$('#place').hidden=false;$('#place').disabled=true;$('#reposition').hidden=true;motionButtons();setStatus(mode==='companion'?'Scan a floor. Place the companion at the green target.':'Move slowly to scan a floor or wall. Find the green target.');
   }catch(e){if(stale())return;try{await openingSession?.end()}catch{}if(token!==attempt)return;cleanup();const reason=e.name==='NotAllowedError'?'Camera or AR permission was denied. Allow it in Chrome site settings.':e.name==='NotSupportedError'?'Required WebXR hit testing or AR controls are unavailable. Check ARCore and Chrome support.':e.message||String(e);error('AR could not start: '+reason)}
  }
@@ -90,6 +89,7 @@ export function setupAR({renderer,scene,camera,room,exterior,snapshot,restore,me
  }
  function updateFrame(frame){
   metrics.lastError='';metrics.hits=0;metrics.rejected='';metrics.target=false;
+  space=renderer.xr.getReferenceSpace();if(!space)throw Error('AR reference space unavailable');
   const viewPose=frame.getViewerPose(space);metrics.pose=!!viewPose;
   if(!viewPose){diagnostics(true);current=null;reticle.visible=false;$('#place').disabled=true;room.visible=false;tracking='tracking-lost';setStatus('Tracking paused. Move slowly back toward the scanned area.');return}
   viewer.set(viewPose.transform.position.x,viewPose.transform.position.y,viewPose.transform.position.z);
@@ -97,11 +97,12 @@ export function setupAR({renderer,scene,camera,room,exterior,snapshot,restore,me
   current=null;reticle.visible=false;$('#place').disabled=true;
   const hits=frame.getHitTestResults(source);metrics.hits=hits.length;
   for(const hit of hits){
-   const pose=hit.getPose(space);if(!pose){metrics.rejected='no hit pose';continue;}mat.fromArray(pose.transform.matrix);mat.decompose(pos,rot,scale);normal.set(0,1,0).applyQuaternion(rot);const kind=surfaceKind(normal);
+   const pose=hit.getPose(space);if(!pose){metrics.rejected='no hit pose';continue;}reticle.matrix.fromArray(pose.transform.matrix);reticle.visible=true;metrics.target=true;
+   mat.fromArray(pose.transform.matrix);mat.decompose(pos,rot,scale);normal.set(0,1,0).applyQuaternion(rot);const kind=surfaceKind(normal);
    if(kind==='slope'||(mode==='companion'&&kind!=='floor')){metrics.rejected=kind;continue;}
    current=placement(normal,pos,viewer);if(!current)continue;
    if(placed&&Math.abs(current.y-floorY)>.12){metrics.rejected='different floor height';current=null;continue}
-   metrics.target=true;metrics.rejected='';reticle.position.copy(pos);reticle.quaternion.copy(rot);reticle.visible=true;$('#place').disabled=false;
+   metrics.target=true;metrics.rejected='';$('#place').disabled=false;
    if(!placed){tracking='surface';setStatus(kind==='floor'?'Floor detected · tap to place at full size':'Wall detected · tap to align the rear wall. Floor height will be estimated.')}
    break;
   }

@@ -427,3 +427,39 @@ whether disabling antialiasing via compatibility mode makes the real reticle/NPC
 visible. No verified physical AR, photorealistic likeness, real obstacle detection
 or persistent anchoring is claimed. This evidence-only update changes no runtime
 files or unrelated project functionality.
+
+
+## 2026-10-25 — reuse the user-confirmed Soundwall surface path
+
+User identified public/sound-wall-cube-ar.html as working on their phone and
+clarified that Stone Room shows no green circle. Inspected that exact main-branch
+source, plus Flying Saucer, Lighthouse and Three r164 ARButton. Soundwall requests
+optional hit-test/dom-overlay, uses ARButton's local reference space, a transparent
+non-premultiplied canvas and a single ring with matrixAutoUpdate=false populated
+directly from each XR hit pose. Its world-space ring is application geometry;
+WebXR supplies the measured surface pose.
+
+Adapted those session options, local-space setup, renderer alpha configuration and
+exact ring geometry/material/matrix path into Stone Room. Resolve the renderer's
+current reference space each frame. Previously Stone Room hid all rejected hits,
+including walls in NPC-only mode; now the ring shows valid surface poses while
+floor-only NPC placement remains enforced. No invented camera-relative floor or
+fallback placement is added. The dedicated transparent controls overlay and
+attempt-scoped startup/cleanup safeguards remain.
+
+AR now enters a direct-light material profile before attaching the XR session:
+retain skinned geometry, albedo textures and scalar PBR values; omit environment,
+normal/roughness/metalness maps and the offscreen shadow pass during AR. This
+reduces the renderer to the direct-light setup used by existing standalone pages.
+The shadow-only ground receiver is hidden. Exit restores all original maps,
+environment, shadow and tone-mapping settings for virtual walkthrough. These are
+compatibility changes, not a physically established root cause or repair.
+
+Twenty-two local unit/mock tests pass, including exact wall/floor ring matrices,
+wall rejection for NPC placement, existing movement/session recovery, preserved
+skinned geometry and repeated material restoration. Syntax checks pass. Added a
+browser framebuffer test rendering the actual animated production GLB and shared
+surface ring; deployment must pass that test and existing browser checks. Local
+Chromium still fails at IPC socket creation, so browser results are pending CI.
+Physical S25 FE reticle/NPC visibility and tracking require the user's re-test.
+Only Stone Room runtime, its tests and this append-only record are changed.
