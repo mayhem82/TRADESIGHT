@@ -5,7 +5,14 @@ import {setupAR} from './xr.js';
 import {createFloorContact} from './floor-contact.js';
 const $=s=>document.querySelector(s),scene=new THREE.Scene();scene.background=new THREE.Color('#bdcbd0');scene.fog=null;
 const camera=new THREE.PerspectiveCamera(64,innerWidth/innerHeight,.035,120);
-const renderer=new THREE.WebGLRenderer({canvas:$('#view'),antialias:true,alpha:true,powerPreference:'high-performance'});
+const renderer=(()=>{
+ try{return new THREE.WebGLRenderer({canvas:$('#view'),antialias:true,alpha:true,powerPreference:'high-performance'})}
+ catch(e){
+  $('#loading').hidden=true;$('#ar').disabled=true;$('#error').hidden=false;
+  $('#error').textContent='3D graphics could not start. Close other 3D tabs, then reload in Chrome with graphics acceleration available. AR needs a working WebGL graphics context.';
+  throw e;
+ }
+})();
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.xr.enabled=true;renderer.xr.setReferenceSpaceType('local');
 scene.add(new THREE.HemisphereLight(0xdfefff,0xa79b87,1.25));
 const sunlight=new THREE.DirectionalLight(0xffefd7,2.6);sunlight.position.set(-3,6,-8);sunlight.target.position.set(1,0,1);sunlight.castShadow=true;sunlight.shadow.mapSize.set(2048,2048);Object.assign(sunlight.shadow.camera,{left:-7,right:7,top:6,bottom:-6,near:.5,far:24});sunlight.shadow.bias=-.0002;sunlight.shadow.normalBias=.015;scene.add(sunlight,sunlight.target);
@@ -18,6 +25,7 @@ let environmentMap;
 let floorContact=null;const floorOrigin=new THREE.Vector3();
 let architecture,ceiling,npcModel,mixer,actions={},activeAction,loaded=false,top=false,yaw=0,pitch=0,savedWalk=null,behaviour='idle',elapsed=0,waveUntil=0,wanderTarget=new THREE.Vector3(0,0,-1),wanderTime=0;const npc=new THREE.Group();npc.position.set(.8,0,-.9);room.add(npc);
 const arGround=new THREE.Mesh(new THREE.PlaneGeometry(10,10),new THREE.ShadowMaterial({opacity:.2}));arGround.rotation.x=-Math.PI/2;arGround.position.y=.001;arGround.receiveShadow=true;arGround.visible=false;room.add(arGround);
+let joyId=null;
 const keys=new Set(),joystick={x:0,y:0},loader=new GLTFLoader();
 function message(text){$('#status').textContent=text}
 function error(text){$('#error').hidden=false;$('#error').textContent=text}
@@ -50,14 +58,14 @@ $('#behaviour').onchange=e=>setBehaviour(e.target.value);$('#follow').onclick=()
 $('#speed').oninput=e=>$('#sv').textContent=Number(e.target.value).toFixed(1)+' m/s';$('#nspeed').oninput=e=>{const value=Number(e.target.value);$('#nsv').textContent=value.toFixed(1)+' m/s';$('#ar-speed').value=value;$('#ar-speed-value').textContent=value.toFixed(1)+' m/s'};$('#ar-speed').oninput=e=>{$('#nspeed').value=e.target.value;$('#nspeed').oninput(e)};$('#ar-wave').onclick=()=>{$('#wave').onclick()};const arStop=$('#ar-stop').onclick;$('#ar-stop').onclick=()=>{arStop();waveUntil=0;play('Idle')};
 function panel(open){$('#npcpanel').hidden=!open;$('#npc-toggle').setAttribute('aria-expanded',String(open))}$('#npc-toggle').onclick=()=>panel($('#npcpanel').hidden);$('#npc-close').onclick=()=>panel(false);
 $('#reset').onclick=reset;$('#plan').onclick=()=>{if(ar.active||!loaded)return;if(!top){savedWalk=state();top=true;camera.position.set(0,10,0);camera.rotation.set(-Math.PI/2,0,0);if(ceiling)ceiling.visible=false}else restore(savedWalk);$('#plan').setAttribute('aria-pressed',String(top));clearInput()};
-function clearInput(){keys.clear();joystick.x=joystick.y=0;$('#stick').style.transform='';drag=null}
+function clearInput(){joyId=null;keys.clear();joystick.x=joystick.y=0;$('#stick').style.transform='';drag=null}
 let drag=null;
 renderer.domElement.addEventListener('pointerdown',e=>{if(ar.active)return;drag={id:e.pointerId,x:e.clientX,y:e.clientY};renderer.domElement.setPointerCapture(e.pointerId)});
 renderer.domElement.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId||top||ar.active)return;yaw-=(e.clientX-drag.x)*.004;pitch=clamp(pitch-(e.clientY-drag.y)*.004,-1.4,1.4);drag.x=e.clientX;drag.y=e.clientY;look()});
 for(const name of ['pointerup','pointercancel','lostpointercapture'])renderer.domElement.addEventListener(name,()=>drag=null);
-const stick=$('#joystick');let joyId=null;
+const stick=$('#joystick');
 function joy(e){const r=stick.getBoundingClientRect(),x=(e.clientX-r.left-r.width/2)/(r.width*.36),y=(e.clientY-r.top-r.height/2)/(r.height*.36),l=Math.max(1,Math.hypot(x,y));joystick.x=x/l;joystick.y=y/l;$('#stick').style.transform=`translate(${joystick.x*r.width*.3}px,${joystick.y*r.height*.3}px)`}
-stick.onpointerdown=e=>{if(ar.active)return;joyId=e.pointerId;stick.setPointerCapture(e.pointerId);joy(e)};stick.onpointermove=e=>{if(e.pointerId===joyId)joy(e)};for(const name of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(name,()=>{joyId=null;joystick.x=joystick.y=0;$('#stick').style.transform=''})
+stick.onpointerdown=e=>{if(ar.active||joyId!==null)return;joyId=e.pointerId;stick.setPointerCapture(e.pointerId);joy(e)};stick.onpointermove=e=>{if(e.pointerId===joyId)joy(e)};for(const name of ['pointerup','pointercancel','lostpointercapture'])stick.addEventListener(name,e=>{if(e.pointerId!==joyId)return;joyId=null;joystick.x=joystick.y=0;$('#stick').style.transform=''})
 for(const b of document.querySelectorAll('[data-move]')){b.onpointerdown=e=>{b.setPointerCapture(e.pointerId);keys.add(b.dataset.move)};for(const name of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(name,()=>keys.delete(b.dataset.move))}
 const movementKeys=['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'];window.onkeydown=e=>{if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName))return;const k=e.key.toLowerCase();if(movementKeys.includes(k)){e.preventDefault();keys.add(k)}};window.onkeyup=e=>keys.delete(e.key.toLowerCase());window.addEventListener('blur',clearInput);document.addEventListener('visibilitychange',()=>{if(document.hidden)clearInput()});
 function move(dt){if(!loaded||top||ar.active)return;let f=Number(keys.has('w')||keys.has('arrowup')||keys.has('forward'))-Number(keys.has('s')||keys.has('arrowdown')||keys.has('back'))-joystick.y,r=Number(keys.has('d')||keys.has('arrowright')||keys.has('right'))-Number(keys.has('a')||keys.has('arrowleft')||keys.has('left'))+joystick.x;const n=Math.max(1,Math.hypot(f,r)),v=+$('#speed').value*dt/n;
@@ -84,5 +92,5 @@ if(waveUntil>elapsed){mixer?.update(dt);return}let target=null;const speed=+$('#
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);const box=$('#toolbar').getBoundingClientRect();$('#npcpanel').style.top=box.bottom+10+'px'});
 const clock=new THREE.Clock();renderer.setAnimationLoop((time,frame)=>{const dt=Math.min(clock.getDelta(),.05);move(dt);ar.update(frame);animateNPC(dt);if(loaded)floorContact?.settle(npc.getWorldPosition(floorOrigin).y);renderer.render(scene,camera)});
 // Read-only diagnostics for browser verification; no mutation hooks in production.
-window.stoneRoom={get diagnostics(){const meshes=[];room.traverse(o=>{if(o.isMesh)meshes.push(o)});return {loaded,ar:ar.active,arPlaced:ar.placed,arCompanionOnly:ar.companionOnly,architectureVisible:architecture?.visible,arMoving:!!ar.motion,top,camera:camera.position.toArray(),npc:npc.position.toArray(),npcScreen:npc.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.9,0)).project(camera).toArray(),floorContactSamples:floorContact?.samples??0,groundClearance:floorContact?.clearance(npc.getWorldPosition(floorOrigin).y)??null,npcHeight:npcModel?new THREE.Box3().setFromObject(npcModel).getSize(new THREE.Vector3()).y:0,animations:Object.keys(actions),activeAnimation:activeAction?.getClip().name,meshes:meshes.length,triangles:renderer.info.render.triangles,drawCalls:renderer.info.render.calls,uvMissing:meshes.filter(o=>!o.geometry.attributes.uv).map(o=>o.name),ceilingVisible:ceiling?.visible,roomVisible:room.visible,roomScale:room.scale.toArray(),xrState:ar.state}}};
-window.addEventListener('unhandledrejection',e=>error('An operation failed: '+(e.reason?.message||e.reason)));window.addEventListener('webglcontextlost',e=>{e.preventDefault();error('Graphics context lost. Reload the page to restore the room.')});
+window.stoneRoom={get diagnostics(){const meshes=[];room.traverse(o=>{if(o.isMesh)meshes.push(o)});return {loaded,input:{keys:[...keys],joystick:{...joystick},joyId},ar:ar.active,arPlaced:ar.placed,arCompanionOnly:ar.companionOnly,architectureVisible:architecture?.visible,arMoving:!!ar.motion,top,camera:camera.position.toArray(),npc:npc.position.toArray(),npcScreen:npc.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.9,0)).project(camera).toArray(),floorContactSamples:floorContact?.samples??0,groundClearance:floorContact?.clearance(npc.getWorldPosition(floorOrigin).y)??null,npcHeight:npcModel?new THREE.Box3().setFromObject(npcModel).getSize(new THREE.Vector3()).y:0,animations:Object.keys(actions),activeAnimation:activeAction?.getClip().name,meshes:meshes.length,triangles:renderer.info.render.triangles,drawCalls:renderer.info.render.calls,uvMissing:meshes.filter(o=>!o.geometry.attributes.uv).map(o=>o.name),ceilingVisible:ceiling?.visible,roomVisible:room.visible,roomScale:room.scale.toArray(),xrState:ar.state}}};
+window.addEventListener('unhandledrejection',e=>error('An operation failed: '+(e.reason?.message||e.reason)));renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();clearInput();$('#loading').hidden=true;error('Graphics context lost. Reload the page to restore the room.')});

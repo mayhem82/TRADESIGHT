@@ -4,8 +4,17 @@ Run after installing Playwright and Chromium. CI saves screenshots and JSON.
 """
 from playwright.sync_api import sync_playwright
 from pathlib import Path
-import json,mimetypes,shutil,os,base64
+import json,mimetypes,shutil,os,base64,time
 REPO=Path(__file__).resolve().parents[2];ROOT=Path(os.environ.get('STONE_ROOM_ROOT',str(REPO/'public'))).resolve();OUT=REPO/'tests/stone-room';results=[]
+def capture(page, label, **options):
+ # SwiftShader capture can take longer than Playwright's 30s action default.
+ # Keep a hard bound and fail the deployment if actual pixels cannot be captured.
+ started=time.monotonic()
+ try:
+  return page.screenshot(timeout=120000, **options)
+ finally:
+  print('CAPTURE_DIAGNOSTICS:'+json.dumps({'label':label,'seconds':round(time.monotonic()-started,2)}),flush=True)
+
 with sync_playwright() as p:
  exe=os.environ.get('CHROMIUM_EXECUTABLE') or shutil.which('chromium')
  browser=p.chromium.launch(**({'executable_path':exe} if exe else {}),headless=True,args=['--no-sandbox','--disable-dev-shm-usage','--use-angle=swiftshader','--enable-unsafe-swiftshader'])
@@ -20,7 +29,7 @@ with sync_playwright() as p:
    else:errors.append('missing '+str(path));route.fulfill(status=404,body='missing')
   page.route('https://stone.test/**',serve);page.goto('https://stone.test/stone-room/');page.wait_for_function('window.stoneRoom?.diagnostics.loaded',timeout=90000);page.wait_for_timeout(600)
   diag=page.evaluate('window.stoneRoom.diagnostics');print('INITIAL_DIAGNOSTICS:'+json.dumps(diag),flush=True);assert not diag['uvMissing'];assert 1.6<diag['npcHeight']<2;assert len(diag['animations'])==4;assert diag['ceilingVisible'];assert diag['floorContactSamples']>0 and abs(diag['groundClearance'])<.015;assert abs(diag['npcScreen'][0])<.8 and abs(diag['npcScreen'][1])<.8 and -1<diag['npcScreen'][2]<1,'NPC starts outside viewing area'
-  initial=page.screenshot(type='jpeg',quality=55,scale='css');print('STONE_SCREENSHOT:'+name+'-initial:'+base64.b64encode(initial).decode(),flush=True)
+  initial=capture(page,name+'-initial',type='jpeg',quality=55,scale='css');print('STONE_SCREENSHOT:'+name+'-initial:'+base64.b64encode(initial).decode(),flush=True)
   start=diag['camera'];page.keyboard.down('w')
   try:page.wait_for_function('(start)=>JSON.stringify(window.stoneRoom.diagnostics.camera)!==JSON.stringify(start)',arg=start,timeout=30000)
   finally:page.keyboard.up('w')
@@ -28,17 +37,26 @@ with sync_playwright() as p:
   page.click('#npc-toggle');assert page.is_visible('#npcpanel');page.select_option('#behaviour','wander');page.wait_for_function("window.stoneRoom.diagnostics.activeAnimation?.toLowerCase().includes('walk')",timeout=30000);assert abs(page.evaluate('window.stoneRoom.diagnostics.groundClearance'))<.015
   page.click('#wave');page.wait_for_timeout(200);assert 'wave' in page.evaluate('window.stoneRoom.diagnostics.activeAnimation').lower();page.click('#stop');page.click('#npc-close');assert not page.is_visible('#npcpanel')
   # Verify pointer joystick actually moves the camera and releases cleanly.
-  b=page.locator('#joystick').bounding_box();page.mouse.move(b['x']+b['width']/2,b['y']+b['height']/2);page.mouse.down();page.mouse.move(b['x']+b['width']/2,b['y']+10);page.wait_for_timeout(250);page.mouse.up();page.wait_for_timeout(100)
+  b=page.locator('#joystick').bounding_box();joy_start=page.evaluate('window.stoneRoom.diagnostics.camera');page.mouse.move(b['x']+b['width']/2,b['y']+b['height']/2);page.mouse.down();page.mouse.move(b['x']+b['width']/2,b['y']+10)
+  try:page.wait_for_function('(start)=>JSON.stringify(window.stoneRoom.diagnostics.camera)!==JSON.stringify(start)',arg=joy_start,timeout=30000)
+  finally:page.mouse.up()
+  page.wait_for_timeout(100)
   a=page.evaluate('window.stoneRoom.diagnostics.camera');page.wait_for_timeout(200);assert page.evaluate('window.stoneRoom.diagnostics.camera')==a
+  # A cancelled gesture must not resume when a stale touch pointer moves.
+  page.mouse.move(b['x']+b['width']/2,b['y']+10);page.mouse.down()
+  page.evaluate("window.dispatchEvent(new Event('blur'))")
+  page.mouse.move(b['x']+b['width']/2,b['y']+15)
+  assert page.evaluate('window.stoneRoom.diagnostics.input')=={'keys':[],'joystick':{'x':0,'y':0},'joyId':None}
+  page.mouse.up()
   if name=='desktop':
    page.click('#reset');page.locator('#speed').evaluate("el=>{el.value='3';el.dispatchEvent(new Event('input'))}");page.keyboard.down('w')
    try:page.wait_for_function('Math.hypot(window.stoneRoom.diagnostics.camera[0]-window.stoneRoom.diagnostics.npc[0],window.stoneRoom.diagnostics.camera[2]-window.stoneRoom.diagnostics.npc[2])<1.45',timeout=120000)
    finally:
     page.keyboard.up('w');print('CLOSEUP_DIAGNOSTICS:'+json.dumps(page.evaluate('window.stoneRoom.diagnostics')),flush=True);page.locator('#speed').evaluate("el=>{el.value='1.4';el.dispatchEvent(new Event('input'))}")
-   close=page.screenshot(type='jpeg',quality=85,scale='css');print('STONE_SCREENSHOT:npc-closeup:'+base64.b64encode(close).decode(),flush=True)
-   page.screenshot(path=str(OUT/'npc-closeup.png'));page.click('#reset')
-  page.screenshot(path=str(OUT/(name+'.png')))
-  thumbnail=page.screenshot(type='jpeg',quality=55,scale='css');print('STONE_SCREENSHOT:'+name+':'+base64.b64encode(thumbnail).decode(),flush=True)
+   close=capture(page,'npc-closeup',type='jpeg',quality=85,scale='css');print('STONE_SCREENSHOT:npc-closeup:'+base64.b64encode(close).decode(),flush=True)
+   capture(page,'npc-closeup-png',path=str(OUT/'npc-closeup.png'));page.click('#reset')
+  capture(page,name+'-png',path=str(OUT/(name+'.png')))
+  thumbnail=capture(page,name+'-final',type='jpeg',quality=55,scale='css');print('STONE_SCREENSHOT:'+name+':'+base64.b64encode(thumbnail).decode(),flush=True)
   if not page.evaluate("navigator.xr && window.stoneRoom.diagnostics.xrState!=='inactive'"):
    page.click('#ar');page.wait_for_timeout(300);assert page.is_visible('#error');assert page.evaluate('window.stoneRoom.diagnostics.roomVisible')
   assert not errors,errors
@@ -50,6 +68,21 @@ with sync_playwright() as p:
    box=page.locator(selector).bounding_box();assert box and box['x']>=0 and box['y']>=0 and box['x']+box['width']<=width+1 and box['y']+box['height']<=height+1,('AR control out of viewport',selector,box)
   options=page.locator('#ar-options').bounding_box();actions=page.locator('.ar-actions').first.bounding_box();assert options['y']+options['height']<=actions['y'] or options['x']+options['width']<=actions['x'],'AR panels overlap'
   results[-1]['verified'].append('AR control layout only; no physical XR')
+  page.evaluate("document.querySelector('#view').dispatchEvent(new Event('webglcontextlost',{cancelable:true}))")
+  assert 'Graphics context lost' in page.locator('#error').inner_text()
+  results[-1]['verified'].extend(['joystick blur cancellation','canvas context-loss message'])
   context.close()
+ # Explicitly exercise unavailable graphics: no infinite loading screen or AR launch.
+ unavailable=browser.new_context();unavailable.add_init_script("""
+ const getContext=HTMLCanvasElement.prototype.getContext;
+ HTMLCanvasElement.prototype.getContext=function(type,...args){
+  return /^(webgl2?|experimental-webgl)$/.test(type)?null:getContext.call(this,type,...args);
+ };
+ """)
+ blocked=unavailable.new_page();blocked.route('https://stone.test/**',serve);blocked.goto('https://stone.test/stone-room/')
+ blocked.wait_for_function("document.querySelector('#error').textContent.includes('3D graphics could not start')")
+ assert not blocked.is_visible('#loading');assert blocked.locator('#ar').is_disabled()
+ results.append({'scenario':'WebGL creation unavailable','verified':['visible startup error','loading dismissed','AR disabled'],'notVerified':['GPU recovery','physical device']})
+ unavailable.close()
  browser.close()
 (OUT/'browser-report.json').write_text(json.dumps(results,indent=2)+'\n');print(json.dumps(results))

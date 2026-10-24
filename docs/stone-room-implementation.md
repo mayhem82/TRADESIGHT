@@ -313,3 +313,37 @@ not altered. A new unit test checks raised and penetrating animated feet against
 translated floor. All ten unit/mock tests pass locally. Browser checks now require
 near-zero sampled ground clearance while idle and walking. New runtime module is
 included in live byte verification. Physical terrain/collision remain unverified.
+
+## 2026-10-24 — phone input and interrupted AR startup
+
+Checked out main 218167cccfd7ff3e5cd2cd61a8691c3939d4d1f8 in the cloud workspace.
+The failing CI log identifies Page.screenshot's 30-second default timeout after
+successful scene load, not a failed keyboard movement assertion. Screenshot capture
+now has an explicit 120-second bound and timing evidence; screenshots, viewport
+checks, and deployment gating remain mandatory. This is a pending CI repair, not
+proof of Samsung rendering performance.
+
+Clearing input now forgets the active joystick pointer, preventing a stale move
+from restarting movement after focus loss, reset or AR entry. Secondary pointers
+cannot take over or release the active joystick. Context loss is observed on the
+canvas (the event does not bubble); input clears and the recovery message is shown.
+Browser regressions cover interrupted input, actual joystick movement, and delivery
+of the canvas context-loss message.
+
+Two synthetic XR regressions reproduced late startup results corrupting a restarted
+session. Attempt-scoped ownership now cancels a stale hit-test source and prevents
+an old rejection or event from closing or placing in the new session. Both tests
+failed before the change; all twelve Node core/XR tests pass after it.
+
+Local production build, JavaScript/Python syntax and production GLB contracts pass.
+Local Chromium cannot start because this executor denies IPC sockets; the normal
+escalation failed during environment setup. Full browser verification remains for
+CI before deployment. No character assets, likeness, geometry, or controls were
+redesigned. Physical S25 FE camera passthrough, floor hit testing, tracking and GPU
+performance remain unverified.
+
+A supported cloud-browser inspection of the old live site reported WebGL disabled
+and remained on its loading screen. Added a renderer-construction failure message,
+dismissed loading and disabled AR for that case. A separate browser regression
+forces getContext to return null and checks this recovery guidance. That regression
+is pending CI; the cloud browser limitation is not evidence of a phone failure.

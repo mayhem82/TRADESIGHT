@@ -3,7 +3,7 @@ import {placement,surfaceKind} from './core.mjs';
 export function setupAR({renderer,scene,camera,room,exterior,snapshot,restore,message,error,clearInput,ready,setContent=()=>{}}){
  const $=s=>document.querySelector(s),button=$('#ar'),overlay=$('#ar-ui');
  let session=null,source=null,space=null,active=false,starting=false,placed=false,current=null,saved=null,background=null,fog=null,tracking='inactive',ended=false;
- let mode='companion',destination=null,following=false,floorY=0;
+ let mode='companion',destination=null,following=false,floorY=0,attempt=0;
  const reticle=new THREE.Group();reticle.visible=false;scene.add(reticle);
  const material=new THREE.MeshBasicMaterial({color:0x35ff68,side:THREE.DoubleSide,depthTest:false,depthWrite:false});
  const ring=new THREE.Mesh(new THREE.RingGeometry(.09,.115,48),material);ring.rotation.x=-Math.PI/2;ring.renderOrder=1000;reticle.add(ring);
@@ -25,17 +25,23 @@ export function setupAR({renderer,scene,camera,room,exterior,snapshot,restore,me
   if(starting||active)return;if(!ready()){error('Wait for the room assets to finish loading.');return}
   if(!isSecureContext){error('AR requires a secure HTTPS connection.');return}
   if(!navigator.xr){error('WebXR AR is unavailable in this browser. Use Chrome on an ARCore-supported Android device.');return}
+  const token=++attempt;let openingSession=null;const stale=()=>token!==attempt||ended;
   starting=true;ended=false;mode=$('#ar-content').value||'companion';button.disabled=true;button.textContent='Opening AR…';saved=snapshot();background=scene.background;fog=scene.fog;$('#error').hidden=true;
   try{
    // Request within the user gesture; the capability probe must not delay launch.
-   session=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['hit-test','dom-overlay'],optionalFeatures:['local-floor'],domOverlay:{root:document.body}});
-   session.addEventListener('end',cleanup,{once:true});session.addEventListener('select',place);
-   camera.position.set(0,0,0);camera.quaternion.identity();await renderer.xr.setSession(session);if(ended)return;
-   space=renderer.xr.getReferenceSpace();const v=await session.requestReferenceSpace('viewer');source=await session.requestHitTestSource({space:v});
-   if(ended){source?.cancel();source=null;return}if(!source)throw Error('The device did not provide a hit-test source');
+   openingSession=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['hit-test','dom-overlay'],optionalFeatures:['local-floor'],domOverlay:{root:document.body}});
+   if(stale()){await openingSession.end();return}session=openingSession;
+   session.addEventListener('end',()=>{if(token===attempt)cleanup()},{once:true});session.addEventListener('select',()=>{if(!stale())place()});
+   camera.position.set(0,0,0);camera.quaternion.identity();await renderer.xr.setSession(openingSession);if(stale())return;
+   const referenceSpace=renderer.xr.getReferenceSpace(),v=await openingSession.requestReferenceSpace('viewer');if(stale())return;
+   // An ended session can resolve after a new session has already started. Never
+   // let its late source (or rejection) overwrite or close the new session.
+   const hitSource=await openingSession.requestHitTestSource({space:v});
+   if(stale()){hitSource?.cancel();return}if(!hitSource)throw Error('The device did not provide a hit-test source');
+   space=referenceSpace;source=hitSource;
    active=true;starting=false;tracking='scanning';clearInput();scene.background=null;scene.fog=null;setContent(mode,saved);room.visible=false;exterior.visible=false;
    document.body.classList.add('in-ar');overlay.hidden=false;$('#place').hidden=false;$('#place').disabled=true;$('#reposition').hidden=true;motionButtons();setStatus(mode==='companion'?'Scan a floor. Place the companion at the green target.':'Move slowly to scan a floor or wall. Find the green target.');
-  }catch(e){const failed=session;try{await failed?.end()}catch{}cleanup();const reason=e.name==='NotAllowedError'?'Camera or AR permission was denied. Allow it in Chrome site settings.':e.name==='NotSupportedError'?'Required WebXR hit testing or AR controls are unavailable. Check ARCore and Chrome support.':e.message||String(e);error('AR could not start: '+reason)}
+  }catch(e){if(stale())return;try{await openingSession?.end()}catch{}if(token!==attempt)return;cleanup();const reason=e.name==='NotAllowedError'?'Camera or AR permission was denied. Allow it in Chrome site settings.':e.name==='NotSupportedError'?'Required WebXR hit testing or AR controls are unavailable. Check ARCore and Chrome support.':e.message||String(e);error('AR could not start: '+reason)}
  }
  function place(){
   if(!active||!current)return;

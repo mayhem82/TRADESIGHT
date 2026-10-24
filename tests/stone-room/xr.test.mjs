@@ -33,3 +33,23 @@ test('NPC-only AR rejects walls, supports floor walking and live following, and 
  f.e('#ar-content').value='room';f.e('#ar-content').onchange();assert.equal(f.api.placed,false);assert.equal(f.api.companionOnly,false);assert.equal(f.e('#ar-motion').hidden,true);assert.deepEqual(f.contentModes,['companion','room']);
  await f.e('#exit-ar').onclick();assert.equal(f.contentModes.at(-1),'virtual');assert.equal(f.restored,true);
 });
+
+function deferred(){let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no});return {promise,resolve,reject}}
+function replacementSession(hitSource){const s=new EventTarget();s.end=async()=>s.dispatchEvent(new Event('end'));s.requestReferenceSpace=async()=>({});s.requestHitTestSource=async()=>hitSource;return s}
+test('ending during hit-test startup cannot replace the next session source',async()=>{
+ const f=fixture(),pending=deferred(),requested=deferred();let oldCancelled=false,newCancelled=false;
+ f.session.requestHitTestSource=()=>{requested.resolve();return pending.promise};
+ const oldStart=f.e('#ar').onclick();await requested.promise;await f.session.end();
+ const newSource={cancel(){newCancelled=true}},next=replacementSession(newSource);navigator.xr.requestSession=async()=>next;
+ await f.e('#ar').onclick();pending.resolve({cancel(){oldCancelled=true}});await oldStart;
+ assert.equal(oldCancelled,true,'late source must be cancelled');assert.equal(newCancelled,false);assert.equal(f.api.active,true);
+ f.api.update({...frame(pose(1,.2,2)),getHitTestResults(source){assert.equal(source,newSource);return []}});
+ await f.e('#exit-ar').onclick();assert.equal(newCancelled,true);
+});
+test('late startup rejection must not end a replacement session',async()=>{
+ const f=fixture(),pending=deferred(),requested=deferred();f.session.requestReferenceSpace=()=>{requested.resolve();return pending.promise};
+ const oldStart=f.e('#ar').onclick();await requested.promise;await f.session.end();
+ const next=replacementSession({cancel(){}});let nextEnded=false;next.addEventListener('end',()=>nextEnded=true);navigator.xr.requestSession=async()=>next;
+ await f.e('#ar').onclick();pending.reject(new Error('old session ended'));await oldStart;
+ assert.equal(nextEnded,false);assert.equal(f.api.active,true);assert.equal(f.error,'');await f.e('#exit-ar').onclick();
+});
