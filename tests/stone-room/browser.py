@@ -19,21 +19,22 @@ with sync_playwright() as p:
    if path.exists():route.fulfill(body=path.read_bytes(),content_type=mimetypes.guess_type(str(path))[0] or 'application/octet-stream')
    else:errors.append('missing '+str(path));route.fulfill(status=404,body='missing')
   page.route('https://stone.test/**',serve);page.goto('https://stone.test/stone-room/');page.wait_for_function('window.stoneRoom?.diagnostics.loaded',timeout=90000);page.wait_for_timeout(600)
-  diag=page.evaluate('window.stoneRoom.diagnostics');print('INITIAL_DIAGNOSTICS:'+json.dumps(diag),flush=True);assert not diag['uvMissing'];assert 1.6<diag['npcHeight']<2;assert len(diag['animations'])==4;assert diag['ceilingVisible'];assert abs(diag['npcScreen'][0])<.8 and abs(diag['npcScreen'][1])<.8 and -1<diag['npcScreen'][2]<1,'NPC starts outside viewing area'
+  diag=page.evaluate('window.stoneRoom.diagnostics');print('INITIAL_DIAGNOSTICS:'+json.dumps(diag),flush=True);assert not diag['uvMissing'];assert 1.6<diag['npcHeight']<2;assert len(diag['animations'])==4;assert diag['ceilingVisible'];assert diag['floorContactSamples']>0 and abs(diag['groundClearance'])<.015;assert abs(diag['npcScreen'][0])<.8 and abs(diag['npcScreen'][1])<.8 and -1<diag['npcScreen'][2]<1,'NPC starts outside viewing area'
   initial=page.screenshot(type='jpeg',quality=55,scale='css');print('STONE_SCREENSHOT:'+name+'-initial:'+base64.b64encode(initial).decode(),flush=True)
   start=diag['camera'];page.keyboard.down('w')
   try:page.wait_for_function('(start)=>JSON.stringify(window.stoneRoom.diagnostics.camera)!==JSON.stringify(start)',arg=start,timeout=30000)
   finally:page.keyboard.up('w')
   page.click('#reset');page.click('#plan');assert page.evaluate('window.stoneRoom.diagnostics.top');assert not page.evaluate('window.stoneRoom.diagnostics.ceilingVisible');page.click('#plan');assert page.evaluate('window.stoneRoom.diagnostics.camera')==start
-  page.click('#npc-toggle');assert page.is_visible('#npcpanel');page.select_option('#behaviour','wander');page.wait_for_function("window.stoneRoom.diagnostics.activeAnimation?.toLowerCase().includes('walk')",timeout=30000)
+  page.click('#npc-toggle');assert page.is_visible('#npcpanel');page.select_option('#behaviour','wander');page.wait_for_function("window.stoneRoom.diagnostics.activeAnimation?.toLowerCase().includes('walk')",timeout=30000);assert abs(page.evaluate('window.stoneRoom.diagnostics.groundClearance'))<.015
   page.click('#wave');page.wait_for_timeout(200);assert 'wave' in page.evaluate('window.stoneRoom.diagnostics.activeAnimation').lower();page.click('#stop');page.click('#npc-close');assert not page.is_visible('#npcpanel')
   # Verify pointer joystick actually moves the camera and releases cleanly.
   b=page.locator('#joystick').bounding_box();page.mouse.move(b['x']+b['width']/2,b['y']+b['height']/2);page.mouse.down();page.mouse.move(b['x']+b['width']/2,b['y']+10);page.wait_for_timeout(250);page.mouse.up();page.wait_for_timeout(100)
   a=page.evaluate('window.stoneRoom.diagnostics.camera');page.wait_for_timeout(200);assert page.evaluate('window.stoneRoom.diagnostics.camera')==a
   if name=='desktop':
-   page.click('#reset');page.keyboard.down('w')
-   try:page.wait_for_function('Math.hypot(window.stoneRoom.diagnostics.camera[0]-window.stoneRoom.diagnostics.npc[0],window.stoneRoom.diagnostics.camera[2]-window.stoneRoom.diagnostics.npc[2])<1.45',timeout=45000)
-   finally:page.keyboard.up('w')
+   page.click('#reset');page.locator('#speed').evaluate("el=>{el.value='3';el.dispatchEvent(new Event('input'))}");page.keyboard.down('w')
+   try:page.wait_for_function('Math.hypot(window.stoneRoom.diagnostics.camera[0]-window.stoneRoom.diagnostics.npc[0],window.stoneRoom.diagnostics.camera[2]-window.stoneRoom.diagnostics.npc[2])<1.45',timeout=120000)
+   finally:
+    page.keyboard.up('w');print('CLOSEUP_DIAGNOSTICS:'+json.dumps(page.evaluate('window.stoneRoom.diagnostics')),flush=True);page.locator('#speed').evaluate("el=>{el.value='1.4';el.dispatchEvent(new Event('input'))}")
    close=page.screenshot(type='jpeg',quality=85,scale='css');print('STONE_SCREENSHOT:npc-closeup:'+base64.b64encode(close).decode(),flush=True)
    page.screenshot(path=str(OUT/'npc-closeup.png'));page.click('#reset')
   page.screenshot(path=str(OUT/(name+'.png')))

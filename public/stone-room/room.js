@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
 import {ROOM,clamp,constrain,separate,advanceCompanion} from './core.mjs';
 import {setupAR} from './xr.js';
+import {createFloorContact} from './floor-contact.js';
 const $=s=>document.querySelector(s),scene=new THREE.Scene();scene.background=new THREE.Color('#bdcbd0');scene.fog=null;
 const camera=new THREE.PerspectiveCamera(64,innerWidth/innerHeight,.035,120);
 const renderer=new THREE.WebGLRenderer({canvas:$('#view'),antialias:true,alpha:true,powerPreference:'high-performance'});
@@ -14,6 +15,7 @@ const room=new THREE.Group();room.name='StoneRoom';scene.add(room);
 const exterior=new THREE.Group();exterior.name='Exterior';scene.add(exterior);
 // The distant countryside is an equirectangular environment, never an AR camera overlay.
 let environmentMap;
+let floorContact=null;const floorOrigin=new THREE.Vector3();
 let architecture,ceiling,npcModel,mixer,actions={},activeAction,loaded=false,top=false,yaw=0,pitch=0,savedWalk=null,behaviour='idle',elapsed=0,waveUntil=0,wanderTarget=new THREE.Vector3(0,0,-1),wanderTime=0;const npc=new THREE.Group();npc.position.set(.8,0,-.9);room.add(npc);
 const arGround=new THREE.Mesh(new THREE.PlaneGeometry(10,10),new THREE.ShadowMaterial({opacity:.2}));arGround.rotation.x=-Math.PI/2;arGround.position.y=.001;arGround.receiveShadow=true;arGround.visible=false;room.add(arGround);
 const keys=new Set(),joystick={x:0,y:0},loader=new GLTFLoader();
@@ -32,7 +34,7 @@ function installNPC(gltf,normalize=false){
  if(normalize)model.scale.setScalar(1.83/size.y);const b=new THREE.Box3().setFromObject(model);model.position.y-=b.min.y;model.position.x-=(b.min.x+b.max.x)/2;model.position.z-=(b.min.z+b.max.z)/2;
  model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;for(const m of [].concat(o.material)){m.envMapIntensity=.55;if(m.normalScale)m.normalScale.setScalar(.25)}}});
  if(npcModel){mixer?.stopAllAction();mixer?.uncacheRoot(npcModel);npc.remove(npcModel);dispose(npcModel)}npcModel=model;npc.add(model);mixer=new THREE.AnimationMixer(model);actions={};activeAction=null;
- for(const clip of gltf.animations){const n=clip.name.toLowerCase(),key=n.includes('walk')?'Walk':n.includes('wave')?'Wave':n.includes('look')?'LookAround':n.includes('idle')?'Idle':clip.name;actions[key]=mixer.clipAction(clip)}play('Idle');
+ for(const clip of gltf.animations){const n=clip.name.toLowerCase(),key=n.includes('walk')?'Walk':n.includes('wave')?'Wave':n.includes('look')?'LookAround':n.includes('idle')?'Idle':clip.name;actions[key]=mixer.clipAction(clip)}play('Idle');floorContact=normalize?null:createFloorContact(model);
 }
 async function load(){
  $('#loading').hidden=false;$('#retry').hidden=true;clearError();
@@ -80,7 +82,7 @@ if(waveUntil>elapsed){mixer?.update(dt);return}let target=null;const speed=+$('#
  const clip=walking?'Walk':behaviour!=='stop'&&$('#lookaround').checked?'LookAround':'Idle';play(clip);if(actions.Walk)actions.Walk.timeScale=speed/1.15;mixer?.update(dt);
 }
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);const box=$('#toolbar').getBoundingClientRect();$('#npcpanel').style.top=box.bottom+10+'px'});
-const clock=new THREE.Clock();renderer.setAnimationLoop((time,frame)=>{const dt=Math.min(clock.getDelta(),.05);move(dt);ar.update(frame);animateNPC(dt);renderer.render(scene,camera)});
+const clock=new THREE.Clock();renderer.setAnimationLoop((time,frame)=>{const dt=Math.min(clock.getDelta(),.05);move(dt);ar.update(frame);animateNPC(dt);if(loaded)floorContact?.settle(npc.getWorldPosition(floorOrigin).y);renderer.render(scene,camera)});
 // Read-only diagnostics for browser verification; no mutation hooks in production.
-window.stoneRoom={get diagnostics(){const meshes=[];room.traverse(o=>{if(o.isMesh)meshes.push(o)});return {loaded,ar:ar.active,arPlaced:ar.placed,arCompanionOnly:ar.companionOnly,architectureVisible:architecture?.visible,arMoving:!!ar.motion,top,camera:camera.position.toArray(),npc:npc.position.toArray(),npcScreen:npc.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.9,0)).project(camera).toArray(),npcHeight:npcModel?new THREE.Box3().setFromObject(npcModel).getSize(new THREE.Vector3()).y:0,animations:Object.keys(actions),activeAnimation:activeAction?.getClip().name,meshes:meshes.length,triangles:renderer.info.render.triangles,drawCalls:renderer.info.render.calls,uvMissing:meshes.filter(o=>!o.geometry.attributes.uv).map(o=>o.name),ceilingVisible:ceiling?.visible,roomVisible:room.visible,roomScale:room.scale.toArray(),xrState:ar.state}}};
+window.stoneRoom={get diagnostics(){const meshes=[];room.traverse(o=>{if(o.isMesh)meshes.push(o)});return {loaded,ar:ar.active,arPlaced:ar.placed,arCompanionOnly:ar.companionOnly,architectureVisible:architecture?.visible,arMoving:!!ar.motion,top,camera:camera.position.toArray(),npc:npc.position.toArray(),npcScreen:npc.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.9,0)).project(camera).toArray(),floorContactSamples:floorContact?.samples??0,groundClearance:floorContact?.clearance(npc.getWorldPosition(floorOrigin).y)??null,npcHeight:npcModel?new THREE.Box3().setFromObject(npcModel).getSize(new THREE.Vector3()).y:0,animations:Object.keys(actions),activeAnimation:activeAction?.getClip().name,meshes:meshes.length,triangles:renderer.info.render.triangles,drawCalls:renderer.info.render.calls,uvMissing:meshes.filter(o=>!o.geometry.attributes.uv).map(o=>o.name),ceilingVisible:ceiling?.visible,roomVisible:room.visible,roomScale:room.scale.toArray(),xrState:ar.state}}};
 window.addEventListener('unhandledrejection',e=>error('An operation failed: '+(e.reason?.message||e.reason)));window.addEventListener('webglcontextlost',e=>{e.preventDefault();error('Graphics context lost. Reload the page to restore the room.')});

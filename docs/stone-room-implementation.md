@@ -295,3 +295,21 @@ cover NPC-only wall rejection, measured floor placement, destination selection,
 live-viewer following, tracking-loss pause, Stop, mode switching and exit restore.
 Added browser checks for all AR controls fitting portrait/landscape without panel
 overlap. Those layout checks do not simulate a physical AR session. CI pending.
+
+## 2026-10-24 — animated floor contact and close-up test timing
+
+Commit f8d20182f0bf2d87f67fe5f32f0ce06d2727978e passed all nine unit/mock tests in
+Actions run 40058557858. The revised production scene loaded without page errors,
+with 24 draw calls and 239,616 rendered triangles. The new desktop close-up approach
+timed out after 45 seconds on the software-rendered runner, so deployment was
+correctly skipped. The test now uses the existing 3 m/s speed control for approach,
+a 120-second bound, and reports final camera/NPC diagnostics even if it times out.
+It still requires the camera to reach the character using actual movement controls.
+
+Added a small boot-contact sampler to correct vertical drift from skeletal walking
+against the placed floor plane. This keeps the lowest sampled boot surface grounded;
+it is not terrain reconstruction or full foot IK. Imported replacement models are
+not altered. A new unit test checks raised and penetrating animated feet against a
+translated floor. All ten unit/mock tests pass locally. Browser checks now require
+near-zero sampled ground clearance while idle and walking. New runtime module is
+included in live byte verification. Physical terrain/collision remain unverified.
