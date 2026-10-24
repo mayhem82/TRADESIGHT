@@ -11,10 +11,11 @@ def material(name,color,kind=None,rough=.7):
  m=bpy.data.materials.new(name);m.diffuse_color=(*color,1);m.use_nodes=True;n=m.node_tree.nodes;p=n.get('Principled BSDF');p.inputs['Base Color'].default_value=(*color,1);p.inputs['Roughness'].default_value=rough
  if kind:
   for suffix,socket in [('albedo.jpg','Base Color'),('roughness.png','Roughness'),('normal.png','Normal')]:
-   im=bpy.data.images.load(str(T/(kind+'-'+suffix)),check_existing=True);tex=n.new('ShaderNodeTexImage');tex.image=im
+   texture_file='oak-generated.jpg' if kind=='oak' and suffix=='albedo.jpg' else kind+'-'+suffix
+   im=bpy.data.images.load(str(T/texture_file),check_existing=True);tex=n.new('ShaderNodeTexImage');tex.image=im
    if socket=='Base Color':m.node_tree.links.new(tex.outputs['Color'],p.inputs[socket])
    elif socket=='Normal':
-    im.colorspace_settings.name='Non-Color';norm=n.new('ShaderNodeNormalMap');norm.inputs['Strength'].default_value=.65;m.node_tree.links.new(tex.outputs['Color'],norm.inputs['Color']);m.node_tree.links.new(norm.outputs['Normal'],p.inputs['Normal'])
+    im.colorspace_settings.name='Non-Color';norm=n.new('ShaderNodeNormalMap');norm.inputs['Strength'].default_value=.18 if kind=='oak' else .35 if kind in ['skin','denim','jacket'] else .65;m.node_tree.links.new(tex.outputs['Color'],norm.inputs['Color']);m.node_tree.links.new(norm.outputs['Normal'],p.inputs['Normal'])
    else:
     im.colorspace_settings.name='Non-Color';sep=n.new('ShaderNodeSeparateColor');m.node_tree.links.new(tex.outputs['Color'],sep.inputs[0]);m.node_tree.links.new(sep.outputs[1],p.inputs[socket])
  return m

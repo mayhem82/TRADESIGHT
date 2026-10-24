@@ -216,3 +216,24 @@ Physical AR camera, green reticle, tracking, wall detection and Galaxy S25 FE
 performance remain unverified. Mock XR tests verify logic only. Wall placement
 estimates floor height; persistent anchoring is not implemented. User was given
 the live URL and floor-placement instructions for device inspection.
+
+## 2026-10-24 — visual remediation after production capture review
+
+User requested correction of the visibly stylised production capture. Kept work
+within Stone Room and retained atomic commits. Existing controls and XR logic are
+unchanged. No physical-device result has been supplied.
+
+Environment defects: repeated high-contrast orange grain, an artificial ceiling
+point-light hotspot, and sparse polygon trees against a flat horizon. Replaced the
+wood color map with generated fine-grain neutral oak, reduced its normal strength,
+replaced the hotspot with broad fill, and added an equirectangular countryside
+background with environment reflections. The background is generated scenery, not
+surveyed terrain, and is hidden by actual WebXR camera passthrough during AR.
+Original generated masters are retained; Blender prepares optimized JPEG maps.
+The 1774px panorama is 538,965 bytes and oak albedo is 315,601 bytes.
+
+Geometry verification after material rebuild: 48 window aperture rays, 64 outward
+stone-normal checks, and the solid east-wall check pass. New runtime background
+is included in live byte verification. Browser tests now additionally walk toward
+the character and retain a close-up, preventing distant screenshots from being
+the only visual review. Browser and deployment rerun pending.
