@@ -20,7 +20,7 @@ const diag=page=>page.evaluate(()=>window.stoneRoom.diagnostics);
   page.on('pageerror',e=>errors.push(e.message));await page.route('https://stone.test/**',r=>serve(r,requests,errors));
   await page.goto('https://stone.test/stone-room/');await page.waitForFunction(()=>window.stoneRoom?.diagnostics.loaded,null,{timeout:90000});await page.waitForTimeout(600);
   const initial=await diag(page);assert.deepEqual(initial.uvMissing,[]);assert(initial.npcHeight>1.6&&initial.npcHeight<2);assert.equal(initial.animations.length,4);assert(initial.ceilingVisible);assert(initial.floorContactSamples>0&&Math.abs(initial.groundClearance)<.015);assert(Math.abs(initial.npcScreen[0])<.8&&Math.abs(initial.npcScreen[1])<.8&&Math.abs(initial.npcScreen[2])<1);
-  assert(requests.includes('stone-room/xr-presentation.js'),'built presentation module must load');
+  assert(requests.includes('stone-room/xr-presentation.js')&&requests.includes('stone-room/update-guard.js'),'built graphics modules must load');
   await page.screenshot({path:path.join(out,name+'-initial.png'),timeout:120000});
   const start=initial.camera;await page.keyboard.down('w');try{await page.waitForFunction(s=>JSON.stringify(window.stoneRoom.diagnostics.camera)!==JSON.stringify(s),start);}finally{await page.keyboard.up('w');}
   await page.click('#reset');await page.click('#plan');assert((await diag(page)).top);assert(!(await diag(page)).ceilingVisible);await page.click('#plan');assert.deepEqual((await diag(page)).camera,start);
@@ -37,6 +37,7 @@ const diag=page=>page.evaluate(()=>window.stoneRoom.diagnostics);
   }
   await page.screenshot({path:path.join(out,name+'.png'),timeout:120000});
   await page.click('#ar');await page.waitForTimeout(300);assert(await page.isVisible('#error'));assert((await diag(page)).roomVisible);assert.deepEqual(errors,[]);assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));assert(await page.evaluate(()=>!document.querySelector('#ar-overlay').contains(document.querySelector('#view'))));
+  if(name==='desktop'){const update=await page.evaluate('('+fs.readFileSync('tests/stone-room/update-error-check.js','utf8')+')()');assert(update.failures>=3&&update.draws>0&&update.notices===1&&update.visible&&update.poseRestored&&update.normalAnimationResumed);assert(update.text.includes('Animation update failed: Injected animation update fault'));assert.deepEqual(errors,[]);results.push({scenario:'injected animation exception containment',evidence:update});}
   await page.evaluate(()=>{document.body.classList.add('in-ar');for(const id of ['ar-overlay','ar-ui','ar-motion','reposition'])document.getElementById(id).hidden=false;document.getElementById('ar-options').open=true;});
   for(const selector of ['#ar-content','#ar-speed','#place','#reposition','#exit-ar','#ar-follow','#ar-stop','#ar-wave']){const b=await page.locator(selector).boundingBox();assert(b&&b.x>=0&&b.y>=0&&b.x+b.width<=width+1&&b.y+b.height<=height+1,'AR control outside viewport: '+selector);}
   const options=await page.locator('#ar-options').boundingBox(),actions=await page.locator('.ar-actions').first().boundingBox();assert(options.y+options.height<=actions.y||options.x+options.width<=actions.x,'AR panels overlap');

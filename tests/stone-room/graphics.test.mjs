@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from '../../public/stone-room/vendor/three.module.js';
 import {createXRGraphics,PROBE_BOUNDS} from '../../public/stone-room/xr-graphics.js';
 import {renderScene} from '../../public/stone-room/xr-presentation.js';
+import {createUpdateGuard,createPoseCheckpoint} from '../../public/stone-room/update-guard.js';
 import fs from 'node:fs';
 
 function fixture(){
@@ -90,4 +91,36 @@ test('initial XR frames without a viewer pose wait without a false graphics erro
  const frame={getViewerPose:r=>{assert.equal(r,reference);return null;}};
  assert.equal(renderScene(renderer,{}, {},frame),false);
  assert.throws(()=>renderScene(renderer,{}, {},{getViewerPose:()=>({})}),/XR projection target/);
+});
+
+test('animation exception restores the last pose and leaves ring drawing and actual Three RAF alive',()=>{
+ const root=new THREE.Group(),bone=new THREE.Bone();root.add(bone);root.position.set(1,2,3);bone.quaternion.setFromAxisAngle(new THREE.Vector3(0,1,0),.4);
+ const previous=[...root.position.toArray(),...bone.quaternion.toArray()],pose=createPoseCheckpoint(root),messages=[];
+ const guard=createUpdateGuard((phase,message)=>messages.push({phase,message}));
+ const source=fs.readFileSync(new URL('../../public/stone-room/vendor/three.module.js',import.meta.url),'utf8'),start=source.indexOf('function ua(){'),end=source.indexOf('function da(',start);
+ assert(start>=0&&end>start);const factory=Function('return ('+source.slice(start,end)+')')(),scheduler=factory();
+ let next,scheduled=0,ringDraws=0;scheduler.setContext({requestAnimationFrame(callback){next=callback;return ++scheduled},cancelAnimationFrame(){}});
+ scheduler.setAnimationLoop(()=>{guard.run('Animation',()=>{root.position.set(9,8,7);bone.quaternion.identity();throw Error('injected mixer failure')},pose);ringDraws++;});
+ scheduler.start();next(0,{});next(16,{});
+ assert.equal(scheduled,3);assert.equal(ringDraws,2);assert.equal(messages.length,1);assert.deepEqual([...root.position.toArray(),...bone.quaternion.toArray()],previous);
+});
+test('guard preserves normal animation actions, reports once per distinct failure and resets for reentry',()=>{
+ const object=new THREE.Object3D(),mixer=new THREE.AnimationMixer(object),messages=[];const guard=createUpdateGuard((phase,message)=>messages.push({phase,message}));
+ for(const [i,name]of ['Idle','Walk','Wave','LookAround'].entries()){
+  mixer.stopAllAction();const action=mixer.clipAction(new THREE.AnimationClip(name,1,[new THREE.NumberKeyframeTrack('.position[x]',[0,1],[i,i+1])]));action.play();
+  assert(guard.run('Animation',()=>mixer.update(.25)));assert(object.position.x>i);assert.equal(action.isRunning(),true);
+ }
+ assert.equal(messages.length,0);for(let i=0;i<20;i++)guard.run('Animation',()=>{throw Error('same failure')});assert.equal(messages.length,1);assert.equal(guard.diagnostics.failureCount,20);
+ guard.run('Tracking',()=>{throw Error('same failure')});assert.equal(messages.length,2);
+ guard.reset();assert.equal(guard.diagnostics.failureCount,0);guard.run('Animation',()=>{throw Error('same failure')});assert.equal(messages.length,3);
+});
+test('a failed update or error display cannot prevent another update phase',()=>{
+ const guard=createUpdateGuard(()=>{throw Error('display failure')});let tracking=0;
+ assert.doesNotThrow(()=>guard.run('Movement',()=>{throw Error('move failure')}));assert(guard.run('Tracking',()=>tracking++));assert.equal(tracking,1);
+});
+test('AR update warning is inside the overlay and guard resets on both session lifecycle events',()=>{
+ const html=fs.readFileSync(new URL('../../public/stone-room/index.html',import.meta.url),'utf8'),source=fs.readFileSync(new URL('../../public/stone-room/room.js',import.meta.url),'utf8');
+ assert(html.indexOf('id="ar-update-error"')>html.indexOf('id="ar-overlay"'));
+ assert.match(html,/id="ar-update-error" role="alert" hidden/);
+ assert.match(source,/addEventListener\('sessionstart',resetUpdateErrors\)/);assert.match(source,/addEventListener\('sessionend',resetUpdateErrors\)/);
 });

@@ -9,3 +9,4 @@
 
 #ar-options .check{display:flex;align-items:center;gap:8px;font-size:11px}#ar-options .check input{width:20px;min-height:20px;flex:none}#ar-compat{font-size:11px;width:100%}#ar-graphics{font:10px/1.4 monospace;overflow-wrap:anywhere;background:#14201eb8;padding:4px;border-radius:5px}
 @media(min-height:501px){#ar-options{max-height:45dvh;overflow:auto}}
+#ar-update-error{max-width:100%;background:#5b2828ed;border-radius:6px;padding:6px;overflow-wrap:anywhere}

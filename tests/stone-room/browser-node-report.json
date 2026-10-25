@@ -1,6 +1,18 @@
 {
   "results": [
     {
+      "scenario": "injected animation exception containment",
+      "evidence": {
+        "failures": 3,
+        "draws": 75,
+        "notices": 1,
+        "text": "Animation update failed: Injected animation update fault. Scene rendering continues.",
+        "visible": true,
+        "poseRestored": true,
+        "normalAnimationResumed": true
+      }
+    },
+    {
       "viewport": "desktop",
       "dimensions": [
         1280,
@@ -8,6 +20,10 @@
       ],
       "diagnostics": {
         "loaded": true,
+        "updateErrors": {
+          "failureCount": 0,
+          "lastError": ""
+        },
         "graphicsMode": "standard",
         "antialias": true,
         "input": {
@@ -41,7 +57,7 @@
           0.9836465767947516
         ],
         "floorContactSamples": 94,
-        "groundClearance": -3.7591080662406984e-17,
+        "groundClearance": 7.343122180010867e-17,
         "npcHeight": 1.8380000759401587,
         "animations": [
           "Idle",
@@ -89,6 +105,7 @@
         "stone-room/xr-graphics.js",
         "stone-room/ar-render-profile.js",
         "stone-room/xr-presentation.js",
+        "stone-room/update-guard.js",
         "stone-room/surface-reticle.js",
         "stone-room/vendor/BufferGeometryUtils.js",
         "stone-room/assets/stone-room.glb",
@@ -106,6 +123,10 @@
       ],
       "diagnostics": {
         "loaded": true,
+        "updateErrors": {
+          "failureCount": 0,
+          "lastError": ""
+        },
         "graphicsMode": "standard",
         "antialias": true,
         "input": {
@@ -139,7 +160,7 @@
           0.9836465767947516
         ],
         "floorContactSamples": 94,
-        "groundClearance": -3.7591080662406984e-17,
+        "groundClearance": 7.343122180010867e-17,
         "npcHeight": 1.8380000759401587,
         "animations": [
           "Idle",
@@ -187,6 +208,7 @@
         "stone-room/xr-graphics.js",
         "stone-room/ar-render-profile.js",
         "stone-room/xr-presentation.js",
+        "stone-room/update-guard.js",
         "stone-room/surface-reticle.js",
         "stone-room/vendor/BufferGeometryUtils.js",
         "stone-room/assets/stone-room.glb",
@@ -204,6 +226,10 @@
       ],
       "diagnostics": {
         "loaded": true,
+        "updateErrors": {
+          "failureCount": 0,
+          "lastError": ""
+        },
         "graphicsMode": "standard",
         "antialias": true,
         "input": {
@@ -285,6 +311,7 @@
         "stone-room/xr-graphics.js",
         "stone-room/ar-render-profile.js",
         "stone-room/xr-presentation.js",
+        "stone-room/update-guard.js",
         "stone-room/surface-reticle.js",
         "stone-room/vendor/BufferGeometryUtils.js",
         "stone-room/assets/stone-room.glb",

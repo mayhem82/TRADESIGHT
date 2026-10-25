@@ -4,7 +4,7 @@ from urllib.request import urlopen,Request
 from urllib.error import URLError
 import hashlib,time,json,os
 R=Path(__file__).resolve().parents[2];base='https://mayhem82.github.io/TRADESIGHT/stone-room/'
-files=['index.html','room.js','room.css','core.mjs','xr.js','floor-contact.js','xr-graphics.js','xr-presentation.js','ar-render-profile.js','surface-reticle.js','vendor/three.module.js','vendor/GLTFLoader.js','vendor/BufferGeometryUtils.js','assets/stone-room.glb','assets/photo-guided-npc.glb','assets/countryside.jpg']
+files=['index.html','room.js','room.css','core.mjs','xr.js','floor-contact.js','xr-graphics.js','xr-presentation.js','update-guard.js','ar-render-profile.js','surface-reticle.js','vendor/three.module.js','vendor/GLTFLoader.js','vendor/BufferGeometryUtils.js','assets/stone-room.glb','assets/photo-guided-npc.glb','assets/countryside.jpg']
 report=[]
 for name in files:
  expected=hashlib.sha256((R/'public/stone-room'/name).read_bytes()).hexdigest();failure=None

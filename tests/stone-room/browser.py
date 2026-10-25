@@ -62,6 +62,12 @@ with sync_playwright() as p:
   assert not errors,errors
   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),'horizontal overflow'
   results.append({'viewport':name,'dimensions':[width,height],'diagnostics':diag,'assetRequests':requests,'errors':errors,'verified':['load','embedded assets','UVs','NPC scale','named clips','walk','wave','stop','keyboard movement','joystick release','reset','overhead roof visibility','settings collapse','unsupported AR error'],'notVerified':['ARCore camera','physical hit tests','tracking stability','Galaxy S25 FE performance','photorealistic quality']})
+  if name=='desktop':
+   update=page.evaluate((OUT/'update-error-check.js').read_text())
+   assert update['failures']>=3 and update['draws']>0 and update['notices']==1 and update['visible'] and update['poseRestored'] and update['normalAnimationResumed'],update
+   assert 'Animation update failed: Injected animation update fault' in update['text']
+   assert not errors,errors
+   results[-1]['updateContainment']=update
   assert page.evaluate("!document.querySelector('#ar-overlay').contains(document.querySelector('#view'))"),'XR projection canvas must not be part of DOM overlay'
   # Layout-only check: this does not simulate camera passthrough or XR tracking.
   page.evaluate("document.body.classList.add('in-ar');document.querySelector('#ar-overlay').hidden=false;document.querySelector('#ar-ui').hidden=false;document.querySelector('#ar-motion').hidden=false;document.querySelector('#ar-options').open=true;document.querySelector('#reposition').hidden=false")

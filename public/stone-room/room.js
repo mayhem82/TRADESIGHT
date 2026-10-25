@@ -6,6 +6,7 @@ import {createFloorContact} from './floor-contact.js';
 import {createXRGraphics} from './xr-graphics.js';
 import {createARRenderProfile} from './ar-render-profile.js';
 import {renderScene} from './xr-presentation.js';
+import {createUpdateGuard,createPoseCheckpoint} from './update-guard.js';
 const compatibility=new URLSearchParams(location.search).get('graphics')==='compat';
 const $=s=>document.querySelector(s),scene=new THREE.Scene();scene.background=new THREE.Color('#bdcbd0');scene.fog=null;
 const camera=new THREE.PerspectiveCamera(64,innerWidth/innerHeight,.035,120);
@@ -27,7 +28,7 @@ const room=new THREE.Group();room.name='StoneRoom';scene.add(room);
 const exterior=new THREE.Group();exterior.name='Exterior';scene.add(exterior);
 // The distant countryside is an equirectangular environment, never an AR camera overlay.
 let environmentMap;
-let floorContact=null;const floorOrigin=new THREE.Vector3();
+let floorContact=null,npcPose=null;const floorOrigin=new THREE.Vector3();
 let architecture,ceiling,npcModel,mixer,actions={},activeAction,loaded=false,top=false,yaw=0,pitch=0,savedWalk=null,behaviour='idle',elapsed=0,waveUntil=0,wanderTarget=new THREE.Vector3(0,0,-1),wanderTime=0;const npc=new THREE.Group();npc.position.set(.8,0,-.9);room.add(npc);
 const arGround=new THREE.Mesh(new THREE.PlaneGeometry(10,10),new THREE.ShadowMaterial({opacity:.2}));arGround.rotation.x=-Math.PI/2;arGround.position.y=.001;arGround.receiveShadow=true;arGround.visible=false;room.add(arGround);
 let joyId=null;
@@ -35,6 +36,13 @@ const keys=new Set(),joystick={x:0,y:0},loader=new GLTFLoader();
 function message(text){$('#status').textContent=text}
 function error(text){$('#error').hidden=false;$('#error').textContent=text}
 function clearError(){$('#error').hidden=true;$('#error').textContent=''}
+const updateGuard=createUpdateGuard((phase,message)=>{
+ const text=phase+' update failed: '+message.slice(0,160)+'. Scene rendering continues.';
+ if(ar.active){const alert=$('#ar-update-error');alert.textContent=text;alert.hidden=false;}else error(text);
+});
+function resetUpdateErrors(){updateGuard.reset();$('#ar-update-error').hidden=true;$('#ar-update-error').textContent='';}
+renderer.xr.addEventListener('sessionstart',resetUpdateErrors);
+renderer.xr.addEventListener('sessionend',resetUpdateErrors);
 function look(){camera.rotation.set(pitch,yaw,0,'YXZ')}
 function reset(){if(ar.active)return;top=false;$('#plan').setAttribute('aria-pressed','false');if(ceiling)ceiling.visible=true;camera.position.set(-2.05,ROOM.eye,2.05);yaw=-Math.atan2(npc.position.x-camera.position.x,camera.position.z-npc.position.z);pitch=-.05;look();clearInput()}
 function state(){return {position:camera.position.clone(),quaternion:camera.quaternion.clone(),yaw,pitch,top}}
@@ -48,7 +56,7 @@ function installNPC(gltf,normalize=false){
  if(normalize)model.scale.setScalar(1.83/size.y);const b=new THREE.Box3().setFromObject(model);model.position.y-=b.min.y;model.position.x-=(b.min.x+b.max.x)/2;model.position.z-=(b.min.z+b.max.z)/2;
  model.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;o.frustumCulled=false;for(const m of [].concat(o.material)){m.envMapIntensity=.55;if(m.normalScale)m.normalScale.setScalar(.25)}}});
  if(npcModel){mixer?.stopAllAction();mixer?.uncacheRoot(npcModel);npc.remove(npcModel);dispose(npcModel)}npcModel=model;npc.add(model);mixer=new THREE.AnimationMixer(model);actions={};activeAction=null;
- for(const clip of gltf.animations){const n=clip.name.toLowerCase(),key=n.includes('walk')?'Walk':n.includes('wave')?'Wave':n.includes('look')?'LookAround':n.includes('idle')?'Idle':clip.name;actions[key]=mixer.clipAction(clip)}play('Idle');floorContact=normalize?null:createFloorContact(model);
+ for(const clip of gltf.animations){const n=clip.name.toLowerCase(),key=n.includes('walk')?'Walk':n.includes('wave')?'Wave':n.includes('look')?'LookAround':n.includes('idle')?'Idle':clip.name;actions[key]=mixer.clipAction(clip)}play('Idle');floorContact=normalize?null:createFloorContact(model);npcPose=createPoseCheckpoint(npc);
 }
 async function load(){
  $('#loading').hidden=false;$('#retry').hidden=true;clearError();
@@ -98,7 +106,7 @@ if(waveUntil>elapsed){mixer?.update(dt);return}let target=null;const speed=+$('#
  const clip=walking?'Walk':behaviour!=='stop'&&$('#lookaround').checked?'LookAround':'Idle';play(clip);if(actions.Walk)actions.Walk.timeScale=speed/1.15;mixer?.update(dt);
 }
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);const box=$('#toolbar').getBoundingClientRect();$('#npcpanel').style.top=box.bottom+10+'px'});
-const clock=new THREE.Clock();renderer.setAnimationLoop((time,frame)=>{const dt=Math.min(clock.getDelta(),.05);move(dt);ar.update(frame);animateNPC(dt);try{xrGraphics.beforeFrame(ar.active&&$('#ar-probe').checked);if(loaded)floorContact?.settle(npc.getWorldPosition(floorOrigin).y);if(renderScene(renderer,scene,camera,frame)&&ar.active)ar.rendered({draws:renderer.info.render.calls,views:renderer.xr.getCamera().cameras.length,contextLost:renderer.getContext().isContextLost(),xrTarget:!!renderer.getRenderTarget()?.isXRRenderTarget,graphicsMode:compatibility?'compat':'standard',graphics:xrGraphics.afterFrame(ar.diagnostics.frames)},renderer.xr.getCamera())}catch(e){if(ar.active)ar.renderError(e);else error('Graphics update failed: '+e.message)}});
+const clock=new THREE.Clock();renderer.setAnimationLoop((time,frame)=>{const dt=Math.min(clock.getDelta(),.05);move(dt);ar.update(frame);updateGuard.run('Animation',()=>animateNPC(dt),npcPose);try{xrGraphics.beforeFrame(ar.active&&$('#ar-probe').checked);if(loaded)floorContact?.settle(npc.getWorldPosition(floorOrigin).y);if(renderScene(renderer,scene,camera,frame)&&ar.active)ar.rendered({draws:renderer.info.render.calls,views:renderer.xr.getCamera().cameras.length,contextLost:renderer.getContext().isContextLost(),xrTarget:!!renderer.getRenderTarget()?.isXRRenderTarget,graphicsMode:compatibility?'compat':'standard',graphics:xrGraphics.afterFrame(ar.diagnostics.frames)},renderer.xr.getCamera())}catch(e){if(ar.active)ar.renderError(e);else error('Graphics update failed: '+e.message)}});
 // Read-only diagnostics for browser verification; no mutation hooks in production.
-window.stoneRoom={get diagnostics(){const meshes=[];room.traverse(o=>{if(o.isMesh)meshes.push(o)});return {loaded,graphicsMode:compatibility?'compat':'standard',antialias:renderer.getContext().getContextAttributes()?.antialias,input:{keys:[...keys],joystick:{...joystick},joyId},ar:ar.active,arDirectLighting:arRenderProfile.active,arPlaced:ar.placed,arCompanionOnly:ar.companionOnly,architectureVisible:architecture?.visible,arMoving:!!ar.motion,top,camera:camera.position.toArray(),npc:npc.position.toArray(),npcScreen:npc.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.9,0)).project(camera).toArray(),floorContactSamples:floorContact?.samples??0,groundClearance:floorContact?.clearance(npc.getWorldPosition(floorOrigin).y)??null,npcHeight:npcModel?new THREE.Box3().setFromObject(npcModel).getSize(new THREE.Vector3()).y:0,animations:Object.keys(actions),activeAnimation:activeAction?.getClip().name,meshes:meshes.length,triangles:renderer.info.render.triangles,drawCalls:renderer.info.render.calls,uvMissing:meshes.filter(o=>!o.geometry.attributes.uv).map(o=>o.name),ceilingVisible:ceiling?.visible,roomVisible:room.visible,roomScale:room.scale.toArray(),xrState:ar.state,xrDiagnostics:ar.diagnostics}}};
+window.stoneRoom={get diagnostics(){const meshes=[];room.traverse(o=>{if(o.isMesh)meshes.push(o)});return {loaded,updateErrors:updateGuard.diagnostics,graphicsMode:compatibility?'compat':'standard',antialias:renderer.getContext().getContextAttributes()?.antialias,input:{keys:[...keys],joystick:{...joystick},joyId},ar:ar.active,arDirectLighting:arRenderProfile.active,arPlaced:ar.placed,arCompanionOnly:ar.companionOnly,architectureVisible:architecture?.visible,arMoving:!!ar.motion,top,camera:camera.position.toArray(),npc:npc.position.toArray(),npcScreen:npc.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.9,0)).project(camera).toArray(),floorContactSamples:floorContact?.samples??0,groundClearance:floorContact?.clearance(npc.getWorldPosition(floorOrigin).y)??null,npcHeight:npcModel?new THREE.Box3().setFromObject(npcModel).getSize(new THREE.Vector3()).y:0,animations:Object.keys(actions),activeAnimation:activeAction?.getClip().name,meshes:meshes.length,triangles:renderer.info.render.triangles,drawCalls:renderer.info.render.calls,uvMissing:meshes.filter(o=>!o.geometry.attributes.uv).map(o=>o.name),ceilingVisible:ceiling?.visible,roomVisible:room.visible,roomScale:room.scale.toArray(),xrState:ar.state,xrDiagnostics:ar.diagnostics}}};
 window.addEventListener('unhandledrejection',e=>error('An operation failed: '+(e.reason?.message||e.reason)));renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();clearInput();$('#loading').hidden=true;error('Graphics context lost. Reload the page to restore the room.')});

@@ -9,13 +9,14 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   await page.route('https://stone.test/**',route=>{
    const name=new URL(route.request().url()).pathname.slice(1);
    if(name==='fixture')return route.fulfill({body:'<!doctype html><title>Framebuffer regression</title>',contentType:'text/html'});
-   if(!['public/stone-room/vendor/three.module.js','public/stone-room/xr-presentation.js'].includes(name))return route.fulfill({status:404,body:'not found'});
+   if(!['public/stone-room/vendor/three.module.js','public/stone-room/xr-presentation.js','public/stone-room/update-guard.js'].includes(name))return route.fulfill({status:404,body:'not found'});
    return route.fulfill({body:fs.readFileSync(path.resolve(name)),contentType:'text/javascript'});
   });
   await page.goto('https://stone.test/fixture');
   const result=await page.evaluate(async()=>{
    const THREE=await import('/public/stone-room/vendor/three.module.js');
    const {renderScene}=await import('/public/stone-room/xr-presentation.js');
+   const {createUpdateGuard}=await import('/public/stone-room/update-guard.js');
    const renderer=new THREE.WebGLRenderer({alpha:true,antialias:true,premultipliedAlpha:false});renderer.setSize(64,64);renderer.setClearColor(0,0);
    const target=new THREE.WebGLRenderTarget(64,64,{colorSpace:renderer.outputColorSpace});target.isXRRenderTarget=true;
    const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,1,.01,10);camera.position.set(0,1,1);camera.lookAt(0,0,0);
@@ -45,7 +46,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
     renderState={};inputSources=[];enabledFeatures=[];environmentBlendMode='alpha-blend';
     requestReferenceSpace(){return Promise.resolve({});}
     updateRenderState(state){Object.assign(this.renderState,state);}
-    requestAnimationFrame(callback){this.callback=callback;return 1;}
+    scheduled=0;requestAnimationFrame(callback){this.callback=callback;return ++this.scheduled;}
     cancelAnimationFrame(){}
     end(){this.dispatchEvent(new Event('end'));return Promise.resolve();}
    }
@@ -58,21 +59,23 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
     getViewSubImage(layer){return {colorTexture:layer.texture,viewport:{x:0,y:0,width:64,height:64}};}
    };
    const lifecycle=[];
+   const updateNotices=[],guard=createUpdateGuard((phase,message)=>updateNotices.push({phase,message}));
+   xrRenderer.xr.addEventListener('sessionstart',()=>guard.reset());xrRenderer.xr.addEventListener('sessionend',()=>guard.reset());
    for(let pass=0;pass<4;pass++){
     const session=new Session();if(pass>=2)session.renderState.layers=[];await xrRenderer.xr.setSession(session);let rendered=false;
-    xrRenderer.setAnimationLoop((time,frame)=>{if(frame)rendered=renderScene(xrRenderer,scene,camera,frame);});
+    let failAnimation=false;xrRenderer.setAnimationLoop((time,frame)=>{if(frame){guard.run('Animation',()=>{if(failAnimation)throw Error('Injected animation update fault')});rendered=renderScene(xrRenderer,scene,camera,frame);}});
     session.callback(-1,{getViewerPose:()=>null});if(rendered)throw Error('Rendered before initial tracking');
     camera.updateMatrixWorld();const matrix=camera.matrixWorld.toArray(),projectionMatrix=camera.projectionMatrix.toArray();
-    session.callback(0,{getViewerPose:()=>({views:[{transform:{matrix},projectionMatrix}]})});
+    const validFrame={getViewerPose:()=>({views:[{transform:{matrix},projectionMatrix}]})};failAnimation=true;session.callback(0,validFrame);session.callback(16,validFrame);const animationFailures=guard.diagnostics.failureCount;failAnimation=false;session.callback(32,validFrame);
     const layer=xrRenderer.xr.getBaseLayer(),renderTarget=xrRenderer.getRenderTarget();const actual=context.getParameter(context.FRAMEBUFFER_BINDING);const rgba=new Uint8Array(64*64*4);xrRenderer.readRenderTargetPixels(renderTarget,0,0,64,64,rgba);
     let green=0;for(let i=0;i<rgba.length;i+=4)if(rgba[i+1]>80&&rgba[i+1]>rgba[i]*2)green++;
     const boundToXR=pass<2?actual===layer.framebuffer:context.getFramebufferAttachmentParameter(context.FRAMEBUFFER,context.COLOR_ATTACHMENT0,context.FRAMEBUFFER_ATTACHMENT_OBJECT_NAME)===layer.texture;
-    lifecycle.push({pass,type:pass<2?'webgl':'projection',samples:renderTarget.samples,rendered,xrTarget:renderTarget.isXRRenderTarget===true,views:xrRenderer.xr.getCamera().cameras.length,boundToXR,green});
-    await session.end();lifecycle[pass].restored=!xrRenderer.xr.isPresenting&&xrRenderer.getRenderTarget()===null;
+    lifecycle.push({pass,type:pass<2?'webgl':'projection',samples:renderTarget.samples,rendered,xrTarget:renderTarget.isXRRenderTarget===true,views:xrRenderer.xr.getCamera().cameras.length,boundToXR,green,animationFailures,updateNotices:updateNotices.length,scheduled:session.scheduled});
+    await session.end();lifecycle[pass].restored=!xrRenderer.xr.isPresenting&&xrRenderer.getRenderTarget()===null; lifecycle[pass].guardReset=guard.diagnostics.failureCount===0;
    }
    xrRenderer.setAnimationLoop(null);for(const l of layers){context.deleteTexture(l.texture);if(l.depth)context.deleteRenderbuffer(l.depth);if(l.framebuffer)context.deleteFramebuffer(l.framebuffer);}xrRenderer.dispose();
    return {before,after,errors,lifecycle,scope:'Real WebGL and real Three XRManager; synthetic sessions, poses and XR layers; no XR compositor or phone verification'};
   });
-  assert.equal(result.before,0);assert(result.after>10);assert.deepEqual(result.errors,[]);for(const step of result.lifecycle){assert(step.rendered&&step.xrTarget&&step.boundToXR&&step.restored);assert.equal(step.views,1);assert(step.green>10);}console.log(JSON.stringify(result));
+  assert.equal(result.before,0);assert(result.after>10);assert.deepEqual(result.errors,[]);for(const step of result.lifecycle){assert(step.rendered&&step.xrTarget&&step.boundToXR&&step.restored&&step.guardReset);assert.equal(step.views,1);assert(step.green>10);assert.equal(step.animationFailures,2);assert.equal(step.updateNotices,step.pass+1);assert(step.scheduled>=5);}console.log(JSON.stringify(result));
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});

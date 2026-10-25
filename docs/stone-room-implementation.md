@@ -543,3 +543,36 @@ repair's S25 FE visibility and performance are unverified until observed on the
 device. Per-frame state reset adds graphics-state work; no performance claim is
 made. Deployment and live verification must pass before calling this release
 published.
+
+## 2026-10-25 — contain animation exceptions without stopping the scene loop
+
+After release c3a3c35 the user reported neither an AR model nor a placement ring.
+That physical failure remains authoritative; the exact phone-loaded revision was
+not independently observed. The user asked whether animation could cause it.
+The production NPC renders locally with animation stopped and with each of Idle,
+Walk, Wave and LookAround; every case retained the independent green ring and no
+GL errors. Animation alone is not established as the cause.
+
+A concrete failure mechanism was found: animateNPC ran outside the frame's
+try/catch, and Three r164 requests its next RAF after that callback returns. An
+injected synchronous animation exception therefore suppressed both drawing and
+the next frame. No natural production-animation exception was reproduced.
+
+The scoped repair guards only the animation phase. It captures NPC/bone transforms
+in reused storage, restores the last valid pose after an exception, and continues
+to the existing render path. Successful clips, model assets, placement and XR
+layer selection are unchanged. A persistent warning appears inside the AR overlay
+(or the existing walkthrough error display), once per distinct failure per
+session; session start/end clear its history. Read-only diagnostics retain counts.
+
+Local validation passes: production build, both GLB contracts, 31 unit tests,
+desktop/portrait/landscape browser checks and the original main-app smoke check.
+The production-mixer fault regression observed three caught failures, 75 render
+callbacks, one visible warning, retained pose and resumed healthy animation.
+Actual r164 XR-manager tests with synthetic sessions/layers preserve ring pixels,
+future callbacks, warning deduplication and guard reset through legacy/projection
+layer reentry. Existing Python CI browser checks include the same injected-fault
+regression. No workflow, native launcher, vendor renderer or asset changes.
+
+These results prove containment of the injected exception. They do not prove an
+animation exception occurred on the S25 FE or establish a physical visibility fix.
