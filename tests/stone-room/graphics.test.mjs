@@ -55,7 +55,7 @@ test('direct-lit AR keeps textured skinned geometry and restores the walkthrough
  const mesh=new THREE.SkinnedMesh(new THREE.BoxGeometry(),material);root.add(mesh);const geometry=mesh.geometry;
  let alpha=.7;const renderer={shadowMap:{enabled:true},toneMapping:THREE.ACESFilmicToneMapping,getClearAlpha:()=>alpha,setClearAlpha:v=>alpha=v};
  const profile=createARRenderProfile(renderer,scene,root);
- profile.enter();profile.enter();assert.equal(profile.active,true);assert.equal(mesh.geometry,geometry);assert.equal(mesh.isSkinnedMesh,true);assert.equal(material.map,albedo);assert.equal(material.normalMap,null);assert.equal(material.roughnessMap,null);assert.equal(scene.environment,null);assert.equal(renderer.shadowMap.enabled,false);assert.equal(alpha,0);
+ profile.enter();profile.enter();assert.equal(profile.active,true);assert.equal(mesh.geometry,geometry);assert.equal(mesh.isSkinnedMesh,true);assert.equal(material.map,albedo);assert.equal(material.normalMap,normal);assert.equal(material.roughnessMap,roughness);assert.equal(scene.environment,null);assert.equal(renderer.shadowMap.enabled,false);assert.equal(alpha,0);
  profile.exit();profile.exit();assert.equal(profile.active,false);assert.equal(material.normalMap,normal);assert.equal(material.roughnessMap,roughness);assert.equal(material.metalnessMap,metalness);assert.equal(material.envMap,environment);assert.equal(scene.environment,environment);assert.equal(renderer.shadowMap.enabled,true);assert.equal(renderer.toneMapping,THREE.ACESFilmicToneMapping);assert.equal(alpha,.7);
  profile.enter();profile.exit();assert.equal(material.normalMap,normal,'a second session also restores the original map');
 });
@@ -79,7 +79,7 @@ test('missing XR target reaches the existing visible AR error handler',()=>{
  try{renderScene(renderer,{},{});}catch(e){ar.renderError(e);}
  assert.equal(visible,'AR graphics error: XR projection target is unavailable');
  const source=fs.readFileSync(new URL('../../public/stone-room/room.js',import.meta.url),'utf8');
- assert.match(source,/if\(renderScene\(renderer,scene,camera,frame\)&&ar.active\)/);
+ assert.match(source,/renderer\.render\(scene,camera\);if\(ar.active\)/);
  assert.match(source,/catch\(e\)\{if\(ar.active\)ar.renderError\(e\)/);
 });
 test('live byte verifier includes the new presentation module',()=>{

@@ -576,3 +576,42 @@ regression. No workflow, native launcher, vendor renderer or asset changes.
 
 These results prove containment of the injected exception. They do not prove an
 animation exception occurred on the S25 FE or establish a physical visibility fix.
+
+## 2026-10-25 - restore the user-confirmed Lighthouse method
+
+The user reported no change after 73f1dae. Those physical failures remain recorded;
+passing framebuffer/exception experiments did not establish the phone cause.
+Recovered user confirmation identifies Lighthouse as the working reference, not
+the later C03 browser rewrite. The verified source is public/lighthouse-ar.html
+at 508c1e5 (origin 92bef990); 62c6614 reused its approach in model-viewer.html.
+The live Lighthouse page and source were inspected. Its Three r164 renderer is
+identical to Stone Room's vendored renderer after whitespace normalization.
+
+Stone Room now uses that method: standard Three ARButton, local reference space,
+optional local-floor/dom-overlay, full-window body overlay, transparent scene and
+an immediately visible model positioned manually in session-local coordinates.
+Distance, height, horizontal position, size and rotation controls replace the
+scan-to-unhide gate. No hit-test requests, detected-floor claims or placement
+rings remain in the active controller. Walking aims at a mathematical manual
+plane, explicitly labelled as such; Follow, Stop and Wave remain available.
+Movement speed/stopping distance account for manual scale. Placement is fixed in
+session-local coordinates, not continuously attached to the camera. Original GLBs,
+material maps and all four clips remain; the non-AR walkthrough is restored on
+exit, including camera projection and body display. Existing animation exception
+containment remains. The prior speculative framebuffer helper is not imported by
+the app; no capability spoof, forced layer, native launcher or model replacement.
+
+Local checks: build and unchanged GLB contracts pass; 28 unit tests pass. Existing
+Node Playwright runs the production build in desktop, portrait and landscape
+viewports, verifying movement, controls, animation fault/recovery, unsupported
+graphics, optional probe and main application. Lighthouse lifecycle coverage uses
+the actual r164 XRManager/controller and production NPC with explicit synthetic
+native sessions/layers: all four clips produce over 2000 opaque pixels at 128x192;
+all manual transforms retain at least 390 pixels. Both renderer-selected layer
+branches and reentry pass, with follow/stop, retained visibility on pose loss,
+future callbacks and restored walkthrough. No GL errors. Python CI includes the
+same new lifecycle regression; the existing deployment workflow is unchanged.
+
+These checks establish application behavior with synthetic sessions. They cannot
+establish S25 FE camera/compositor visibility or the original phone failure cause.
+Publication remains conditional on CI/deployment and exact live-byte verification.

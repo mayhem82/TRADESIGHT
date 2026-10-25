@@ -1,24 +1,23 @@
 import * as THREE from 'three';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
 import {ROOM,clamp,constrain,separate,advanceCompanion} from './core.mjs';
-import {setupAR} from './xr.js?v=soundwall-1';
+import {setupAR} from './xr.js?v=lighthouse-1';
 import {createFloorContact} from './floor-contact.js';
 import {createXRGraphics} from './xr-graphics.js';
-import {createARRenderProfile} from './ar-render-profile.js';
-import {renderScene} from './xr-presentation.js';
+import {createARRenderProfile} from './ar-render-profile.js?v=lighthouse-1';
 import {createUpdateGuard,createPoseCheckpoint} from './update-guard.js';
 const compatibility=new URLSearchParams(location.search).get('graphics')==='compat';
 const $=s=>document.querySelector(s),scene=new THREE.Scene();scene.background=new THREE.Color('#bdcbd0');scene.fog=null;
 const camera=new THREE.PerspectiveCamera(64,innerWidth/innerHeight,.035,120);
 const renderer=(()=>{
- try{return new THREE.WebGLRenderer({canvas:$('#view'),antialias:!compatibility,alpha:true,premultipliedAlpha:false})}
+ try{return new THREE.WebGLRenderer({canvas:$('#view'),antialias:!compatibility,alpha:true})}
  catch(e){
   $('#loading').hidden=true;$('#ar').disabled=true;$('#error').hidden=false;
   $('#error').textContent='3D graphics could not start. Close other 3D tabs, then reload in Chrome with graphics acceleration available. AR needs a working WebGL graphics context.';
   throw e;
  }
 })();
-renderer.setPixelRatio(Math.min(devicePixelRatio,1.6));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.xr.enabled=true;renderer.xr.setReferenceSpaceType('local');
+renderer.setPixelRatio(1);renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.xr.enabled=true;renderer.xr.setReferenceSpaceType('local');
 const xrGraphics=createXRGraphics(renderer,scene);
 scene.add(new THREE.HemisphereLight(0xdfefff,0xa79b87,1.25));
 const sunlight=new THREE.DirectionalLight(0xffefd7,2.6);sunlight.position.set(-3,6,-8);sunlight.target.position.set(1,0,1);sunlight.castShadow=true;sunlight.shadow.mapSize.set(2048,2048);Object.assign(sunlight.shadow.camera,{left:-7,right:7,top:6,bottom:-6,near:.5,far:24});sunlight.shadow.bias=-.0002;sunlight.shadow.normalBias=.015;scene.add(sunlight,sunlight.target);
@@ -92,11 +91,11 @@ function animateNPC(dt){if(!loaded)return;elapsed+=dt;
   if(!ar.placed||(ar.state==='tracking-lost'||ar.state==='tracking-error')){play('Idle');mixer?.update(dt);return}
   if(waveUntil>elapsed){mixer?.update(dt);return}
   let walking=false;const motion=ar.motion;
-  if(motion){const target=room.worldToLocal(new THREE.Vector3(motion.target.x,motion.target.y,motion.target.z));const step=advanceCompanion(npc.position,target,+$('#nspeed').value,dt,motion.follow?1.25:.06);npc.position.set(step.x,0,step.z);walking=step.walking;
+  if(motion){const target=room.worldToLocal(new THREE.Vector3(motion.target.x,motion.target.y,motion.target.z));const step=advanceCompanion(npc.position,target,+$('#nspeed').value/room.scale.x,dt,(motion.follow?1.25:.06)/room.scale.x);npc.position.set(step.x,0,step.z);walking=step.walking;
    if(walking){const delta=Math.atan2(Math.sin(step.heading-npc.rotation.y),Math.cos(step.heading-npc.rotation.y));npc.rotation.y+=delta*Math.min(1,dt*6)}
    if(step.arrived&&!motion.follow)ar.arrived();
   }
-  arGround.position.set(npc.position.x,.001,npc.position.z);play(walking?'Walk':'Idle');if(actions.Walk)actions.Walk.timeScale=+$('#nspeed').value/1.15;mixer?.update(dt);return;
+  arGround.position.set(npc.position.x,.001,npc.position.z);play(walking?'Walk':'Idle');if(actions.Walk)actions.Walk.timeScale=+$('#nspeed').value/(1.15*room.scale.x);mixer?.update(dt);return;
  }
 if(waveUntil>elapsed){mixer?.update(dt);return}let target=null;const speed=+$('#nspeed').value;
  if(behaviour==='follow'&&!top&&npc.position.distanceTo(new THREE.Vector3(camera.position.x,0,camera.position.z))>1.45)target=camera.position;
@@ -106,7 +105,7 @@ if(waveUntil>elapsed){mixer?.update(dt);return}let target=null;const speed=+$('#
  const clip=walking?'Walk':behaviour!=='stop'&&$('#lookaround').checked?'LookAround':'Idle';play(clip);if(actions.Walk)actions.Walk.timeScale=speed/1.15;mixer?.update(dt);
 }
 window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);const box=$('#toolbar').getBoundingClientRect();$('#npcpanel').style.top=box.bottom+10+'px'});
-const clock=new THREE.Clock();renderer.setAnimationLoop((time,frame)=>{const dt=Math.min(clock.getDelta(),.05);move(dt);ar.update(frame);updateGuard.run('Animation',()=>animateNPC(dt),npcPose);try{xrGraphics.beforeFrame(ar.active&&$('#ar-probe').checked);if(loaded)floorContact?.settle(npc.getWorldPosition(floorOrigin).y);if(renderScene(renderer,scene,camera,frame)&&ar.active)ar.rendered({draws:renderer.info.render.calls,views:renderer.xr.getCamera().cameras.length,contextLost:renderer.getContext().isContextLost(),xrTarget:!!renderer.getRenderTarget()?.isXRRenderTarget,graphicsMode:compatibility?'compat':'standard',graphics:xrGraphics.afterFrame(ar.diagnostics.frames)},renderer.xr.getCamera())}catch(e){if(ar.active)ar.renderError(e);else error('Graphics update failed: '+e.message)}});
+const clock=new THREE.Clock();renderer.setAnimationLoop((time,frame)=>{const dt=Math.min(clock.getDelta(),.05);move(dt);ar.update(frame);updateGuard.run('Animation',()=>animateNPC(dt),npcPose);try{xrGraphics.beforeFrame(ar.active&&$('#ar-probe').checked);if(loaded)floorContact?.settle(npc.getWorldPosition(floorOrigin).y);renderer.render(scene,camera);if(ar.active)ar.rendered({draws:renderer.info.render.calls,views:renderer.xr.getCamera().cameras.length,contextLost:renderer.getContext().isContextLost(),xrTarget:!!renderer.getRenderTarget()?.isXRRenderTarget,graphicsMode:compatibility?'compat':'standard',graphics:xrGraphics.afterFrame(ar.diagnostics.frames)},renderer.xr.getCamera())}catch(e){if(ar.active)ar.renderError(e);else error('Graphics update failed: '+e.message)}});
 // Read-only diagnostics for browser verification; no mutation hooks in production.
 window.stoneRoom={get diagnostics(){const meshes=[];room.traverse(o=>{if(o.isMesh)meshes.push(o)});return {loaded,updateErrors:updateGuard.diagnostics,graphicsMode:compatibility?'compat':'standard',antialias:renderer.getContext().getContextAttributes()?.antialias,input:{keys:[...keys],joystick:{...joystick},joyId},ar:ar.active,arDirectLighting:arRenderProfile.active,arPlaced:ar.placed,arCompanionOnly:ar.companionOnly,architectureVisible:architecture?.visible,arMoving:!!ar.motion,top,camera:camera.position.toArray(),npc:npc.position.toArray(),npcScreen:npc.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0,.9,0)).project(camera).toArray(),floorContactSamples:floorContact?.samples??0,groundClearance:floorContact?.clearance(npc.getWorldPosition(floorOrigin).y)??null,npcHeight:npcModel?new THREE.Box3().setFromObject(npcModel).getSize(new THREE.Vector3()).y:0,animations:Object.keys(actions),activeAnimation:activeAction?.getClip().name,meshes:meshes.length,triangles:renderer.info.render.triangles,drawCalls:renderer.info.render.calls,uvMissing:meshes.filter(o=>!o.geometry.attributes.uv).map(o=>o.name),ceilingVisible:ceiling?.visible,roomVisible:room.visible,roomScale:room.scale.toArray(),xrState:ar.state,xrDiagnostics:ar.diagnostics}}};
 window.addEventListener('unhandledrejection',e=>error('An operation failed: '+(e.reason?.message||e.reason)));renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();clearInput();$('#loading').hidden=true;error('Graphics context lost. Reload the page to restore the room.')});

@@ -58,17 +58,17 @@ with sync_playwright() as p:
   capture(page,name+'-png',path=str(OUT/(name+'.png')))
   thumbnail=capture(page,name+'-final',type='jpeg',quality=55,scale='css');print('STONE_SCREENSHOT:'+name+':'+base64.b64encode(thumbnail).decode(),flush=True)
   if not page.evaluate("navigator.xr && window.stoneRoom.diagnostics.xrState!=='inactive'"):
-   page.click('#ar');page.wait_for_timeout(300);assert page.is_visible('#error');assert page.evaluate('window.stoneRoom.diagnostics.roomVisible')
+   page.wait_for_function("/AR NOT SUPPORTED|WEBXR NOT AVAILABLE/.test(document.querySelector('#ar').textContent)");assert page.evaluate('window.stoneRoom.diagnostics.roomVisible')
   assert not errors,errors
   assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),'horizontal overflow'
-  results.append({'viewport':name,'dimensions':[width,height],'diagnostics':diag,'assetRequests':requests,'errors':errors,'verified':['load','embedded assets','UVs','NPC scale','named clips','walk','wave','stop','keyboard movement','joystick release','reset','overhead roof visibility','settings collapse','unsupported AR error'],'notVerified':['ARCore camera','physical hit tests','tracking stability','Galaxy S25 FE performance','photorealistic quality']})
+  results.append({'viewport':name,'dimensions':[width,height],'diagnostics':diag,'assetRequests':requests,'errors':errors,'verified':['load','embedded assets','UVs','NPC scale','named clips','walk','wave','stop','keyboard movement','joystick release','reset','overhead roof visibility','settings collapse','unsupported AR indicator'],'notVerified':['ARCore camera','physical hit tests','tracking stability','Galaxy S25 FE performance','photorealistic quality']})
   if name=='desktop':
    update=page.evaluate((OUT/'update-error-check.js').read_text())
    assert update['failures']>=3 and update['draws']>0 and update['notices']==1 and update['visible'] and update['poseRestored'] and update['normalAnimationResumed'],update
    assert 'Animation update failed: Injected animation update fault' in update['text']
    assert not errors,errors
    results[-1]['updateContainment']=update
-  assert page.evaluate("!document.querySelector('#ar-overlay').contains(document.querySelector('#view'))"),'XR projection canvas must not be part of DOM overlay'
+  assert page.evaluate("document.body.contains(document.querySelector('#view'))"),'Lighthouse full-window body contains canvas'
   # Layout-only check: this does not simulate camera passthrough or XR tracking.
   page.evaluate("document.body.classList.add('in-ar');document.querySelector('#ar-overlay').hidden=false;document.querySelector('#ar-ui').hidden=false;document.querySelector('#ar-motion').hidden=false;document.querySelector('#ar-options').open=true;document.querySelector('#reposition').hidden=false")
   for selector in ['#ar-content','#ar-speed','#place','#reposition','#exit-ar','#ar-follow','#ar-stop','#ar-wave']:
@@ -97,11 +97,17 @@ with sync_playwright() as p:
  }""")
  assert pixels['off'][3]==0 and pixels['on']==[255,0,255,255] and pixels['restored'][3]==0,pixels
  results.append({'scenario':'explicit compatibility and optional graphics probe','verified':['antialias disabled only when requested','probe defaults off','real magenta test pixels','test can be switched off'],'notVerified':['XR compositor','physical device']})
- # Render the real animated character and a world-space ring with the AR profile.
+ # Render the real animated character with original materials and all clips.
  direct=compat.evaluate((OUT/'ar-render-check.js').read_text())
- assert direct['coloured']>1000 and direct['green']>20 and not direct['errors'],{k:v for k,v in direct.items() if k!='screenshot'}
+ assert direct['coloured']>1000 and len(direct['clips'])==4 and not direct['errors'],{k:v for k,v in direct.items() if k!='screenshot'}
  (OUT/'ar-render-profile.png').write_bytes(base64.b64decode(direct.pop('screenshot').split(',')[1]))
  results.append({'scenario':'direct-lit AR scene rendering','evidence':direct,'notVerified':['XR compositor','physical ground hit','Samsung GPU']})
+ xr=compat.evaluate((OUT/'lighthouse-xr-check.js').read_text());assert not xr['errors'],xr
+ for step in xr['result']:
+  assert all(step[k] for k in ['immediate','follows','stopped','retained','restored']),step
+  assert step['manualPixels']>100 and all(c['pixels']>100 for c in step['clips']),step
+  assert step['positioned']==[.3,-.8,-4] and step['scale']==.6,step
+ results.append({'scenario':'Lighthouse manual XR lifecycle','evidence':xr})
  compatibility.close()
  # Explicitly exercise unavailable graphics: no infinite loading screen or AR launch.
  unavailable=browser.new_context();unavailable.add_init_script("""

@@ -57,7 +57,7 @@
           0.9836465767947516
         ],
         "floorContactSamples": 94,
-        "groundClearance": 7.343122180010867e-17,
+        "groundClearance": -3.7591080662406984e-17,
         "npcHeight": 1.8380000759401587,
         "animations": [
           "Idle",
@@ -82,15 +82,18 @@
           "stage": "inactive",
           "frames": 0,
           "pose": false,
-          "hits": 0,
-          "rejected": "",
-          "target": false,
-          "lastError": "",
+          "manual": true,
+          "rendered": 0,
           "draws": 0,
           "views": 0,
-          "contextLost": false,
-          "xrTarget": false,
-          "rendered": 0
+          "lastError": "",
+          "route": "Lighthouse ARButton/manual",
+          "manualPosition": [
+            0,
+            0,
+            0
+          ],
+          "manualScale": 1
         }
       },
       "requests": [
@@ -104,9 +107,9 @@
         "stone-room/floor-contact.js",
         "stone-room/xr-graphics.js",
         "stone-room/ar-render-profile.js",
-        "stone-room/xr-presentation.js",
         "stone-room/update-guard.js",
-        "stone-room/surface-reticle.js",
+        "stone-room/vendor/ARButton.js",
+        "stone-room/manual-placement.js",
         "stone-room/vendor/BufferGeometryUtils.js",
         "stone-room/assets/stone-room.glb",
         "stone-room/assets/photo-guided-npc.glb",
@@ -160,7 +163,7 @@
           0.9836465767947516
         ],
         "floorContactSamples": 94,
-        "groundClearance": 7.343122180010867e-17,
+        "groundClearance": -3.7591080662406984e-17,
         "npcHeight": 1.8380000759401587,
         "animations": [
           "Idle",
@@ -185,15 +188,18 @@
           "stage": "inactive",
           "frames": 0,
           "pose": false,
-          "hits": 0,
-          "rejected": "",
-          "target": false,
-          "lastError": "",
+          "manual": true,
+          "rendered": 0,
           "draws": 0,
           "views": 0,
-          "contextLost": false,
-          "xrTarget": false,
-          "rendered": 0
+          "lastError": "",
+          "route": "Lighthouse ARButton/manual",
+          "manualPosition": [
+            0,
+            0,
+            0
+          ],
+          "manualScale": 1
         }
       },
       "requests": [
@@ -207,9 +213,9 @@
         "stone-room/floor-contact.js",
         "stone-room/xr-graphics.js",
         "stone-room/ar-render-profile.js",
-        "stone-room/xr-presentation.js",
         "stone-room/update-guard.js",
-        "stone-room/surface-reticle.js",
+        "stone-room/vendor/ARButton.js",
+        "stone-room/manual-placement.js",
         "stone-room/vendor/BufferGeometryUtils.js",
         "stone-room/assets/stone-room.glb",
         "stone-room/assets/photo-guided-npc.glb",
@@ -263,7 +269,7 @@
           0.9836465767947516
         ],
         "floorContactSamples": 94,
-        "groundClearance": -3.7591080662406984e-17,
+        "groundClearance": 7.343122180010867e-17,
         "npcHeight": 1.8380000759401587,
         "animations": [
           "Idle",
@@ -288,15 +294,18 @@
           "stage": "inactive",
           "frames": 0,
           "pose": false,
-          "hits": 0,
-          "rejected": "",
-          "target": false,
-          "lastError": "",
+          "manual": true,
+          "rendered": 0,
           "draws": 0,
           "views": 0,
-          "contextLost": false,
-          "xrTarget": false,
-          "rendered": 0
+          "lastError": "",
+          "route": "Lighthouse ARButton/manual",
+          "manualPosition": [
+            0,
+            0,
+            0
+          ],
+          "manualScale": 1
         }
       },
       "requests": [
@@ -310,9 +319,9 @@
         "stone-room/floor-contact.js",
         "stone-room/xr-graphics.js",
         "stone-room/ar-render-profile.js",
-        "stone-room/xr-presentation.js",
         "stone-room/update-guard.js",
-        "stone-room/surface-reticle.js",
+        "stone-room/vendor/ARButton.js",
+        "stone-room/manual-placement.js",
         "stone-room/vendor/BufferGeometryUtils.js",
         "stone-room/assets/stone-room.glb",
         "stone-room/assets/photo-guided-npc.glb",
@@ -344,10 +353,172 @@
         ]
       },
       "direct": {
-        "coloured": 12852,
-        "green": 663,
+        "coloured": 12213,
+        "clips": [
+          "Idle",
+          "Walk",
+          "Wave",
+          "LookAround"
+        ],
         "errors": [],
-        "scope": "Ordinary WebGL framebuffer with animated production GLB and world-space ring; not physical XR"
+        "scope": "Ordinary WebGL framebuffer with all four animated production GLB clips and original materials; not physical XR"
+      }
+    },
+    {
+      "scenario": "Lighthouse manual XR lifecycle",
+      "evidence": {
+        "result": [
+          {
+            "pass": 0,
+            "layer": "webgl",
+            "immediate": true,
+            "clips": [
+              {
+                "name": "Idle",
+                "pixels": 2120
+              },
+              {
+                "name": "Walk",
+                "pixels": 2112
+              },
+              {
+                "name": "Wave",
+                "pixels": 2126
+              },
+              {
+                "name": "LookAround",
+                "pixels": 2111
+              }
+            ],
+            "manualPixels": 413,
+            "positioned": [
+              0.3,
+              -0.8,
+              -4
+            ],
+            "scale": 0.6,
+            "yaw": 0.5235987755982988,
+            "follows": true,
+            "stopped": true,
+            "retained": true,
+            "restored": true,
+            "draws": 7,
+            "scheduled": 8
+          },
+          {
+            "pass": 1,
+            "layer": "webgl",
+            "immediate": true,
+            "clips": [
+              {
+                "name": "Idle",
+                "pixels": 2120
+              },
+              {
+                "name": "Walk",
+                "pixels": 2112
+              },
+              {
+                "name": "Wave",
+                "pixels": 2126
+              },
+              {
+                "name": "LookAround",
+                "pixels": 2111
+              }
+            ],
+            "manualPixels": 413,
+            "positioned": [
+              0.3,
+              -0.8,
+              -4
+            ],
+            "scale": 0.6,
+            "yaw": 0.5235987755982988,
+            "follows": true,
+            "stopped": true,
+            "retained": true,
+            "restored": true,
+            "draws": 7,
+            "scheduled": 8
+          },
+          {
+            "pass": 2,
+            "layer": "projection",
+            "immediate": true,
+            "clips": [
+              {
+                "name": "Idle",
+                "pixels": 2051
+              },
+              {
+                "name": "Walk",
+                "pixels": 2052
+              },
+              {
+                "name": "Wave",
+                "pixels": 2061
+              },
+              {
+                "name": "LookAround",
+                "pixels": 2056
+              }
+            ],
+            "manualPixels": 390,
+            "positioned": [
+              0.3,
+              -0.8,
+              -4
+            ],
+            "scale": 0.6,
+            "yaw": 0.5235987755982988,
+            "follows": true,
+            "stopped": true,
+            "retained": true,
+            "restored": true,
+            "draws": 7,
+            "scheduled": 8
+          },
+          {
+            "pass": 3,
+            "layer": "projection",
+            "immediate": true,
+            "clips": [
+              {
+                "name": "Idle",
+                "pixels": 2051
+              },
+              {
+                "name": "Walk",
+                "pixels": 2052
+              },
+              {
+                "name": "Wave",
+                "pixels": 2061
+              },
+              {
+                "name": "LookAround",
+                "pixels": 2056
+              }
+            ],
+            "manualPixels": 390,
+            "positioned": [
+              0.3,
+              -0.8,
+              -4
+            ],
+            "scale": 0.6,
+            "yaw": 0.5235987755982988,
+            "follows": true,
+            "stopped": true,
+            "retained": true,
+            "restored": true,
+            "draws": 7,
+            "scheduled": 8
+          }
+        ],
+        "errors": [],
+        "scope": "Actual Three renderer, production model/animations and manual controller; synthetic sessions/layers; no physical AR verification"
       }
     },
     {

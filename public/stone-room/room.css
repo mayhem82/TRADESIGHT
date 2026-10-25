@@ -4,9 +4,11 @@
 
 :root:has(body.in-ar){background:transparent}.in-ar{background:transparent!important}.ar-actions{flex-wrap:wrap}#ar-options{position:fixed;top:max(10px,env(safe-area-inset-top));left:12px;max-width:min(310px,calc(100vw - 24px));text-align:left;background:#14201ee8;border-radius:12px;padding:0 12px;pointer-events:auto}#ar-options summary{padding:12px 0;min-height:44px;color:#f4f4ed}#ar-options label{display:block;margin:8px 0}#ar-options select,#ar-options input{display:block;width:100%;margin-top:4px}#ar-options small{max-width:270px;padding-bottom:10px}#ar-ui .ar-actions button{min-width:86px}#ar-follow[aria-pressed=true]{background:#28582a}@media(max-height:500px){#ar-ui{left:auto;right:12px;width:310px;bottom:8px}.ar-instructions{font-size:12px;padding:7px}#ar-ui>*{margin:5px auto}#ar-options{max-height:calc(100dvh - 20px);overflow:auto}}
 
-/* Keep the DOM overlay separate from the XR projection canvas. */
+/* Lighthouse uses body as its full-window DOM overlay. */
 #ar-overlay{position:fixed;inset:0;background:transparent;pointer-events:none}#ar-overlay:xr-overlay{background:transparent}#ar-diagnostics{font:10px/1.4 monospace;overflow-wrap:anywhere;max-width:100%;background:#14201eb8;border-radius:5px;padding:4px}
 
 #ar-options .check{display:flex;align-items:center;gap:8px;font-size:11px}#ar-options .check input{width:20px;min-height:20px;flex:none}#ar-compat{font-size:11px;width:100%}#ar-graphics{font:10px/1.4 monospace;overflow-wrap:anywhere;background:#14201eb8;padding:4px;border-radius:5px}
 @media(min-height:501px){#ar-options{max-height:45dvh;overflow:auto}}
 #ar-update-error{max-width:100%;background:#5b2828ed;border-radius:6px;padding:6px;overflow-wrap:anywhere}
+
+#toolbar #ar{position:static!important;left:auto!important;bottom:auto!important;width:auto!important;opacity:1!important;font:inherit!important}body:xr-overlay{background:transparent!important}

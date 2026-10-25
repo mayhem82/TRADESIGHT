@@ -9,8 +9,8 @@
   "last_commit_summary": "Fixed the Phone 3D Scan Workflow to accept GLTF exports, not just GLB: a real photogrammetry app's export menu showed no GLB option, only GLTF among other formats. The importer, on-screen instructions, and status/error copy now cover both, with the error path explaining that a multi-file GLTF bundle (separate .bin/texture files) will not load, only a single embedded file or GLB.",
   "blocker": "Live Bunnings stock and pricing still require approved partner API credentials before runtime access can be enabled.",
   "last_user_requested_increment": {
-    "id": "stone-room-animation-containment",
-    "summary": "Contain synchronous animation failures, retain the last valid pose, visibly report once per session, and preserve rendering/placement.",
-    "validation": "Build, production GLB contracts, 31 unit tests, three browser viewports and production-mixer fault/recovery regression pass locally; phone cause remains unproven."
+    "id": "stone-room-lighthouse-manual-ar",
+    "summary": "Restore verified Lighthouse ARButton/full-window presentation and immediate manual positioning while preserving Stone Room assets, materials, animation and walkthrough.",
+    "validation": "Production build, GLB asset contracts, 28 unit tests, desktop/mobile browser checks and real Three XRManager pixels with synthetic sessions pass; physical phone result pending."
   }
 }
