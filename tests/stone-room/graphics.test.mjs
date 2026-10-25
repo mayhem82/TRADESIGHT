@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../../public/stone-room/vendor/three.module.js';
 import {createXRGraphics,PROBE_BOUNDS} from '../../public/stone-room/xr-graphics.js';
+import {renderScene} from '../../public/stone-room/xr-presentation.js';
+import fs from 'node:fs';
 
 function fixture(){
  let queries=0;const framebuffer={},target={samples:4},errorQueue=[];
@@ -55,4 +57,37 @@ test('direct-lit AR keeps textured skinned geometry and restores the walkthrough
  profile.enter();profile.enter();assert.equal(profile.active,true);assert.equal(mesh.geometry,geometry);assert.equal(mesh.isSkinnedMesh,true);assert.equal(material.map,albedo);assert.equal(material.normalMap,null);assert.equal(material.roughnessMap,null);assert.equal(scene.environment,null);assert.equal(renderer.shadowMap.enabled,false);assert.equal(alpha,0);
  profile.exit();profile.exit();assert.equal(profile.active,false);assert.equal(material.normalMap,normal);assert.equal(material.roughnessMap,roughness);assert.equal(material.metalnessMap,metalness);assert.equal(material.envMap,environment);assert.equal(scene.environment,environment);assert.equal(renderer.shadowMap.enabled,true);assert.equal(renderer.toneMapping,THREE.ACESFilmicToneMapping);assert.equal(alpha,.7);
  profile.enter();profile.exit();assert.equal(material.normalMap,normal,'a second session also restores the original map');
+});
+
+test('XR rendering repairs a stale physical binding without replacing the XR target',()=>{
+ const projection={isXRRenderTarget:true,samples:4},scene={},camera={};
+ let logical=projection,bound='walkthrough-shadow',cache='projection',rendered=false;
+ const renderer={xr:{isPresenting:true},getRenderTarget:()=>logical,
+  resetState(){logical=null;cache=null;bound=null;},
+  setRenderTarget(target){assert.equal(target,projection);logical=target;if(cache!==target){bound=target;cache=target;}},
+  render(s,c){assert.equal(s,scene);assert.equal(c,camera);assert.equal(bound,projection);assert.equal(logical,projection);rendered=true;}};
+ renderScene(renderer,scene,camera);assert.equal(rendered,true);assert.equal(projection.samples,4);
+});
+test('ordinary walkthrough rendering does not reset graphics or change its target',()=>{
+ let rendered=false;const renderer={xr:{isPresenting:false},resetState(){assert.fail('walkthrough reset')},setRenderTarget(){assert.fail('walkthrough rebind')},render(){rendered=true}};
+ renderScene(renderer,{},{});assert.equal(rendered,true);
+});
+test('missing XR target reaches the existing visible AR error handler',()=>{
+ const renderer={xr:{isPresenting:true},getRenderTarget:()=>null,render(){assert.fail('wrong framebuffer render')}};
+ let visible='';const ar={renderError:e=>{visible='AR graphics error: '+e.message}};
+ try{renderScene(renderer,{},{});}catch(e){ar.renderError(e);}
+ assert.equal(visible,'AR graphics error: XR projection target is unavailable');
+ const source=fs.readFileSync(new URL('../../public/stone-room/room.js',import.meta.url),'utf8');
+ assert.match(source,/if\(renderScene\(renderer,scene,camera,frame\)&&ar.active\)/);
+ assert.match(source,/catch\(e\)\{if\(ar.active\)ar.renderError\(e\)/);
+});
+test('live byte verifier includes the new presentation module',()=>{
+ const source=fs.readFileSync(new URL('./live.py',import.meta.url),'utf8');
+ assert.match(source,/'xr-presentation\.js'/);
+});
+test('initial XR frames without a viewer pose wait without a false graphics error',()=>{
+ const reference={},renderer={xr:{isPresenting:true,getReferenceSpace:()=>reference},getRenderTarget:()=>null,render(){assert.fail('render before tracking')}};
+ const frame={getViewerPose:r=>{assert.equal(r,reference);return null;}};
+ assert.equal(renderScene(renderer,{}, {},frame),false);
+ assert.throws(()=>renderScene(renderer,{}, {},{getViewerPose:()=>({})}),/XR projection target/);
 });

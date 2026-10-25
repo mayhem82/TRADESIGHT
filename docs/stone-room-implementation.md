@@ -508,3 +508,38 @@ workspace /workspace/stone-ar-repair. It is a draft, not a verified remedy. No n
 runtime change is committed in this evidence-only update. Await the working URL
 before selecting a replacement tracking/rendering path. Physical reticle visibility,
 NPC visibility and live AR walking remain unresolved.
+
+## 2026-10-25 — explicit XR projection-target binding
+
+Prepared from current main 087ce04e5a3ac34a53d0b917414ee89f128ba3e4 after
+approval to copy the complete project, verify it and publish if checks pass.
+Preserved the newer failure/hosting evidence above and all production assets.
+
+The render loop now explicitly resets cached graphics state and rebinds Three's
+existing XR projection target before each XR draw. Three still owns the session,
+camera, per-view viewport and render target. Ordinary walkthrough rendering is
+unchanged. Initial XR frames without a viewer pose wait for tracking; they are not
+reported as rendered. A missing target with a valid pose reaches the visible AR
+graphics-error handler. The entry module is versioned as projection-1.
+
+This is a bounded compatibility repair, not a physically established root cause.
+An injected stale framebuffer binding gives zero green ring pixels before recovery
+and 54 afterward with no GL errors. Real WebGL tests using the actual r164 XRManager
+and synthetic session/layer objects pass two start/render/end cycles for each
+legacy WebGL and four-sample projection-layer path, with correct actual binding,
+ring pixels and restoration. These tests do not exercise a real XR compositor.
+
+Local verification: production build, 27 unit/mock tests, both production GLB
+contracts, desktop/portrait/landscape browser checks, close-up movement,
+animations, controls, compatibility/probe pixels, actual animated character and
+ring pixels, unavailable-graphics recovery and the built main application pass.
+The Node browser adapter uses the existing Playwright binding and Chrome to run
+the browser.py assertions without changing the existing Python CI gate. The
+graphics gate includes the new presentation regressions, and live byte checks
+include xr-presentation.js. No workflow, character/model or placement rules change.
+
+The user's physical failure remains the last established handset result. The
+repair's S25 FE visibility and performance are unverified until observed on the
+device. Per-frame state reset adds graphics-state work; no performance claim is
+made. Deployment and live verification must pass before calling this release
+published.
