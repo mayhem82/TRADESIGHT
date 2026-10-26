@@ -1,0 +1,12 @@
+{
+  "source": "https://github.com/immersive-web/webxr-samples",
+  "commit": "a3d8c540e360494f22c39e85f17711e6f0175499",
+  "baselineScriptSHA256": "0635db21835494f9fe623ac87a378635bd5d832ebe96f7632aa96a7ef17af8b9",
+  "changes": [
+    "Inline module moved to baseline.js for library CSP",
+    "Back link returns to library",
+    "Motion-controller dependency served locally; button uses system font",
+    "Stone Room page changes model URL and limits placement to one room"
+  ],
+  "physicalAR": "awaiting phone check on library host"
+}

@@ -1,0 +1,33 @@
+{
+  "id": "/TRADESIGHT/ar-experiments/mayhem-ar/models/",
+  "name": "AR Occlusion",
+  "short_name": "AR Occlusion",
+  "description": "MAYHEM AR Occlusion model collection",
+  "lang": "en",
+  "start_url": "/TRADESIGHT/ar-experiments/mayhem-ar/models/index.html?source=homescreen",
+  "scope": "/TRADESIGHT/ar-experiments/mayhem-ar/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#10242b",
+  "theme_color": "#10242b",
+  "icons": [
+    {
+      "src": "icons/mayhem-ar-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/mayhem-ar-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/mayhem-ar-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "id": "/TRADESIGHT/ar-experiments/mayhem-ar/projects/",
+  "name": "MAYHEM Projects",
+  "short_name": "MAYHEM Projects",
+  "description": "MAYHEM Projects project collection",
+  "lang": "en",
+  "start_url": "/TRADESIGHT/ar-experiments/mayhem-ar/projects/index.html?source=homescreen",
+  "scope": "/TRADESIGHT/ar-experiments/mayhem-ar/projects/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#10242b",
+  "theme_color": "#10242b",
+  "icons": [
+    {
+      "src": "icons/hub-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/hub-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/hub-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

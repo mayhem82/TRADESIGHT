@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "models": [
+    {
+      "id": "c03-container-ar",
+      "name": "C-03 Container · AR & Walkthrough",
+      "description": "Full-size custom processing container, native phone AR and indoor walkthrough, English / Japanese",
+      "type": "interactive-scene",
+      "viewer": "c03/index.html",
+      "version": 1,
+      "features": [
+        "3D",
+        "AR",
+        "Walkthrough",
+        "English / Japanese",
+        "1:1 scale"
+      ],
+      "editableSource": "public/c03/index.html"
+    },
+    {
+      "id": "sound-wall-cube-ar",
+      "name": "Sound Wall Cube · VIP Zone",
+      "description": "Resizable VIP AR zone with live microphone-driven bass/mid/treble colour tint",
+      "type": "interactive-scene",
+      "viewer": "sound-wall-cube-ar.html",
+      "version": 2,
+      "features": [
+        "3D",
+        "AR",
+        "Audio Colour Tint"
+      ],
+      "editableSource": "public/sound-wall-cube-ar.html"
+    },
+    {
+      "id": "invisible-beholder-mirror-ar",
+      "name": "Invisible Beholder Mirror",
+      "description": "Frameless AR surface prototype",
+      "type": "interactive-scene",
+      "viewer": "invisible-beholder-mirror-ar.html",
+      "version": 1,
+      "features": [
+        "3D",
+        "AR"
+      ],
+      "editableSource": "public/invisible-beholder-mirror-ar.html"
+    },
+    {
+      "id": "flying-saucer-ar",
+      "name": "Flying Saucer",
+      "description": "Animated spacecraft with AR sky placement",
+      "type": "interactive-scene",
+      "viewer": "flying-saucer-ar.html",
+      "version": 1,
+      "features": [
+        "3D",
+        "AR"
+      ],
+      "editableSource": "public/flying-saucer-ar.html"
+    },
+    {
+      "id": "orrery-ar",
+      "name": "Mechanical Solar System",
+      "description": "Animated orbital model",
+      "type": "interactive-scene",
+      "viewer": "orrery-ar.html",
+      "version": 1,
+      "features": [
+        "3D",
+        "AR"
+      ],
+      "editableSource": "public/orrery-ar.html"
+    },
+    {
+      "id": "lighthouse-ar",
+      "name": "Lighthouse",
+      "description": "Exploded architectural model",
+      "type": "interactive-scene",
+      "viewer": "lighthouse-ar.html",
+      "version": 1,
+      "features": [
+        "3D",
+        "AR"
+      ],
+      "editableSource": "public/lighthouse-ar.html"
+    },
+    {
+      "id": "exploded-car-ar",
+      "name": "Exploded Car",
+      "description": "Vehicle component model",
+      "type": "interactive-scene",
+      "viewer": "exploded-car-ar.html",
+      "version": 1,
+      "features": [
+        "3D",
+        "AR"
+      ],
+      "editableSource": "public/exploded-car-ar.html"
+    },
+    {
+      "id": "chicken-enclosure-v1",
+      "name": "Chicken Enclosure",
+      "description": "Reusable parametric 3D enclosure, galvanised frame, mesh roof and brick coop; provisional dimensions",
+      "type": "parametric-model",
+      "viewer": "model-viewer.html?model=chicken-enclosure-v1",
+      "version": 1,
+      "features": [
+        "3D",
+        "AR",
+        "Parametric",
+        "GLB export"
+      ],
+      "editableSource": "public/models/chicken-enclosure.js"
+    },
+    {
+      "id": "outline-windmill-v1",
+      "name": "Outline Windmill",
+      "description": "Animated windmill with transparent fins and cyan outline edges inspired by Colour Vision Extreme",
+      "type": "parametric-model",
+      "viewer": "model-viewer.html?model=outline-windmill-v1",
+      "version": 1,
+      "features": [
+        "3D",
+        "AR",
+        "Animation",
+        "Transparent fins",
+        "GLB export"
+      ],
+      "editableSource": "public/models/outline-windmill.js"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "name": "mayhem-ar-current-square",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "rolldown": "1.2.13"
+  }
+}

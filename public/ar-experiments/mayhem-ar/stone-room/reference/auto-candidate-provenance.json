@@ -1,0 +1,21 @@
+{
+  "foundation": "User-confirmed START AR sunflower demo",
+  "source": "https://immersive-web.github.io/webxr-samples/hit-test.html",
+  "baselineSHA256": "0635db21835494f9fe623ac87a378635bd5d832ebe96f7632aa96a7ef17af8b9",
+  "framePath": "Original demo with one movement hook before drawing",
+  "sessionRequirements": [
+    "local",
+    "hit-test"
+  ],
+  "renderer": "Original reference Renderer + XRWebGLLayer",
+  "model": "External glTF with simplified base-colour materials",
+  "previewRequiredBeforeAR": true,
+  "virtualRoom": false,
+  "virtualFloor": false,
+  "companionAnimation": "Native Idle and Walk clips; joystick controls gait rate",
+  "modelExposure": "-2 to +3 EV, model materials only",
+  "optionalFeatures": [
+    "dom-overlay"
+  ],
+  "newBuildPhoneCheck": "pending"
+}
