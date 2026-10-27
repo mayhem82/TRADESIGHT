@@ -1,0 +1,26 @@
+import {CaptureWall} from './capture-wall.js';
+import {mat4} from './vendor/js/render/math/gl-matrix.js';
+export const MAX_WALLS=4;
+export function modelsMatch(a,b){return !!a&&!!b&&a.every((v,i)=>Math.abs(v-b[i])<1e-4);}
+// Preserve the actual capture pose/PV on the immutable photo record. Only derive
+// a virtual image-plane projection for movement; this is not a new real capture.
+export function attachedViews(shots,model){return shots.map(s=>{const inverse=mat4.create(),delta=mat4.create(),pv=mat4.create(),inverseDelta=mat4.create(),world=mat4.create();if(!mat4.invert(inverse,s.model))return s;mat4.multiply(delta,model,inverse);mat4.invert(inverseDelta,delta);mat4.multiply(pv,s.capturePV,inverseDelta);mat4.multiply(world,delta,s.world);return {...s,capturePV:pv,world,sourceCapturePV:s.capturePV,sourceWorld:s.world};});}
+export class WallSet {
+ constructor(gl){this.gl=gl;this.renderer=new CaptureWall(gl);this.items=[];this.activeId=null;this.nextId=1;this.pool=new Map();this.totalBytes=0;}
+ get active(){return this.items.find(w=>w.id===this.activeId)||null;}
+ get views(){return this.active?.views||[];}get bytes(){return this.totalBytes;}get wallVersion(){return this.active?.version||0;}get plan(){return this.active?.plan||null;}get snapshot(){return this.active?.snapshot||null;}
+ get needsRecapture(){return !!this.active&&this.active.views.some(s=>!modelsMatch(s.model,this.active.model));}
+ mount(item=this.active){this.renderer.views=item?.views||[];this.renderer.bytes=this.totalBytes;this.renderer.wallVersion=item?.version||0;this.renderer.plan=item?.plan||null;this.renderer.snapshot=item?.snapshot||null;}
+ place(model,base,world,radius,height){let w=this.active;if(!w){w={id:this.nextId++,views:[],version:0,plan:null,snapshot:null};this.items.push(w);this.activeId=w.id;}w.model=new Float32Array(model);w.base=new Float32Array(base);w.world=new Float32Array(world);w.radius=radius;w.height=height;w.plan=null;this.mount();return w;}
+ syncPlacement(p){const w=this.active;if(!w)return;p.matrix=new Float32Array(w.base);p.worldMatrix=new Float32Array(w.world);p.cancelReposition();}
+ select(id){if(!this.items.some(w=>w.id===Number(id)))return false;this.activeId=Number(id);this.mount();return true;}
+ move(dx,dz){const w=this.active;if(!w||!Number.isFinite(dx)||!Number.isFinite(dz))return;for(const m of [w.model,w.base,w.world]){m[12]+=dx;m[14]+=dz;}w.plan=null;}
+ clone(){const source=this.active;if(!source)throw Error('Place a wall before cloning');if(this.items.length>=MAX_WALLS)throw Error('Four-wall limit reached; existing walls kept');const w={...source,id:this.nextId++,model:new Float32Array(source.model),base:new Float32Array(source.base),world:new Float32Array(source.world),views:source.views.slice(),plan:null,snapshot:null};for(const shot of w.views)this.pool.get(shot).refs++;this.items.push(w);this.activeId=w.id;const offset=Math.min(.35,w.radius*.3);this.move(w.model[0]*offset,w.model[2]*offset);this.mount();return w;}
+ release(shot){const entry=this.pool.get(shot);if(!entry)return;if(--entry.refs===0){this.gl.deleteTexture(shot.texture);this.gl.deleteFramebuffer(shot.framebuffer);this.totalBytes-=shot.bytes;this.pool.delete(shot);}}
+ clear(){const w=this.active;if(!w)return;for(const s of w.views)this.release(s);w.views=[];w.plan=null;w.snapshot=null;w.version++;this.mount();}
+ resetAll(){for(const w of this.items)for(const s of w.views)this.release(s);this.items=[];this.activeId=null;this.nextId=1;this.totalBytes=0;this.mount();}
+ resize(radius,height){const w=this.active;if(!w)return;this.clear();w.model[12]+=w.model[8]*(radius-w.radius);w.model[14]+=w.model[10]*(radius-w.radius);w.model[13]+=(height-w.height)/2;w.radius=radius;w.height=height;}
+ capture(options){if(!this.active)throw Error('Place wall first');this.mount();const shot=this.renderer.capture(options);this.pool.set(shot,{refs:1});this.totalBytes+=shot.bytes;this.active.snapshot=shot;this.active.plan=null;return shot;}
+ choose(current,model,radius,height){if(!this.active)return null;this.mount();const plan=this.renderer.choose(current,this.active.model,this.active.radius,this.active.height);this.active.plan=plan;this.active.snapshot=this.renderer.snapshot;return plan;}
+ draw(options){if(!this.items.length){this.mount(null);return this.renderer.draw(options);}const camera=options.currentWorld,dist=w=>camera?Math.hypot(camera[12]-w.model[12],camera[14]-w.model[14]):0;let passes=0,submitted=false,selected=null;for(const w of this.items.slice().sort((a,b)=>dist(b)-dist(a))){this.mount(w);const result=this.renderer.draw({...options,model:w.model,radius:w.radius,height:w.height,aligned:!!w.views.length,selected:w.id===this.activeId});w.plan=this.renderer.plan;w.snapshot=this.renderer.snapshot;passes+=result.passes||0;submitted||=!!result.imageSubmitted;if(w.id===this.activeId)selected=result.selected;}this.mount();return {imageSubmitted:submitted,passes,selected};}
+}

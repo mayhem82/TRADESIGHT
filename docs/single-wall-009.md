@@ -1,0 +1,11 @@
+# Separate movable single wall009
+
+Public route: https://mayhem82.github.io/TRADESIGHT/ar-experiments/mayhem-ar/single-wall-009/index.html
+
+Three-wall008g and every earlier version are unchanged. AR Occlusion adds a separate launcher card; its current square target is unchanged. Place one whole panel using the accepted surface circle/back-wall anchor. Select Wall1-4 in the dropdown. Joystick uses horizontal camera axes at0.45m/s, capped frame delta50ms. Pointer release/cancel/lost capture, menu hide, blur, visibility/tracking loss and session end stop movement. Clone creates a small offset copy and selects it. Copies move independently.
+
+Photo textures are owned frozen copies from granted Raw Camera Access. Up to6photos per wall and16MiB unique RGBA image storage total; up to4walls. Clones share immutable images with reference-counted GPU lifetime; no duplicated allocation. Clear photos affects only selected wall. Memory is freed only after all owners release an image. Resize clears selected photos; Reset/exit clears all. No uploads/recording/new backend.
+
+Moved or cloned photographs become virtual image planes. Their original physical capture pose/PV remain unchanged; a derived projection attaches each snapshot to its wall. This does NOT reconstruct unseen scenery or guarantee background concealment at the new position. The visible moved-snapshot warning instructs Clear photos then Add photo to recapture. Multi-view selection can choose different retained photos as viewpoint changes. Explicit recapture clears the selected set first; simply selecting or cloning never clears images. Exterior behavior retained. Virtual depth resolves overlapping photographed walls; real-world person/depth discrimination is not implemented.
+
+Editable source: ar-source/single-wall-009 with pinnedrolldown1.2.13; compiled runtime is served directly.25logic,10actualDOMtouch/emulatedXR and3GPUchecks pass, including frozen image/pose retention, clone independence, selected clear/refcounts,16MiB allocation,4wall limit, pointer stops, camera-axis directions, depth and lifecycle. An initial GPU test incorrectly expected newest photo after moving a multi-view set; the nearest retained view was correctly selected. Test was corrected to explicit Clear+Add recapture, matching UI. Physical-phone joystick/capture/clone acceptance remains pending.
