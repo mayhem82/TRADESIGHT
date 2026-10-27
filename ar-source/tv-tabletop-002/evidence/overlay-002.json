@@ -1,0 +1,67 @@
+{
+  "checks": [
+    "native touch with no fresh hit cannot place or reuse a stale reticle",
+    "blank fullscreen overlay circle tap emits select, places feet at tabletop height",
+    "panel taps remain blocked from XR select and cancel preserves placement",
+    "native touchscreen reposition places on new table; Hide/Show remain usable",
+    "tap placement still works with controls hidden",
+    "hidden-menu bottom dock accepts two fingers, independent release and in-place spin without native XR select leakage",
+    "safe-area bottom dock stays below centre and reachable with menu hidden in portrait/landscape; settings stay above centre",
+    "same dimensioned model visibly renders GPU pixels; no culling/transform/page/GL failures"
+  ],
+  "method": "Real CDP touchscreen input plus spec-faithful emulation of XR DOM overlay UA fullscreen styles and cancelable beforexrselect/select dispatch. XR poses/hits remain emulated.",
+  "touch": {
+    "matrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0.8199999928474426,
+      0,
+      1
+    ],
+    "events": [
+      {
+        "type": "beforexrselect",
+        "target": "overlay",
+        "cancelled": false
+      },
+      {
+        "type": "select"
+      }
+    ],
+    "status": "Feet at tabletop height · 1:1 scale locked."
+  },
+  "gpu": {
+    "pixels": 42071,
+    "error": 0,
+    "matrix": [
+      0.9461066126823425,
+      0,
+      0.32385537028312683,
+      0,
+      0,
+      1,
+      0,
+      0,
+      -0.32385537028312683,
+      0,
+      0.9461066126823425,
+      0,
+      0.5300000309944153,
+      0.9100000262260437,
+      0,
+      1
+    ]
+  },
+  "passed": true
+}

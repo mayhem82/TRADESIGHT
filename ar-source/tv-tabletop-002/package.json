@@ -1,0 +1,11 @@
+{
+  "name": "samsung-tabletop-tv-002",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "rolldown": "1.2.13"
+  }
+}

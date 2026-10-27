@@ -1,0 +1,14 @@
+# Tabletop TV002: native overlay tap repair and fixed bottom controls
+
+Direct URL: https://mayhem82.github.io/TRADESIGHT/ar-experiments/mayhem-ar/tv-tabletop-002/index.html
+Rollback TV001 remains byte-exact at ../tv-tabletop-001/index.html. Other projects untouched.
+
+User reported a placement circle but no TV on tap. Reproduced on published001 with CDP touchscreen plus WebXR DOM Overlay UA fullscreen styles and cancelable beforexrselect semantics: transparent overlay root cancelled beforexrselect; select never fired; matrix stayed null. Direct select bypass placed/rendered the same model (40162GPU pixels, zeroGL errors). Prior tests bypassed this native input boundary with programmatic select. This was an input defect, not evidence of a wall-style orientation or dimension defect. Specification: https://immersive-web.github.io/dom-overlays/#onbeforexrselect . Native DOM overlay root fills the display; cancelling beforexrselect suppresses selectstart/end/select.
+
+002 blocks XR select only for panel, menu toggle and joystick dock. Transparent centre remains interactive. Controls are descendants positioned within the fullscreen overlay: scrollable settings above centre, safe-area-aware fixed bottom joystick dock. Hide controls hides settings, retains usable dock and stops existing held inputs. Both sticks retain independent pointers and movement/spin safety rules. No DOM click placement fallback or duplicate select route.
+
+model.js and tv-renderer.js are byte-identical to001. Exact dimensions/footprint, feet-bottom tabletop anchor, front facing viewer at placement,1:1scale lock, camera-relative horizontal joystick1, in-place yaw joystick2, fresh-hit safeguards and reposition/cancel retained. Approximate black Basic Feet, not manufacturer CAD. Physical measurement/load/stability checks required.
+
+Validation:8geometry tests,12mobile control/emulated XR/GPU regression checks,8native-overlay touch/layout checks. Same centre touch on001 fails and on002 places; stale hit denied; panel/joysticks isolated; hidden-menu dock supports simultaneous touch and independent release; in-place spin preserves translated footprint centre/height. Portrait393x852 and landscape852x393 keep settings above centre and dock below, with20pxminimum bottom clearance plus safe-area inset. GPU visible pixels, zero page/GL/missing asset errors. These tests emulate XR and native-overlay browser semantics; they do not override the user's phone failure or prove physical002 acceptance. Phone retest required.
+
+Source: ar-source/tv-tabletop-002; existing pinned rolldown1.2.13 build. No dependency or hosting/workflow/account changes. Tests retain PC Playwright/Chrome harness paths and local task layout assumptions; configure paths or use the working task harness for replay. Raw evidence included; do not mistake emulated test results for handset acceptance.

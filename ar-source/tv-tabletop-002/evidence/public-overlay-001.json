@@ -1,0 +1,42 @@
+{
+  "checks": [
+    "TV001 reproduces circle-tap failure: fullscreen transparent overlay cancels native select; no placement",
+    "bypassing DOM suppression with programmatic select places same model, isolating input defect",
+    "same dimensioned model visibly renders GPU pixels; no culling/transform/page/GL failures"
+  ],
+  "method": "Real CDP touchscreen input plus spec-faithful emulation of XR DOM overlay UA fullscreen styles and cancelable beforexrselect/select dispatch. XR poses/hits remain emulated.",
+  "touch": {
+    "matrix": null,
+    "events": [
+      {
+        "type": "beforexrselect",
+        "target": "overlay",
+        "cancelled": true
+      }
+    ],
+    "status": "Tabletop candidate found. Confirm it is the table, then tap the circle."
+  },
+  "gpu": {
+    "pixels": 40162,
+    "error": 0,
+    "matrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0.8199999928474426,
+      0,
+      1
+    ]
+  },
+  "passed": true
+}
