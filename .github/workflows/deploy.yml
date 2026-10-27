@@ -51,12 +51,24 @@ jobs:
           test -s dist/stone-room/assets/stone-room.glb
           test -s dist/stone-room/assets/photo-guided-npc.glb
           test -s dist/stone-room/vendor/three.module.js
+      - name: Verify isolated camera experiment assets and lifecycle
+        run: node dist/ar-experiments/mayhem-ar/experiments/verify.cjs
       - name: Install browser verification tools
         run: |
           python -m pip install playwright==1.55.0
           python -m playwright install --with-deps chromium
       - name: Verify Stone Room in desktop and Android viewports
         run: STONE_ROOM_ROOT=dist python tests/stone-room/browser.py
+      - name: Verify camera-free experiments in desktop and phone viewports
+        run: python tests/camera-experiments/browser.py
+      - name: Retain camera experiment verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: camera-experiments-verification
+          path: |
+            tests/camera-experiments/*report.json
+            tests/camera-experiments/*.png
       - name: Retain Stone Room test evidence
         if: always()
         uses: actions/upload-artifact@v4

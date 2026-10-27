@@ -1,0 +1,62 @@
+[
+  {
+    "path": "opencv-outline/vendor/opencv-4.13.0.js",
+    "url": "https://docs.opencv.org/4.13.0/opencv.js",
+    "bytes": 10964323,
+    "sha256": "63366510248adf3a7eddf3e793dd825404efb7df3749f4d6f8557c7fa4ca8aa0"
+  },
+  {
+    "path": "licenses/OpenCV-Apache-2.0.txt",
+    "url": "https://raw.githubusercontent.com/opencv/opencv/4.13.0/LICENSE",
+    "bytes": 11358,
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  {
+    "path": "ar-marker/vendor/ar-threex-3.4.8.mjs",
+    "url": "https://raw.githubusercontent.com/AR-js-org/AR.js/3.4.8/three.js/build/ar-threex.mjs",
+    "bytes": 1618782,
+    "sha256": "6c9aa037be052f9741defe725bc3d22b01c8ba09500a41796a11f6417eb6fd34"
+  },
+  {
+    "path": "ar-marker/vendor/three-r164.module.js",
+    "url": "https://raw.githubusercontent.com/mrdoob/three.js/r164/build/three.module.js",
+    "bytes": 1274691,
+    "sha256": "a97ec6852978949b7941c070b81292b842473a37549222353fa0a70c18d7285a"
+  },
+  {
+    "path": "licenses/Three-MIT.txt",
+    "url": "https://raw.githubusercontent.com/mrdoob/three.js/r164/LICENSE",
+    "bytes": 1081,
+    "sha256": "4c40a1ef62450b857c3b2aaf294936304cd552d965fbcd9d32d4c5bcf4ba4454"
+  },
+  {
+    "path": "licenses/ARjs-MIT.txt",
+    "url": "https://raw.githubusercontent.com/AR-js-org/AR.js/3.4.8/LICENSE",
+    "bytes": 1062,
+    "sha256": "a1f95e66eddf8634d15c6a743e292a88dd56eca8cc23c33f923c01b0af5c752f"
+  },
+  {
+    "path": "ar-marker/assets/camera_para.dat",
+    "url": "https://raw.githubusercontent.com/AR-js-org/AR.js/3.4.8/data/data/camera_para.dat",
+    "bytes": 176,
+    "sha256": "dc0487240de94aafab0f6106c6d9faf79b70f22de0faf3281d341e33edd777ed"
+  },
+  {
+    "path": "ar-marker/assets/patt.hiro",
+    "url": "https://raw.githubusercontent.com/AR-js-org/AR.js/3.4.8/data/data/patt.hiro",
+    "bytes": 12484,
+    "sha256": "749618e935cd1ddc715acc77da1bcd7687a6d5dbc64e1f943a1e10fd6596e516"
+  },
+  {
+    "path": "ar-marker/assets/hiro.png",
+    "url": "https://raw.githubusercontent.com/AR-js-org/AR.js/3.4.8/data/images/hiro.png",
+    "bytes": 115515,
+    "sha256": "310b3fac7f71c702966831ff271213da67c358cd0fbb982cc7db174d8a9e2710"
+  },
+  {
+    "path": "licenses/ARToolkit-LGPL-3.0-with-permission.txt",
+    "url": "https://raw.githubusercontent.com/AR-js-org/artoolkit5-js/master/LICENSE",
+    "bytes": 45178,
+    "sha256": "cb856e05f54c3975a811123a12852f3f22c65a62be56ebd12fc51b283851fe93"
+  }
+]
