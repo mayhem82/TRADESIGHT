@@ -57,8 +57,6 @@ jobs:
         run: |
           python -m pip install playwright==1.55.0
           python -m playwright install --with-deps chromium
-      - name: Verify Stone Room in desktop and Android viewports
-        run: STONE_ROOM_ROOT=dist python tests/stone-room/browser.py
       - name: Verify camera-free experiments in desktop and phone viewports
         run: python tests/camera-experiments/browser.py
       - name: Retain camera experiment verification evidence
@@ -69,6 +67,8 @@ jobs:
           path: |
             tests/camera-experiments/*report.json
             tests/camera-experiments/*.png
+      - name: Verify Stone Room in desktop and Android viewports
+        run: STONE_ROOM_ROOT=dist python tests/stone-room/browser.py
       - name: Retain Stone Room test evidence
         if: always()
         uses: actions/upload-artifact@v4

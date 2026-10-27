@@ -20,7 +20,7 @@ Open `ar-marker/`, expand controls and open the printable Hiro marker page. Prin
 
 This implements **marker tracking**, not arbitrary image/NFT tracking. Good light, focus and a visible border are required; occlusion, motion blur and steep angles can cause jitter or loss. The included default calibration is approximate, not per-device calibration. Basic WebGL in the browser is required; there is no dedicated GPU requirement, native OpenCV compilation, large model or paid service. Phone camera and marker alignment remain to be checked on a physical phone.
 
-## Version decision (verified 2026-10-28 UTC session)
+## Version decision (verified 2026-10-27 UTC session)
 
 - GitHub's current OpenCV release listing reports **4.14.0**, stable, published 2026-07-19; it also lists 5.0.0 as stable (2026-06-06). The official `https://docs.opencv.org/4.14.0/opencv.js` returned HTTP 404. This prototype deliberately pins the available **4.13.0** official browser build, matching the requested documentation. Its actual runtime reports OpenCV 4.13.0. It is not represented as the newest stable OpenCV release.
 - AR.js latest stable release is **3.4.8**, published 2026-03-16. The marker-capable Three.js ES-module build is pinned to that tag. Its package declares Three.js `^0.164.0`; this prototype pins **r164 / 0.164.0**, rather than upgrading the renderer independently.

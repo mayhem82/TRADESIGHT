@@ -1,0 +1,6 @@
+# Preserve pinned upstream bytes and their recorded SHA-256 hashes on Windows too.
+opencv-outline/vendor/opencv-4.13.0.js -text
+ar-marker/vendor/*.mjs -text
+ar-marker/vendor/three-r164.module.js -text
+ar-marker/assets/* -text
+licenses/* -text
