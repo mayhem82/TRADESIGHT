@@ -1,8 +1,9 @@
 {
-  "id": "mayhem-ar-release-010",
-  "currentSquare": "008f",
+  "id": "mayhem-ar-release-011",
+  "currentSquare": "008g",
   "acceptedStoneBundle": "stone-room/reference/bellbrook-yowie-4-d0e78b45bad9.bundle.js",
   "assetCount": 302,
   "sourceHashManifest": "docs/ar-project-release.md",
-  "phoneNewOrigin": "pending"
+  "phoneNewOrigin": "User008f failure established;008g physical retest pending",
+  "repair": "Closed back wall anchors at the selected floor point; enclosure extends away"
 }

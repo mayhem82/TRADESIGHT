@@ -1,3 +1,4 @@
+import {anchoredWallModel} from './wall-model.js';
 import {OverlayControls} from './overlay-controls.js';
 import {MAX_VIEWS,MAX_BYTES,SECTORS} from './multi-view.js';
 import {maskStatus} from './mask-status.js';
@@ -13,7 +14,7 @@ const settings={effect:true,radius:1.2,height:2,debug:true};
 let gl,scene,renderer,wall,reticle,session=null,ref=null,hitSource=null,binding=null,ready=false,supported=false,starting=false,previewYaw=.25,lastUI=-Infinity,epoch=0;
 let captureRequested=false,captureMessage='No views stored — Add view retains each photo',captureRequestCount=0,captureModuleError='';
 function showMask(data){const value=maskStatus(data);const node=$('#mask-status');node.textContent=value.text;node.dataset.state=value.kind;diagnostics.mask=value.text;}
-let diagnostics={build:'invisibility-wall-008f',tracking:'Desktop preview',camera:'No XR session; preview is virtual-only',depth:'No sample; real-depth occlusion not implemented'};
+let diagnostics={build:'invisibility-wall-008g',tracking:'Desktop preview',camera:'No XR session; preview is virtual-only',depth:'No sample; real-depth occlusion not implemented'};
 const status=s=>$('#status').textContent=s;
 function report(){ $('#diagnostics').textContent=Object.entries(diagnostics).map(([k,v])=>`${k}: ${v}`).join('\n'); }
 function buttons(){ $('#start').disabled=$('#basic').disabled=!ready||!supported||starting||!!session; }
@@ -53,11 +54,11 @@ async function init(){
   gl.canvas.addEventListener('pointermove',e=>{if(e.buttons)previewYaw=(e.offsetX/gl.canvas.clientWidth-.5)*2.8;});
   ready=true;try{supported=!!navigator.xr&&await navigator.xr.isSessionSupported('immersive-ar');}catch(e){diagnostics.xr=e.name;}
   $('#support').textContent=supported?'Immersive AR can be requested. Camera, depth and physical tracking remain unverified.':'Immersive AR unavailable in this browser. The virtual-only preview remains usable.';
-  $('#startup').textContent='Ready · wall-008f · phone verification pending';buttons();reset();report();
+  $('#startup').textContent=(wall?'Ready':'Wall renderer unavailable: '+captureModuleError)+' — wall-008g — phone verification pending';buttons();reset();report();
   if(/Android/i.test(navigator.userAgent)){const u=new URL(location.href);$('#chrome').href=`intent://${u.host}${u.pathname}${u.search}#Intent;scheme=${u.protocol.slice(0,-1)};package=com.android.chrome;end`;$('#chrome').hidden=false;}
   requestAnimationFrame(preview);
 }
-function wallMatrix(){if(!placement.matrix)return null;const m=new Float32Array(placement.matrix);m[13]=placement.worldMatrix[13]+settings.height/2;return m;}
+function wallMatrix(){return anchoredWallModel(placement.matrix,placement.worldMatrix,settings.radius,settings.height);}
 function preview(){requestAnimationFrame(preview);if(session||starting||!ready)return;const p=mat4.create(),v=mat4.create();mat4.perspective(p,Math.PI/3,2,.05,30);mat4.lookAt(v,[0,.3,3],[0,0,0],[0,1,0]);gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,720,360);gl.clearColor(.04,.09,.12,1);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);wall?.draw({projection:p,view:v,model:mat4.create(),...settings,aligned:false,viewport:{x:0,y:0,width:720,height:360}});}
 
 async function start(basic){
@@ -82,14 +83,14 @@ async function start(basic){
 }
 function ended(s){
   if(s!==session)return;clearCapture();++epoch;try{hitSource?.cancel();}catch{}hitSource=null;session=null;ref=null;binding=null;placement.reset();reticle.visible=false;document.body.classList.remove('xr');setMenu(true);$('#scan').textContent='Scan surface';
-  diagnostics={build:'invisibility-wall-008f',tracking:'Session ended; fresh placement required on re-entry',camera:'No current camera frame',depth:'No sample; real-depth occlusion not implemented'};status('AR ended. START AR to enter again.');showMask({active:false});buttons();report();captureUI();
+  diagnostics={build:'invisibility-wall-008g',tracking:'Session ended; fresh placement required on re-entry',camera:'No current camera frame',depth:'No sample; real-depth occlusion not implemented'};status('AR ended. START AR to enter again.');showMask({active:false});buttons();report();captureUI();
 }
 function onFrame(t,frame){
   const s=frame.session;if(s!==session)return;s.requestAnimationFrame(onFrame);
   const layer=s.renderState.baseLayer;gl.bindFramebuffer(gl.FRAMEBUFFER,layer.framebuffer);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);reticle.visible=false;
   let pose=null;try{if(s.visibilityState==='visible')pose=frame.getViewerPose(ref);}catch(e){diagnostics.pose=e.name;}
   if(!pose){trackingNow=false;$('#session-state').textContent='Tracking paused — hold still; captures kept. Wait for tracking before capture.';showMask({active:true,tracking:false});if(captureRequested){captureMessage='Capture cancelled: no current tracked camera frame';captureUI();}captureRequested=false;placement.cancelPending();diagnostics.tracking='Pose unavailable/paused; effect hidden';diagnostics.camera='No current view; no stale texture reused';diagnostics.depth='No current depth sample';if(t-lastUI>250){report();lastUI=t;}return;}
-  trackingNow=true;$('#session-state').textContent=placement.matrix?'Tracking available — add a clean-background view.':'Aim at the floor circle, then tap to place.';diagnostics.tracking=pose.emulatedPosition?'Emulated viewer position; phone unverified':'Viewer pose available; phone stability unverified';
+  trackingNow=true;$('#session-state').textContent=placement.matrix?'Tracking available — add a clean-background view.':'Aim at the floor circle, then tap to place.';diagnostics.placement=placement.matrix?'Three panels anchored at the selected back-wall floor point; enclosure extends away':'Not placed — tap a current surface circle';diagnostics.tracking=pose.emulatedPosition?'Emulated viewer position; phone unverified':'Viewer pose available; phone stability unverified';
   let hit=null;
   if(hitSource&&(!placement.worldMatrix||placement.scanning))try{const p=frame.getHitTestResults(hitSource)[0]?.getPose(ref);if(p){hit=new Float32Array(p.transform.matrix);reticle.matrix=hit;reticle.visible=true;}}catch(e){diagnostics.hit=e.name;}
   const replacing=placement.repositioning,previous=placement.matrix?new Float32Array(placement.matrix):null;
@@ -115,5 +116,5 @@ function onFrame(t,frame){
 }
 
 window.addEventListener('pagehide',()=>{clearCapture();placement.cancelPending();session?.end().catch(()=>{});});
-if(new URLSearchParams(location.search).has('test'))window.__WALL={get state(){return {ready,supported,starting,active:!!session,matrix:placement.matrix?Array.from(placement.matrix):null,world:placement.worldMatrix?Array.from(placement.worldMatrix):null,settings:{...settings},diagnostics:{...diagnostics},captured:!!wall?.views.length,viewCount:wall?.views.length||0,memoryBytes:wall?.bytes||0,wallVersion:wall?.wallVersion||0,selectedView:wall?.plan?.primary?.id||null,coverage:wall?.plan?.coverage||[],captureRequested,captureMessage,captureRequestCount,captureModuleError,trackingNow,repositioning:placement.repositioning,scanning:placement.scanning,pending:placement.pending,glError:gl?.getError()};},get gl(){return gl;},get wall(){return wall;},reset};
+if(new URLSearchParams(location.search).has('test'))window.__WALL={get state(){return {ready,supported,starting,active:!!session,matrix:placement.matrix?Array.from(placement.matrix):null,world:placement.worldMatrix?Array.from(placement.worldMatrix):null,settings:{...settings},diagnostics:{...diagnostics},captured:!!wall?.views.length,viewCount:wall?.views.length||0,memoryBytes:wall?.bytes||0,wallVersion:wall?.wallVersion||0,wallModel:wallMatrix()?Array.from(wallMatrix()):null,selectedView:wall?.plan?.primary?.id||null,coverage:wall?.plan?.coverage||[],captureRequested,captureMessage,captureRequestCount,captureModuleError,trackingNow,repositioning:placement.repositioning,scanning:placement.scanning,pending:placement.pending,glError:gl?.getError()};},get gl(){return gl;},get wall(){return wall;},reset};
 init().catch(e=>{status('Startup failed: '+e.message);$('#startup').textContent='AR code could not initialize: '+e.message;buttons();});

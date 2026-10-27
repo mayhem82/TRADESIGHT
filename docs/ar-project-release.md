@@ -1,4 +1,4 @@
-# MAYHEM AR release 010
+# MAYHEM AR release 011
 
 Public front door after deployment: https://mayhem82.github.io/TRADESIGHT/ar-experiments/mayhem-ar/projects/index.html
 
@@ -10,7 +10,7 @@ This is a static public release. Runtime does not call ChatGPT/OpenAI or require
 
 - Deployed assets: public/ar-experiments/mayhem-ar. Vite copies them into dist during the unchanged existing npm run build / Pages workflow.
 - Editable current square source: ar-source/current-square/public, including the accepted renderer modules and local reticle assets. Pinned bundler: rolldown1.2.13. Run npm install and npm run build in ar-source/current-square if rebuilding; no dependency installation is needed merely to serve the already compiled release.
-- Current binary: invisibility-wall-008f/invisibility-wall-008f.bundle.js. Original prepared SHA256 a09710f54040c6515afcd93d85aef500fe0ff17acac49c7612f551ee40cc6155. It has three whole panels and three wall-level indicators, max6photos/16MiB, manual capture, exterior projection, opening-away placement, compact Hide/Show and transactional Reposition/cancel.
+- Current binary: invisibility-wall-008g/invisibility-wall-008g.bundle.js. Original prepared SHA256 89e36075cdec343e4912cd8619a364a19bdd03b2e0d09c15ed79435f769c0514. It has three whole panels and three wall-level indicators, max6photos/16MiB, manual capture, exterior projection, opening-away placement, compact Hide/Show and transactional Reposition/cancel.
 - Accepted Stone bundle: stone-room/reference/bellbrook-yowie-4-d0e78b45bad9.bundle.js, SHA256 d0e78b45bad90485e51130f340d4f9e4472d4ed18a01641e3667bd94bde8a2e1. Original source/baseline on the PC was not changed. Copied navigation gets a subpath adapter; models/bundle remain byte exact and uncompressed.
 - Models current-square card is the only launcher target to change for a future release. Use a new version directory, retain previous files and add a history link.
 - Manifests/icons have distinct Hub, Stone Room and AR Occlusion names/ids, standard192/512 and maskable512 icons, scoped to the existing repository path. No custom domain or hosting-account settings changed.
@@ -24,3 +24,7 @@ Clone/download this repository and keep public/ar-experiments/mayhem-ar plus ar-
 008f passed13focusedlogic+14browser/GPUchecks; prior foundation/camera/placement checks passed in earlier version evidence. Left/back/right gradient tests verify no mirror, interior rejection and no former strip lines; preview has three whole outlines and AR only visible exterior outlines. These do not prove real-world concealment. Hub/shortcut checks8pass locally; final subpath/public verification is recorded separately. The805protectedStoneRoomfiles remain unchanged.
 
 GitHub Pages is the existing repository deployment, replacing the temporary tunnel as the durable destination. No additional paid API is used by the app. Account/provider limits or prices may change; no free-forever or account-plan claim is made.
+
+
+## Loading repair011 / square008g
+User reported008f walls did not load on phone. Published008f was independently reproduced with an emulated0.6m floor hit: startup,AR and placement succeeded, but camera lay inside the enclosure; exterior guides0 and capture refused. Opening-away yaw had left the open edge at the hit point.008g anchors the closed back at the hit instead and extends the enclosure away. Three-panel geometry, exterior gates, capture/menu and transactional reposition modules unchanged.16focusedlogic+7browser/GPU checks pass, including .3/.6/1/2m placements and regression capture/reposition. This confirms a code defect, not the exact phone failure stage; physical008g retest pending.
