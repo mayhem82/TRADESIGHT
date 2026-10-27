@@ -1,0 +1,23 @@
+{
+  "checks": [
+    "subpath bundle and local reticle assets load; mobile preview ready",
+    "fresh horizontal TABLETOP hit anchors feet at .82m, front faces viewer",
+    "viewer movement and extra taps keep placement fixed; rotation preserves scale and height",
+    "reposition cancel retains old pose; commit accepts new table height",
+    "real touch rotation joystick turns ON SPOT at translated tabletop, release/hide/tracking loss stop without drift",
+    "first joystick translates across tabletop without yaw/height/scale change; release stops",
+    "two fingers drive independent movement/spin; releasing movement keeps spin anchored at translated centre; hide/tracking stop both",
+    "pointer cancellation stops either joystick",
+    "movement follows horizontal camera-relative axes after viewer yaw, never changes TV rotation/height",
+    "compact controls reachable in portrait/landscape, Hide/Show and XR-select suppression",
+    "tracking loss consumes pending tap, resumes safely; TV draws visible GPU pixels without GL errors",
+    "exit/reentry clears placement; no page errors or missing assets"
+  ],
+  "method": "Chrome mobile DOM, SwiftShader GPU, emulated XR. No physical phone acceptance.",
+  "passed": true,
+  "gpu": {
+    "pixels": 30031,
+    "error": 0
+  },
+  "url": "http://127.0.0.1:60549/TRADESIGHT/ar-experiments/mayhem-ar/tv-tabletop-001/index.html"
+}
