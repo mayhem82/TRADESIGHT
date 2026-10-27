@@ -52,6 +52,16 @@ try:
             page.wait_for_function("document.querySelector('#status').textContent.includes('NotAllowedError')", timeout=60000)
             assert page.evaluate('cameraRequests') == 1
             assert page.locator('#start').is_enabled()
+            pending=[]
+            page.route('**/patt.hiro', lambda route: pending.append(route))
+            with page.expect_request('**/patt.hiro'):
+                page.get_by_role('button', name='Start camera').click()
+            page.get_by_role('button', name='Stop', exact=True).click()
+            for route in pending:
+                route.continue_()
+            page.wait_for_timeout(500)
+            assert page.evaluate('cameraRequests') == 1, 'Stopped marker load must not request a camera later'
+            assert not errors, errors
             report['cases'].append({'viewport': name, 'ar': 'actual renderer/tracker initialized; button-only request and synthetic denial handled; physical detection untested'})
             page.goto(base+'/ar-marker/print-marker.html', wait_until='networkidle')
             assert page.locator('img').evaluate('(img)=>img.complete && img.naturalWidth>0')
