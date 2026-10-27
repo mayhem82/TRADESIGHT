@@ -58,5 +58,23 @@
     "url": "https://raw.githubusercontent.com/AR-js-org/artoolkit5-js/master/LICENSE",
     "bytes": 45178,
     "sha256": "cb856e05f54c3975a811123a12852f3f22c65a62be56ebd12fc51b283851fe93"
+  },
+  {
+    "path": "licenses/OpenCV-Zlib.txt",
+    "url": "https://raw.githubusercontent.com/opencv/opencv/4.13.0/3rdparty/zlib/LICENSE",
+    "bytes": 1002,
+    "sha256": "845efc77857d485d91fb3e0b884aaa929368c717ae8186b66fe1ed2495753243"
+  },
+  {
+    "path": "licenses/OpenCV-Protobuf-BSD.txt",
+    "url": "https://raw.githubusercontent.com/opencv/opencv/4.13.0/3rdparty/protobuf/LICENSE",
+    "bytes": 1732,
+    "sha256": "6e5e117324afd944dcf67f36cf329843bc1a92229a8cd9bb573d7a83130fea7d"
+  },
+  {
+    "path": "licenses/OpenCV-Flatbuffers-Apache-2.0.txt",
+    "url": "https://raw.githubusercontent.com/opencv/opencv/4.13.0/3rdparty/flatbuffers/LICENSE.txt",
+    "bytes": 11358,
+    "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
   }
 ]

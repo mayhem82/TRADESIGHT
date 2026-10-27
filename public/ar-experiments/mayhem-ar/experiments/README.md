@@ -32,7 +32,7 @@ Official sources: [OpenCV releases](https://github.com/opencv/opencv/releases), 
 
 Run `node verify.cjs`. Passed in this environment:
 
-- All ten upstream assets match their recorded byte counts and SHA-256 hashes.
+- All thirteen upstream assets and licence files match their recorded byte counts and SHA-256 hashes. OpenCV's embedded Zlib, Protobuf and Flatbuffers versions were checked against the actual runtime build information and their pinned upstream notices are included.
 - The actual official OpenCV 4.13.0 runtime processes a synthetic square into exactly 160 nonzero edge pixels, with Mat cleanup.
 - OpenCV page setup makes no camera request; Start requests once, Stop releases a late permission result, and the legacy self-resolving OpenCV thenable loads without Promise recursion.
 - AR page setup and Stop make no camera request (DOM lifecycle smoke check).
