@@ -51,6 +51,12 @@ jobs:
           test -s dist/stone-room/assets/stone-room.glb
           test -s dist/stone-room/assets/photo-guided-npc.glb
           test -s dist/stone-room/vendor/three.module.js
+      - name: Verify separate AR Sound Vision autostereography
+        run: |
+          node --test tests/ar-sound-vision-autostereography-001/*.test.mjs
+          test -s dist/ar-experiments/mayhem-ar/ar-sound-vision-autostereography-001/models/midas-small-v2_1.onnx
+          test -s dist/ar-experiments/mayhem-ar/ar-sound-vision-autostereography-001/vendor/ort/ort-wasm-simd-threaded.wasm
+          node tools/verify-autostereography-assets.mjs
       - name: Verify isolated camera experiment assets and lifecycle
         run: node dist/ar-experiments/mayhem-ar/experiments/verify.cjs
       - name: Install browser verification tools

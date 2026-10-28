@@ -1,0 +1,562 @@
+{
+  "id": "ar-sound-vision-autostereography-001",
+  "model": {
+    "source": "https://github.com/isl-org/MiDaS/releases/download/v2_1/model-small.onnx",
+    "tag": "v2_1",
+    "sha256": "2d8c6cb8f415229daf1eb041024208e2608c9f98e17c81cc7c6ecb449c56fd58"
+  },
+  "runtime": "onnxruntime-web@1.23.2",
+  "physicalPhone": "pending",
+  "assets": [
+    {
+      "file": "app.js",
+      "bytes": 24725,
+      "sha256": "0eebb60f32ed32f21ade061d6be2f078c6522adc110a507e2f327cbceeba4b77"
+    },
+    {
+      "file": "ar-sound-vision.bundle.js",
+      "bytes": 140051,
+      "sha256": "49deb626fff0f15fcabb98939505ace6b4e6493bda3ae5ea2f1b65fbd8f9e39b"
+    },
+    {
+      "file": "autostereogram.js",
+      "bytes": 2913,
+      "sha256": "9abcb96631b3995471578f0bce4e09f0fca30eb653f7b8218b77f995bce591b2"
+    },
+    {
+      "file": "baseline-010.html",
+      "bytes": 15066,
+      "sha256": "92b25e4625aefe0968004675f4c88fb31cca3a9546685fb0e3d3a6d3a3d97099"
+    },
+    {
+      "file": "capabilities.js",
+      "bytes": 1846,
+      "sha256": "f8e526e667a1f48c6a5601d0c44bf191a8be5a12738520b40c98107a73e0b088"
+    },
+    {
+      "file": "capture-wall.js",
+      "bytes": 12539,
+      "sha256": "2b41fe12bfa9a4e1e4c7c32c07fbd2779c1c68fed5b38fa29d63a4aaa895564b"
+    },
+    {
+      "file": "depth-contract.js",
+      "bytes": 2115,
+      "sha256": "86f9c8b7d21dfbac333f29ce6eab002bb9809db8e25f4009590df4b95311298e"
+    },
+    {
+      "file": "depth-estimator.js",
+      "bytes": 1057,
+      "sha256": "aae3e69088e2002e734c7f5ff3fa6dc73781a1b365ca603b973c4f26d8070287"
+    },
+    {
+      "file": "index.html",
+      "bytes": 18492,
+      "sha256": "2ee20445c9deb96b15ef8202b0c3d76c6cfeef65ce343a33247cdf2cf9965d1d"
+    },
+    {
+      "file": "invisibility-wall-004.bundle.js",
+      "bytes": 103339,
+      "sha256": "e9370d7f120f8cdd59e5c37e69a7c5833bcf8b2ee30c89282849711e88ecf7b1"
+    },
+    {
+      "file": "invisibility-wall-004b.bundle.js",
+      "bytes": 105665,
+      "sha256": "af563a6df4dd7d096b084201e97aa1ca69842841c03fb61df5411a95c0afc9d6"
+    },
+    {
+      "file": "invisibility-wall-004c.bundle.js",
+      "bytes": 106541,
+      "sha256": "2df441f85ffac8296cb38827ce866729a2929b20c518b8a155bb03357f4939eb"
+    },
+    {
+      "file": "invisibility-wall-005.bundle.js",
+      "bytes": 111922,
+      "sha256": "2de36123823630a73637f7cb6a66ad14a4a1baa2661b0723886602312e0d0b38"
+    },
+    {
+      "file": "invisibility-wall-006.bundle.js",
+      "bytes": 115480,
+      "sha256": "96348b737fdb6dbe464f37a81d8d67ec60e52916513ae51fc772a52ed8f02353"
+    },
+    {
+      "file": "invisibility-wall-008.bundle.js",
+      "bytes": 115896,
+      "sha256": "a4744578deaedd738bb7df9c4912d08d6aa174090d10e636961442f087c7e9e2"
+    },
+    {
+      "file": "invisibility-wall-008b.bundle.js",
+      "bytes": 113435,
+      "sha256": "08bfe17851d30efbdf946ee63a359725cd56d3b8a6f7aa9b191ffc7d9fd96b45"
+    },
+    {
+      "file": "invisibility-wall-008c.bundle.js",
+      "bytes": 114657,
+      "sha256": "6a42411016232fa7e09d1fcaefd050be7574715fb1257c61acbc9f8ba1812148"
+    },
+    {
+      "file": "invisibility-wall-008d.bundle.js",
+      "bytes": 114970,
+      "sha256": "3bacec926f800d6fd170fb414a04507e921881b9e23a747951dbe9281e0d73c2"
+    },
+    {
+      "file": "invisibility-wall-008e.bundle.js",
+      "bytes": 114978,
+      "sha256": "c3c3e01301ad519f6cd8cbb29cdc60ff5bad688416bf56f2bf276a08d31e3a6d"
+    },
+    {
+      "file": "invisibility-wall-008f.bundle.js",
+      "bytes": 115178,
+      "sha256": "a09710f54040c6515afcd93d85aef500fe0ff17acac49c7612f551ee40cc6155"
+    },
+    {
+      "file": "invisibility-wall-008g.bundle.js",
+      "bytes": 115486,
+      "sha256": "89e36075cdec343e4912cd8619a364a19bdd03b2e0d09c15ed79435f769c0514"
+    },
+    {
+      "file": "joystick.js",
+      "bytes": 1814,
+      "sha256": "cbc7dc90a7342ce33e75753b666bf36355134e3d08f96c3d27f1c5ee1bb27b85"
+    },
+    {
+      "file": "mask-status.js",
+      "bytes": 1210,
+      "sha256": "a7a9141b5eb2d4ca17cc7c5711bb675c2b0e0d8aac2e768c34badcbad9727be5"
+    },
+    {
+      "file": "media/gltf/reticle/reticle.bin",
+      "bytes": 5364,
+      "sha256": "e75e72160bec85b8ed4918a493128a669b4b992fe6621b9fb9b8bc84c18bd022"
+    },
+    {
+      "file": "media/gltf/reticle/reticle.gltf",
+      "bytes": 3931,
+      "sha256": "c19d70c7b2bf3b9528692b2bc6699b9ca85fe5889c38449086d8984a948b8e9f"
+    },
+    {
+      "file": "midas-preprocess.js",
+      "bytes": 1768,
+      "sha256": "9721cec82e54522d180ff48f9bb6e726d735ec067605f72753c96d0ab423c892"
+    },
+    {
+      "file": "midas-worker.js",
+      "bytes": 1600,
+      "sha256": "d7e248489f47fd3502e2e72b94082935317344e8e475635c8f51ca9ff4a2426d"
+    },
+    {
+      "file": "models/MiDaS-LICENSE.txt",
+      "bytes": 1098,
+      "sha256": "99ec0b9f9bcc9234b649787b8f03b07dbece95764b7879e1e72fb76cb0f96876"
+    },
+    {
+      "file": "models/midas-small-v2_1.onnx",
+      "bytes": 66764249,
+      "sha256": "2d8c6cb8f415229daf1eb041024208e2608c9f98e17c81cc7c6ecb449c56fd58"
+    },
+    {
+      "file": "multi-view.js",
+      "bytes": 3078,
+      "sha256": "6cc6313e3aac0321cabfc2afa4beb1b6358c2574a7ce0de80f715376cde98f14"
+    },
+    {
+      "file": "overlay-controls.js",
+      "bytes": 1135,
+      "sha256": "b5a38586ac972f9767882de40425361429d96cfc2d7e78c3fdf690d123907768"
+    },
+    {
+      "file": "placement.js",
+      "bytes": 1543,
+      "sha256": "1c671e5cec740873f28d8dfa3c3165729de1b6f6037f9642b3bf558c1b5efbd3"
+    },
+    {
+      "file": "PROTOTYPE-NOTES.md",
+      "bytes": 3784,
+      "sha256": "5f4be3af1c47ea6195e857a28f7106a384c6cd5d8ac3e1d720342a9111269713"
+    },
+    {
+      "file": "single-wall-009.bundle.js",
+      "bytes": 122232,
+      "sha256": "7c2e107de1646137b69466fcfd50f8f11e00cefc8e54f04c9d2e7c1211066250"
+    },
+    {
+      "file": "single-wall-010.bundle.js",
+      "bytes": 122913,
+      "sha256": "a8e147c9a2c5e77b2644b1e0019a1b4b67fa95df09e9e7b8f11b75e74a9c1014"
+    },
+    {
+      "file": "square-geometry.js",
+      "bytes": 503,
+      "sha256": "e6a88b41b7d00cbba1f179da0bb0575f7ca18394077d7599b041447147fa0fc7"
+    },
+    {
+      "file": "stereo-controls.js",
+      "bytes": 9470,
+      "sha256": "42816210de16f205bda9f9947baaec889121282c4069bef358f815351c0f9032"
+    },
+    {
+      "file": "stereo-surface.js",
+      "bytes": 2785,
+      "sha256": "23bd2f7f70e828ae4f186a970fc76833cef25b69d76abb16d6dbca0a92795b1e"
+    },
+    {
+      "file": "sweep.js",
+      "bytes": 2728,
+      "sha256": "62919bf808b99866de32cc0eaa7de0ca1180e80a2539f2bc33ca626406bb539f"
+    },
+    {
+      "file": "vendor/js/hit-test.js",
+      "bytes": 11007,
+      "sha256": "4bbbb4bdb71327f50626b99190fe7e9e2cb91e0112b078898a757b97b145aa8d"
+    },
+    {
+      "file": "vendor/js/render/core/material.js",
+      "bytes": 6847,
+      "sha256": "2c7432f0959089f2834e42e43292e95191dd60046b67dc73e294f8ca50fc83f6"
+    },
+    {
+      "file": "vendor/js/render/core/node.js",
+      "bytes": 12207,
+      "sha256": "fe05e59d3da680ada32fa8d90d6ef5ef82a16b67d17c3a90d8a833e308420b40"
+    },
+    {
+      "file": "vendor/js/render/core/primitive.js",
+      "bytes": 2232,
+      "sha256": "6d20da8c14e367c1f8936ab5fbde4719adfa00ae8814c26d6049a82046cffdcf"
+    },
+    {
+      "file": "vendor/js/render/core/program.js",
+      "bytes": 5029,
+      "sha256": "bbdf48e9af55f23d6b43fe2cc99bdf902d60bd2de646ab0a528e5a50bc6e6c3b"
+    },
+    {
+      "file": "vendor/js/render/core/renderer-gpu.js",
+      "bytes": 42177,
+      "sha256": "eb3141a087c2a91ab70aa97b928b5d5a5ef705fb0df417b9391b2d518fb4698a"
+    },
+    {
+      "file": "vendor/js/render/core/renderer.js",
+      "bytes": 50290,
+      "sha256": "0907e7c0c0c7c09af5d14e44b4a4c4dd57a8d9d63f0617459a331851bd98457e"
+    },
+    {
+      "file": "vendor/js/render/core/texture.js",
+      "bytes": 5404,
+      "sha256": "f5672b89552e78765017142eae4ac759f49350435c2f9c58f566e6d10dba328d"
+    },
+    {
+      "file": "vendor/js/render/geometry/box-builder.js",
+      "bytes": 4548,
+      "sha256": "2ae585338f2d6eba6e4868d1722109111357e26dc82bab4329e7a61caf6e547e"
+    },
+    {
+      "file": "vendor/js/render/geometry/cone-builder.js",
+      "bytes": 3067,
+      "sha256": "7136038b53dbe8e302b6804c987cfb67fcc2b0a2680294225e7aa135540de493"
+    },
+    {
+      "file": "vendor/js/render/geometry/primitive-stream.js",
+      "bytes": 7891,
+      "sha256": "dd5a38fab56dfe7b8db13abaff1224379057fac0ed0ba9ba4448f4bb3e828e86"
+    },
+    {
+      "file": "vendor/js/render/loaders/gltf2-gpu.js",
+      "bytes": 14265,
+      "sha256": "da04381e2fa4871d57b33a4e7fe85d05fa2b528ca8abd9bacae9fdfd67812656"
+    },
+    {
+      "file": "vendor/js/render/loaders/gltf2.js",
+      "bytes": 14026,
+      "sha256": "3552516de7338f28fd29e0782219ebdfed85d9ff509a6857a06508cb22b16779"
+    },
+    {
+      "file": "vendor/js/render/materials/pbr-gpu.js",
+      "bytes": 6717,
+      "sha256": "2d184ea33d90ccfaf411ccdcdc364bb60ecb81314608383150fa64cb5d053146"
+    },
+    {
+      "file": "vendor/js/render/materials/pbr.js",
+      "bytes": 8279,
+      "sha256": "6ec985dd931da09a925d3b570cfc1137d1b7a09138a614b900336a2c91ac8ffb"
+    },
+    {
+      "file": "vendor/js/render/math/gl-matrix.js",
+      "bytes": 2026,
+      "sha256": "5011eabc5a9a4e7a7792e93207dadfe7278b8875ab3cbf1d4811845afbd98985"
+    },
+    {
+      "file": "vendor/js/render/math/ray.js",
+      "bytes": 3915,
+      "sha256": "b707d04c8bfcf2f1ebb15a56e05088d6d2d8057e99f5a182337a196d34f84139"
+    },
+    {
+      "file": "vendor/js/render/nodes/bounds-renderer.js",
+      "bytes": 4362,
+      "sha256": "b034cfccf60abf910e785000dd5120ad257e6cb69eb1e17265bb858e9c2ef62e"
+    },
+    {
+      "file": "vendor/js/render/nodes/button.js",
+      "bytes": 7237,
+      "sha256": "a783c8124b9b3ce869524b2c4bbe4b86ff24ae83c9c1b8c9b2d2ba6c228806a6"
+    },
+    {
+      "file": "vendor/js/render/nodes/cube-sea.js",
+      "bytes": 8518,
+      "sha256": "76b4ef8f20ef12caba5e140c760be8ed5d4fa6d0a721c49837723f0d7fcbac00"
+    },
+    {
+      "file": "vendor/js/render/nodes/drop-shadow.js",
+      "bytes": 3783,
+      "sha256": "fde8b7bc224ff407e42f4ba5d456879d1150e847dff911908bd04a49f861c0df"
+    },
+    {
+      "file": "vendor/js/render/nodes/gltf2-gpu.js",
+      "bytes": 2460,
+      "sha256": "d81110340cda7edcdc84e977d0a14193ec845bb3976c3b77c084216d1dee6998"
+    },
+    {
+      "file": "vendor/js/render/nodes/gltf2.js",
+      "bytes": 2669,
+      "sha256": "fa1d1cbb524cf0a2f4044a71abe2261021ca3fbf62bd61b276f530e363fe4684"
+    },
+    {
+      "file": "vendor/js/render/nodes/input-renderer.js",
+      "bytes": 17014,
+      "sha256": "5e7f7d1ce1a03fea24baf5e8d72da17296346240c306536fefecade372a410db"
+    },
+    {
+      "file": "vendor/js/render/nodes/menu-system.js",
+      "bytes": 4372,
+      "sha256": "e3e049d8376af24848a67e9c863126191488a609d0bcb064589236d1ab973d38"
+    },
+    {
+      "file": "vendor/js/render/nodes/quad-texture.js",
+      "bytes": 3153,
+      "sha256": "221ca42424fa401cc220130499154dd1af80f6d7b2ad91fac5a402cf43f78798"
+    },
+    {
+      "file": "vendor/js/render/nodes/seven-segment-text-gpu.js",
+      "bytes": 7265,
+      "sha256": "b00187af8717fce997496b93718bbd2ecf23b87e9f86a2078f8913f40c09bc9c"
+    },
+    {
+      "file": "vendor/js/render/nodes/seven-segment-text.js",
+      "bytes": 6528,
+      "sha256": "fe65af01d171092cb9c5ca1d0ea6524964215cf78017c9d2a585260c3faa411b"
+    },
+    {
+      "file": "vendor/js/render/nodes/skybox-gpu.js",
+      "bytes": 6364,
+      "sha256": "9020a64868e212553364b4587f415c98b14b19f501ae8357efd982254d0f65c3"
+    },
+    {
+      "file": "vendor/js/render/nodes/skybox.js",
+      "bytes": 5705,
+      "sha256": "ae0d8416899f2f001490e2a4b3efac49692d56fa9a3402e3b03b00e03556116f"
+    },
+    {
+      "file": "vendor/js/render/nodes/stats-viewer-gpu.js",
+      "bytes": 11914,
+      "sha256": "f7d89d916dea01264080c11c4b4f8f288cd048f0163274f1b739214d026389c0"
+    },
+    {
+      "file": "vendor/js/render/nodes/stats-viewer.js",
+      "bytes": 9540,
+      "sha256": "ec422fe47a2bd3aa2e1591f9277eac0280e2fce4a7d3a150cdd10a3471392d79"
+    },
+    {
+      "file": "vendor/js/render/nodes/video.js",
+      "bytes": 4768,
+      "sha256": "1774604a02fbbc8f6d39483f404416a87498d6ad1ece9dd386325e40f1d68256"
+    },
+    {
+      "file": "vendor/js/render/README.md",
+      "bytes": 1039,
+      "sha256": "d24611d0b335a4755fee3bdb8b3f9a249c5fba9da03e93a03a8fb2893a6c319c"
+    },
+    {
+      "file": "vendor/js/render/scenes/scene-gpu.js",
+      "bytes": 7703,
+      "sha256": "718d0ab41ff6d306a4f744f09512caf8e47a1af5355489fdfd7ed22fad6aae55"
+    },
+    {
+      "file": "vendor/js/render/scenes/scene.js",
+      "bytes": 11672,
+      "sha256": "9d40ee1dcc70dd4f3c9273d248c7c6cd8970c38542e8fb1b8618ebdf37afbe14"
+    },
+    {
+      "file": "vendor/js/stereo-util.js",
+      "bytes": 5711,
+      "sha256": "b32e0607f5cf81467b2e02332f258927ecc0894e674b99d7b7d62ee1f3faa1f4"
+    },
+    {
+      "file": "vendor/js/third-party/dat.gui.min.js",
+      "bytes": 50052,
+      "sha256": "07862b29e6efb744fcbfec550d2fa4ed410466c087d69d90bb0967036d40d11f"
+    },
+    {
+      "file": "vendor/js/third-party/gl-matrix/LICENSE.md",
+      "bytes": 1101,
+      "sha256": "51eca09f84d678a3f73fb69ff3e515ad87f2638d6370abd9a4fcc614f60a338a"
+    },
+    {
+      "file": "vendor/js/third-party/gl-matrix/src/gl-matrix/common.js",
+      "bytes": 1208,
+      "sha256": "6a155ac1f48f89b0dbfc9aa7789ecb346a20debf91a76b43b2d5b38fbe57cbe1"
+    },
+    {
+      "file": "vendor/js/third-party/gl-matrix/src/gl-matrix/mat2.js",
+      "bytes": 10161,
+      "sha256": "04c940acf232f09a634b3d0fa6b14c3d410687087c71b464810497572208336a"
+    },
+    {
+      "file": "vendor/js/third-party/gl-matrix/src/gl-matrix/mat2d.js",
+      "bytes": 11307,
+      "sha256": "4030408f6956cd16082c08593928345d2a30608e13253e6393edd6e4ebb0531a"
+    },
+    {
+      "file": "vendor/js/third-party/gl-matrix/src/gl-matrix/mat3.js",
+      "bytes": 19224,
+      "sha256": "aa0f3e2301668c487879513c0badb23984fdf9dec5a3f83e79cb547b96495cd9"
+    },
+    {
+      "file": "vendor/js/third-party/gl-matrix/src/gl-matrix/mat4.js",
+      "bytes": 48983,
+      "sha256": "2c0d27c5601e5b20c0de0fd2261f0bd14e107f233921a833dfdcc99cc9a4ce91"
+    },
+    {
+      "file": "vendor/js/third-party/gl-matrix/src/gl-matrix/quat.js",
+      "bytes": 16653,
+      "sha256": "45011d2e92d64e8983f05cfa72d0431f6c3f3acb31e3fc9b749ba4de90c85557"
+    },
+    {
+      "file": "vendor/js/third-party/gl-matrix/src/gl-matrix/quat2.js",
+      "bytes": 22508,
+      "sha256": "fd3f50d2b17a2ad57a0cbaa1677cf6c6ebb45873d7a366187302fa5c4324a1d5"
+    },
+    {
+      "file": "vendor/js/third-party/gl-matrix/src/gl-matrix/vec2.js",
+      "bytes": 14306,
+      "sha256": "f0ff2c54f6c0ee31ccf8db86d8d490cfa9906ebd7706c789b0358a58d30d2e11"
+    },
+    {
+      "file": "vendor/js/third-party/gl-matrix/src/gl-matrix/vec3.js",
+      "bytes": 19139,
+      "sha256": "cc76843ccc789b2781df9b38ed3a02f213c09570ab66b488f4ab655fb1ecfaad"
+    },
+    {
+      "file": "vendor/js/third-party/gl-matrix/src/gl-matrix/vec4.js",
+      "bytes": 14550,
+      "sha256": "f6ddb7338ef4e1e7b3e1aaba63cf32ffab09312d3583431f6d9c8e42bdcfbd89"
+    },
+    {
+      "file": "vendor/js/third-party/gl-matrix/src/gl-matrix.js",
+      "bytes": 564,
+      "sha256": "f024e7bc1b56895cc4e8a5a6a689d7bdcc28cf24a6f55fe9295a3e19b6f8ab24"
+    },
+    {
+      "file": "vendor/js/third-party/motion-controllers-LICENSE.txt",
+      "bytes": 1094,
+      "sha256": "0ef0c87e8ffdd0681f332dc3b39f284dee2166d1f853fabc3853884fe81a6f30"
+    },
+    {
+      "file": "vendor/js/third-party/motion-controllers.module.js",
+      "bytes": 13492,
+      "sha256": "c2d631f67ff39ef82abccb21f680e1f64337b63ebe744d2b39d779e27c28c7bb"
+    },
+    {
+      "file": "vendor/js/third-party/webxr-polyfill/build/webxr-polyfill.module.js",
+      "bytes": 256566,
+      "sha256": "83833c5cfef821e51beefc0bb7ab1e4421a4300229838cd1c689fc33545c2c5e"
+    },
+    {
+      "file": "vendor/js/third-party/webxr-polyfill/LICENSE",
+      "bytes": 11543,
+      "sha256": "40984607a57a4f3546e31b257d400182dfc92acc1a4ecd66fae7f0cdc8c948d5"
+    },
+    {
+      "file": "vendor/js/util/inline-viewer-helper.js",
+      "bytes": 4812,
+      "sha256": "893e5c94dc1a1396c1ebb71b3614990ef6d01c1c3a2d8cf72358e1df8dbc8d7e"
+    },
+    {
+      "file": "vendor/js/util/query-args.js",
+      "bytes": 3010,
+      "sha256": "15c2160d10d54f9dd7ec86d996ea4d3095408c989cf15921d18e47f4f1db57fd"
+    },
+    {
+      "file": "vendor/js/util/texture-loader.js",
+      "bytes": 2476,
+      "sha256": "331747da6abf7a17d55fafec42d9bec61d77c4176a84fda0f668707e7a85271c"
+    },
+    {
+      "file": "vendor/js/util/webxr-button.js",
+      "bytes": 16341,
+      "sha256": "39a1c83a0b9cb715c0a2c58550eb0b744411a7357fb3ed4a73e08c1a7149540d"
+    },
+    {
+      "file": "vendor/js/webxr-sample-app-gpu.js",
+      "bytes": 5232,
+      "sha256": "92b20c1a7b99f4495f2302bb5eb3a3d416def038486b468a8029c78afaba9590"
+    },
+    {
+      "file": "vendor/js/webxr-sample-app.js",
+      "bytes": 7183,
+      "sha256": "09073608f0d3befeb00e772b2b04f692eee5583eeec40752ae4538081e3b17b2"
+    },
+    {
+      "file": "vendor/js/wglu/wglu-program.js",
+      "bytes": 6230,
+      "sha256": "ebb1517c5973f84656fc067b1bb17c9abaf487ef7eb0fd047982ded2908eb4a9"
+    },
+    {
+      "file": "vendor/js/wglu/wglu-url.js",
+      "bytes": 2979,
+      "sha256": "2fc63e4d9d27093082a10b7046e08aa26c2359fcbc30c065b46bddf945834096"
+    },
+    {
+      "file": "vendor/LICENSE.md",
+      "bytes": 1091,
+      "sha256": "efd05a964a7ec6c88250c84535117338ff6428a3e3844ce5e46221631181dcdf"
+    },
+    {
+      "file": "vendor/ort/LICENSE.txt",
+      "bytes": 1073,
+      "sha256": "2f07c72751aed99790b8a4869cf2311df85a860b22ded05fa22803587a48922c"
+    },
+    {
+      "file": "vendor/ort/ort-wasm-simd-threaded.mjs",
+      "bytes": 20321,
+      "sha256": "90a557d15c02bac4504d95b67f431d8594635ed2a0a62a7f2cd83d090ff91d3e"
+    },
+    {
+      "file": "vendor/ort/ort-wasm-simd-threaded.wasm",
+      "bytes": 11905541,
+      "sha256": "45eaee27761ad883742a8d4b8fce1538d60ce43b51adf1726fafccc59b8c1a15"
+    },
+    {
+      "file": "vendor/ort/ort.wasm.min.mjs",
+      "bytes": 49856,
+      "sha256": "69751720f611e37d1ce2fa3c6ebaa80f949014752636c5f8887a63d40feadcc7"
+    },
+    {
+      "file": "vendor/ort/ThirdPartyNotices.txt",
+      "bytes": 326866,
+      "sha256": "e9e90971a8e75a9a8ac0c6412e29c1202d079998389915aa485f46c816c3b4cc"
+    },
+    {
+      "file": "viewpoint.js",
+      "bytes": 484,
+      "sha256": "cff9bc8833d6e5a8f9882573280eec7efbd5f107f97bfa8cbe5f8d5bdcf5b86b"
+    },
+    {
+      "file": "wall-model.js",
+      "bytes": 399,
+      "sha256": "b8d7a3c32bcd5834ddc82740a9e8cee323e31c525267bf059c6be1659dad4fd3"
+    },
+    {
+      "file": "wall-set.js",
+      "bytes": 6006,
+      "sha256": "31d90dbcb22ba9e8dd9c53c108b3cfe47e3a83b5b9f66a3595467e22a1df094b"
+    }
+  ]
+}
