@@ -1,0 +1,9 @@
+# Stone Room texture test 001
+
+Separate complete copy of the preserved Stone Room application, retaining the original 8 × 6 × 3 m nominal interior, companion animations, controls and WebXR hit-test placement. The original architecture GLB SHA256 is e091f7666a95d126ea159efa178cf8854aa9373b99e158040c08f7ae6f6ec850. No architecture edits.
+
+The four 512 × 512 PNGs are deterministically authored using existing NumPy/Pillow tooling (fixed seed 1741): weathered albedo, tangent normal, roughness and a drawn angular rune emissive mask. Blender was not used. No new model downloads. They share approximately 5.33 MiB additional RGBA8 GPU storage including mipmaps across six cloned limestone material slots; oak and mortar retain original materials. Rune emission applies to one original limestone slot and pulses on a three-second browser-clock cycle through JavaScript MeshStandardMaterial.emissiveIntensity. No Blender shader export or bloom is required.
+
+Open Textures for original-versus-weathered comparison, pulse hold/resume and architecture Hide/Show. Existing companion behaviour and animation controls remain independent. All 39 original control/option tags and defaults remain. Existing explicit small text sizes are increased four CSS pixels. New texture controls move into the original AR DOM overlay and collapse without placing the room. Select Stone Room + NPC in the original AR Environment menu to view the full room; the original NPC-only default is retained.
+
+New effects run in walkthrough and Browser AR. The native Android viewer remains the original model and cannot run the new JavaScript comparison/pulse. Local Chrome software-WebGL, mobile DOM layout, geometry and emulated XR lifecycle checks passed; physical S25FE tracking, memory, temperature and performance acceptance remain pending.
