@@ -5968,7 +5968,9 @@
   async function enterFullscreen() {
     try {
       const req = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
-      if (req) await req.call(document.documentElement);
+      // Immersive AR already owns the screen. Requesting ordinary fullscreen
+      // there can end XR; keep its independent controls in the DOM overlay.
+      if (req && !document.body.classList.contains('xr')) await req.call(document.documentElement);
     } catch (e) { /* fullscreen not available/permitted — still hide the HUD below */ }
     fullscreenActive = true;
     hud.classList.add("hide");
@@ -5982,8 +5984,9 @@
     updateFloatingCaptureBarVisibility();
     setFullscreenBtnState(false);
     const exit = document.exitFullscreen || document.webkitExitFullscreen;
-    if ((document.fullscreenElement || document.webkitFullscreenElement) && exit) {
-      exit.call(document).catch ? exit.call(document).catch(() => {}) : exit.call(document);
+    if (!document.body.classList.contains('xr') && (document.fullscreenElement || document.webkitFullscreenElement) && exit) {
+      const result=exit.call(document);
+      if(result?.catch)result.catch(()=>{});
     }
   }
 

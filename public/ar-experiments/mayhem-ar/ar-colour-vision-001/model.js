@@ -1,10 +1,19 @@
 // A walk-around colour pavilion: architectural surfaces, floor, columns,
 // roof beams and 96 fins. Every face receives the actual Colour Vision output.
+// DOM/canvas uploads below use UNPACK_FLIP_Y_WEBGL=true: v=1 is the
+// image's top. Vertical faces therefore increase v with model height.
+// Reverse u on opposing outward faces so lettering reads left-to-right
+// from either exterior, including the closed back facing the placement user.
+export function surfaceUV(normal,x,y,z){
+ if(normal[1]!==0)return [(x+1.25)/2.5,(z+.95)/1.9]; // Existing world-X/Z floor and roof mapping.
+ const u=normal[0]!==0?(z+.95)/1.9:(x+1.25)/2.5;
+ return [normal[0]>0||normal[2]<0?1-u:u,y/2.25];
+}
 export function architecture(kind='pavilion') {
  const out=[];
  const box=(x,y,z,w,h,d)=>{
   const faces=[[[0,0,1],[[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]]],[[0,0,-1],[[1,-1,-1],[-1,-1,-1],[-1,1,-1],[1,1,-1]]],[[1,0,0],[[1,-1,1],[1,-1,-1],[1,1,-1],[1,1,1]]],[[-1,0,0],[[-1,-1,-1],[-1,-1,1],[-1,1,1],[-1,1,-1]]],[[0,1,0],[[-1,1,1],[1,1,1],[1,1,-1],[-1,1,-1]]],[[0,-1,0],[[-1,-1,-1],[1,-1,-1],[1,-1,1],[-1,-1,1]]]];
-  for(const [normal,vertices] of faces)for(const i of [0,1,2,0,2,3]){const p=vertices[i],px=x+p[0]*w/2,py=y+p[1]*h/2,pz=z+p[2]*d/2;const uv=normal[1]!==0?[(px+1.25)/2.5,(pz+.95)/1.9]:normal[0]!==0?[(pz+.95)/1.9,(2.25-py)/2.25]:[(px+1.25)/2.5,(2.25-py)/2.25];out.push(px,py,pz,...uv,...normal);}
+  for(const [normal,vertices] of faces)for(const i of [0,1,2,0,2,3]){const p=vertices[i],px=x+p[0]*w/2,py=y+p[1]*h/2,pz=z+p[2]*d/2;out.push(px,py,pz,...surfaceUV(normal,px,py,pz),...normal);}
  };
  if(kind==='surface'){box(0,1,0,2,2,.035);return new Float32Array(out);}
  box(0,.025,0,2.4,.05,1.8);box(0,1.98,0,2.5,.08,1.9);

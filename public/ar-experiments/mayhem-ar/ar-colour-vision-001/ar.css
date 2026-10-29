@@ -2,7 +2,24 @@
 #ar-tools{position:fixed;top:10px;left:10px;z-index:8;width:min(470px,calc(100vw - 20px));background:#101626ed;border:1px solid #81bde84d;border-radius:16px;padding:12px;max-height:40vh;overflow:auto;font-size:16px}
 #ar-tools h2{font-size:20px;margin:0 0 8px}#ar-tools p{margin:8px 0;font-size:16px;line-height:1.4}#ar-tools button,#ar-tools select,#ar-menu{font:inherit;padding:9px;border:1px solid #8db9dc55;border-radius:9px;background:#22364d;color:#fff;min-height:44px}#ar-tools .ar-row{display:flex;gap:6px;flex-wrap:wrap;margin:5px 0}#ar-menu{position:fixed;top:10px;right:10px;z-index:10}#ar-tools[hidden]{display:none}
 #ar-canvas{position:fixed;inset:0;width:100vw;height:100vh;z-index:0}body.model-mode #stage,body.model-mode #particleCanvas{visibility:hidden}body.xr{background:transparent}body.xr #ar-canvas{visibility:hidden}
-#ar-sticks{display:none;position:fixed;bottom:max(12px,env(safe-area-inset-bottom));left:12px;right:12px;justify-content:space-between;z-index:9;pointer-events:none}body.xr #ar-sticks{display:flex}.ar-stick-wrap{text-align:center;font-size:16px;color:white;text-shadow:0 1px 3px black}.ar-stick{width:108px;height:108px;border-radius:50%;border:2px solid #9fcaffaa;background:#15294088;position:relative;touch-action:none;pointer-events:auto}.ar-stick span{display:block;position:absolute;left:33px;top:33px;width:38px;height:38px;border-radius:50%;background:#bfdeffbb}
-#hud{max-height:45vh;overflow:auto;top:auto;bottom:145px}#overlay #panel{max-height:48vh;overflow:auto;margin-top:42vh}#overlay #panel h1{font-size:24px}.hint,.color-name{font-size:16px}body.menu-hidden #hud,body.menu-hidden #ar-tools,body.menu-hidden #ar-sticks{display:none!important}
+#ar-sticks{display:flex;position:fixed;bottom:max(12px,env(safe-area-inset-bottom));left:12px;right:12px;justify-content:space-between;z-index:9;pointer-events:none}.ar-stick-wrap{text-align:center;font-size:16px;color:white;text-shadow:0 1px 3px black}.ar-stick{width:132px;height:132px;flex:0 0 132px;border-radius:50%;border:2px solid #9fcaffaa;background:#15294088;position:relative;touch-action:none;pointer-events:auto}.ar-stick span{display:block;position:absolute;left:calc(50% - 27px);top:calc(50% - 27px);width:54px;height:54px;border-radius:50%;background:#bfdeffbb;pointer-events:none}
+#hud{max-height:45vh;overflow:auto;top:auto;bottom:145px}#overlay #panel{max-height:48vh;overflow:auto;margin-top:42vh}#overlay #panel h1{font-size:24px}.hint,.color-name{font-size:16px}body.menu-hidden #hud,body.menu-hidden #ar-tools{display:none!important}
 @media(min-width:800px){#hud{max-width:650px;right:16px;left:auto;width:45vw;bottom:30px;max-height:70vh}#ar-tools{max-height:55vh}}
 #cameraOnlyModeWrap,#receiveModeSection,#showViewerBtn{display:none!important}
+/* Measured safe areas and reserved space only; control order/fonts stay intact.
+   132px ring / 54px knob comes from the accepted Bellbrook Yowie v4 control. */
+#ar-tools{top:var(--ar-tools-top,34px);left:var(--ar-safe-left,10px);width:var(--ar-tools-width,min(470px,calc(100vw - 20px)));max-height:var(--ar-tools-height,40vh)}
+#ar-tools h2{padding-right:var(--ar-header-reserve,116px);min-height:var(--ar-header-height,44px)}
+#ar-menu{top:var(--ar-safe-top,34px);right:var(--ar-safe-right,10px)}
+#ar-sticks{bottom:var(--ar-stick-bottom,12px);left:var(--ar-safe-left,12px);right:var(--ar-safe-right,12px)}
+.ar-stick-wrap{width:132px;flex:0 0 132px}
+#hud{top:var(--ar-hud-top,45vh);left:var(--ar-hud-left,16px);right:auto;width:var(--ar-hud-width,calc(100vw - 32px));bottom:auto;max-width:none;max-height:var(--ar-hud-height,25vh)}
+#fullscreenBtn,#zoomControl,#floatingCaptureBar,#histogramCanvas,#palettePanel{bottom:var(--ar-utility-bottom,180px)}
+#floatingCaptureBar{max-width:calc(100vw - var(--ar-safe-left,12px) - var(--ar-safe-right,12px));flex-wrap:nowrap;overflow-x:auto;touch-action:pan-x}
+#floatingCaptureBar .hud-btn{flex:0 0 auto}
+#fullscreenBtn,#histogramCanvas{left:var(--ar-safe-left,16px)}
+#floatingCaptureBar,#palettePanel{right:var(--ar-safe-right,16px)}
+#overlay{align-items:flex-start;padding-top:var(--ar-hud-top,45vh);padding-bottom:var(--ar-popup-bottom,190px)}
+#overlay #panel{margin-top:0;max-height:var(--ar-hud-height,25vh)}
+#tunePanel,#pointsPanel,#choosePanel,#viewerPanel{bottom:var(--ar-popup-bottom,190px)}
+#tunePanelInner,#pointsPanelInner,#choosePanelInner,#viewerPanelInner{max-height:var(--ar-popup-height,55vh)}
