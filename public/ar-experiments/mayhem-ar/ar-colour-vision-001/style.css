@@ -1,0 +1,615 @@
+:root {
+  color-scheme: dark;
+  --bg: #05050a;
+  --fg: #f2f2f7;
+  --accent: #7dd3fc;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  overflow: hidden;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+#blackout {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: #000;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  z-index: 1;
+}
+
+#blackout.active {
+  opacity: 1;
+}
+
+#screenFlash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background-color: transparent;
+  z-index: 1;
+  /* "screen" brightens what's underneath instead of just alpha-tinting it,
+     so the flash reads clearly against the already-colourful, dark nebula
+     scene instead of blending into it. Same z-index as #blackout, but it
+     comes later in the DOM so it paints on top — the beat flash still
+     shows through even when blacked out. */
+  mix-blend-mode: screen;
+}
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 5, 10, 0.55);
+  backdrop-filter: blur(6px);
+  padding: 24px;
+  transition: opacity 0.4s ease;
+  z-index: 2;
+}
+
+#overlay.hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#panel {
+  max-width: 420px;
+  text-align: center;
+  background: rgba(15, 15, 25, 0.7);
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  border-radius: 18px;
+  padding: 32px 28px;
+}
+
+#panel h1 {
+  margin: 0 0 12px;
+  font-size: 26px;
+  letter-spacing: 0.02em;
+}
+
+#panel p {
+  margin: 0 0 20px;
+  line-height: 1.5;
+  color: rgba(242, 242, 247, 0.75);
+  font-size: 15px;
+}
+
+#panel p.hint {
+  font-size: 17px;
+  color: rgba(242, 242, 247, 0.55);
+}
+
+#panel.hide {
+  display: none;
+}
+
+/* A small explanatory note inside the HUD itself (not #panel) -- e.g. for
+   a capability that turned out unsupported on this device/browser, shown
+   in place of the control it would otherwise replace. */
+#hud p.hint {
+  margin: 0;
+  padding: 4px 10px;
+  max-width: 260px;
+  font-size: 16px;
+  line-height: 1.4;
+  color: rgba(242, 242, 247, 0.55);
+}
+
+/* Camera-only broadcast mode: a small, non-blocking corner card — the
+   whole point is that the live camera view underneath stays visible
+   (not hidden behind a full-screen status panel), so the phone still
+   works as its own monitor while broadcasting. */
+#cameraOnlyBadge {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 2;
+  max-width: min(280px, calc(100vw - 32px));
+  background: rgba(15, 15, 25, 0.75);
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  border-radius: 14px;
+  padding: 14px 16px;
+  text-align: center;
+}
+
+#cameraOnlyBadge.hide {
+  display: none;
+}
+
+#cameraOnlyBadge .room-code-label {
+  font-size: 15px;
+}
+
+#cameraOnlyBadge .room-code {
+  font-size: 28px;
+  margin: 2px 0 8px;
+}
+
+#cameraOnlyBadge p.hint {
+  font-size: 16px;
+  margin: 0 0 10px;
+}
+
+#cameraOnlyBadge .hud-btn {
+  width: 100%;
+}
+
+#receiverStatusBadge {
+  position: fixed;
+  top: 60px;
+  left: 16px;
+  z-index: 2;
+  pointer-events: none;
+  background: rgba(15, 15, 25, 0.55);
+  color: #7dd3fc;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  max-width: min(280px, calc(100vw - 32px));
+}
+
+#receiverStatusBadge.hide {
+  display: none;
+}
+
+.camera-only-mode-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-size: 17px;
+  color: rgba(242, 242, 247, 0.75);
+  cursor: pointer;
+}
+
+#receiveModeSection {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(242, 242, 247, 0.15);
+}
+
+#receiveForm {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#receiveForm.hide {
+  display: none;
+}
+
+#receiveForm input[type="text"] {
+  appearance: none;
+  border: 1px solid rgba(242, 242, 247, 0.25);
+  background: rgba(5, 5, 10, 0.4);
+  color: var(--fg);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 16px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+#startBtn {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  padding: 14px 26px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #05050a;
+  background: linear-gradient(135deg, #7dd3fc, #a78bfa);
+  cursor: pointer;
+}
+
+#startBtn:hover { filter: brightness(1.08); }
+#startBtn:active { transform: scale(0.98); }
+
+.status {
+  min-height: 20px;
+  font-size: 17px;
+  color: #fca5a5;
+  margin: 14px 0 0 !important;
+}
+
+#hud {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: calc(100vw - 32px);
+  /* With enough controls (e.g. the Sound Nebula HUD once camera
+     background + colour vision are both on), this can grow taller than
+     the viewport — without a cap it just keeps extending past the bottom
+     edge with no way to reach what's cut off, since body has
+     overflow:hidden. Capping it and scrolling internally instead keeps
+     everything reachable. */
+  max-height: calc(100vh - 32px);
+  /* 100vh on mobile browsers is the *largest* possible viewport (as if the
+     address bar were hidden), so with it alone the cap can end up taller
+     than what's actually visible on screen — the last row of buttons sits
+     behind the browser's own UI chrome and staying scrolled-down doesn't
+     reliably keep it in view. dvh tracks the real visible viewport instead;
+     unsupported browsers just ignore this line and keep the vh value above. */
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  z-index: 2;
+}
+
+#hud.hide { display: none; }
+
+/* Generic fallback for any .hud-btn / .hud-slider toggled with the "hide"
+   class — most conditionally-shown HUD controls across all three pages
+   (calibrate/points buttons, camera picker, outline sliders, etc.) rely
+   on exactly this and had no matching rule until now, so they were never
+   actually hidden despite the class being toggled correctly in JS. */
+.hud-btn.hide,
+.hud-slider.hide {
+  display: none;
+}
+
+.hud-btn {
+  appearance: none;
+  display: inline-block;
+  border: 1px solid rgba(242, 242, 247, 0.25);
+  background: rgba(15, 15, 25, 0.55);
+  color: var(--fg);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 17px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.hud-btn:hover { background: rgba(125, 211, 252, 0.18); }
+
+.hud-btn.active {
+  background: rgba(250, 204, 21, 0.2);
+  border-color: rgba(250, 204, 21, 0.55);
+  color: #fde68a;
+}
+
+.flash-status {
+  position: fixed;
+  top: 60px;
+  right: 16px;
+  max-width: min(320px, calc(100vw - 32px));
+  text-align: right;
+  font-size: 16px;
+  color: rgba(242, 242, 247, 0.7);
+  background: rgba(15, 15, 25, 0.55);
+  border-radius: 10px;
+  padding: 8px 12px;
+  z-index: 2;
+}
+
+.flash-status.hide { display: none; }
+
+.hud-slider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(242, 242, 247, 0.25);
+  background: rgba(15, 15, 25, 0.55);
+  color: rgba(242, 242, 247, 0.85);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 17px;
+  white-space: nowrap;
+}
+
+.hud-slider input[type="range"] {
+  width: 100px;
+  accent-color: #7dd3fc;
+}
+
+.hud-slider input[type="range"]:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.hud-slider select {
+  appearance: none;
+  border: 1px solid rgba(242, 242, 247, 0.25);
+  background: rgba(5, 5, 10, 0.4);
+  color: var(--fg);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 17px;
+  max-width: 160px;
+  text-overflow: ellipsis;
+}
+
+.hud-slider select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.freq-range {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.freq-range-title {
+  white-space: nowrap;
+}
+
+.freq-range-sliders {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.freq-range-sliders input[type="range"] {
+  width: 90px;
+  accent-color: #7dd3fc;
+}
+
+.freq-all-btn {
+  padding: 6px 10px;
+  font-size: 16px;
+  margin: 0;
+}
+
+/* Tablet-viewer pairing panel — colorvision.css/restore.css each define an
+   equivalent block for their own pages; this is the same thing for
+   index.html, which has no page-specific stylesheet of its own. Living
+   here means it's also the one colorvision.html/restore.html would fall
+   back on if their own copies were ever removed, since style.css loads
+   before those files and their rules win on ties. */
+#viewerPanel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  justify-content: center;
+}
+
+#viewerPanel.hide {
+  display: none;
+}
+
+#viewerPanelInner {
+  width: 100%;
+  max-width: 480px;
+  background: rgba(15, 15, 25, 0.92);
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  border-radius: 18px 18px 0 0;
+  padding: 24px 24px 32px;
+  max-height: 86vh;
+  overflow-y: auto;
+}
+
+#viewerPanelInner h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+}
+
+#viewerPanelInner #startShareBtn {
+  width: 100%;
+}
+
+#shareCodeBlock {
+  margin-top: 16px;
+  text-align: center;
+}
+
+#shareCodeBlock.hide {
+  display: none;
+}
+
+.room-code-label {
+  font-size: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(242, 242, 247, 0.6);
+}
+
+.room-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: 0.25em;
+  color: var(--accent);
+  margin: 4px 0 10px;
+}
+
+.share-url {
+  word-break: break-all;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 16px;
+  color: rgba(242, 242, 247, 0.6);
+}
+
+.tune-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.tune-actions .hud-btn { flex: 1 1 auto; }
+
+.reticle-btn-secondary {
+  background: rgba(15, 15, 25, 0.55);
+  border-color: rgba(242, 242, 247, 0.2);
+  color: rgba(242, 242, 247, 0.75);
+}
+
+#viewerConnectedBadge {
+  position: fixed;
+  top: 60px;
+  left: 16px;
+  z-index: 2;
+  pointer-events: none;
+  background: rgba(15, 15, 25, 0.55);
+  color: #86efac;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+#viewerConnectedBadge.hide {
+  display: none;
+}
+
+/* Photo/Record stay reachable even with the HUD tapped away — a small
+   floating bar, positioned bottom-right by default but draggable (long
+   press then move) to wherever's convenient, e.g. out from under a
+   thumb or the subject itself. Position is restored via inline
+   left/top styles set from JS once the user has moved it; until then
+   this bottom-right default applies. */
+#floatingCaptureBar {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 3;
+  display: flex;
+  gap: 8px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#floatingCaptureBar.hide {
+  display: none;
+}
+
+/* Visual cue that the bar is in "drag mode" once the long-press has
+   fired — otherwise a slow drag looks identical to doing nothing. */
+#floatingCaptureBar.dragging {
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+#floatingCaptureBar .hud-btn {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* Bottom-left, opposite floatingCaptureBar's bottom-right — visible at
+   all times (unlike that bar, this one isn't gated on the HUD being
+   hidden), so it never has to compete with those buttons for space. */
+#fullscreenBtn {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 3;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* Bottom-center, clear of #fullscreenBtn (bottom-left) and
+   #floatingCaptureBar (bottom-right) — visible at all times, same as
+   #fullscreenBtn, including in fullscreen. Hidden entirely unless the
+   camera actually reports zoom support (see setupZoom() in colorvision.js). */
+#zoomControl {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#zoomControl.hide {
+  display: none;
+}
+
+.bluelight-autosuppress-status.hide {
+  display: none;
+}
+
+#zoomControl .hud-btn {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  padding: 8px 16px;
+  font-size: 16px;
+  line-height: 1;
+}
+
+#zoomLabel {
+  color: var(--fg);
+  font-size: 17px;
+  min-width: 3em;
+  text-align: center;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+}
+
+.profiles-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(242, 242, 247, 0.15);
+  text-align: left;
+}
+
+.profiles-section h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+}
+
+.profiles-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.profiles-row select,
+.profiles-row input[type="text"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  appearance: none;
+  border: 1px solid rgba(242, 242, 247, 0.25);
+  background: rgba(5, 5, 10, 0.4);
+  color: var(--fg);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 17px;
+}
+
+.profiles-row .hud-btn {
+  flex: 0 0 auto;
+}
+
+@media (prefers-color-scheme: light) {
+  /* This project is intentionally dark-only; a bright nebula on white
+     washes out the glow blending, so we keep the dark theme fixed. */
+}
+

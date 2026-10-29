@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AR Colour Vision</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👁️</text></svg>">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="colorvision.css">
+<link rel="stylesheet" href="ar.css"></head>
+<body>
+<canvas id="stage"></canvas>
+<canvas id="particleCanvas" aria-hidden="true"></canvas>
+<canvas id="histogramCanvas" class="hide" aria-hidden="true"></canvas>
+<div id="palettePanel" class="hide" role="status" aria-live="off">
+  <div id="paletteSwatches"></div>
+  <p id="paletteCopyStatus" class="hint" aria-live="polite"></p>
+</div>
+<video id="cameraFeed" playsinline muted hidden></video>
+<canvas id="sampleCanvas" hidden></canvas>
+<div id="screenFlash" aria-hidden="true"></div>
+
+<div id="overlay">
+  <div id="panel">
+    <h1>AR Colour Vision</h1>
+    <p>Live camera correction built from colours you calibrate yourself, not a generic filter. Aim at a colour, tune it until it reads right, save it — corrections blend outward from every point you save.</p>
+    <button id="startBtn">Enable camera &amp; start</button>
+    <label id="cameraOnlyModeWrap" class="hud-slider camera-only-mode-wrap" title="For a two-device setup: this device just points somewhere and broadcasts, with no controls of its own. Do all the calibration and correction on the other (receiving) device instead.">
+      <input id="cameraOnlyModeCheckbox" type="checkbox">
+      Camera-only mode (broadcast to another device)
+    </label>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <p class="hint"><a href="nebula.html">&larr; Back to Sound Nebula</a></p>
+    <p class="hint"><a href="colorassist.html">Colour Assist (focused/everyday version) &rarr;</a></p>
+    <p class="hint"><a href="video-production.html">Video Production &rarr;</a></p>
+    <p class="hint"><a href="restore.html">Property Colour Reference &rarr;</a></p>
+    <p class="hint"><a href="call.html">Video Call &rarr;</a></p>
+    <p class="hint"><a href="batcount.html">Flying Fox Count &rarr;</a></p>
+    <p class="hint"><a href="bluelight.html">Blue Light Filter &rarr;</a></p>
+    <p class="hint"><a href="tutorials.html">Video Tutorials &rarr;</a></p>
+
+    <div id="receiveModeSection">
+      <p class="hint">Or, on the controlling device of a two-device setup:</p>
+      <button id="showReceiveBtn" class="hud-btn reticle-btn-secondary">Receive camera from another device</button>
+      <div id="receiveForm" class="hide">
+        <p class="hint">On the camera device: open this page, check "Camera-only mode" above, tap "Enable camera &amp; start", then read out the room code shown there.</p>
+        <input id="receiveRoomInput" type="text" placeholder="ROOM CODE" maxlength="8" autocapitalize="characters" autocomplete="off">
+        <button id="receiveConnectBtn" class="hud-btn">Connect</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="cameraOnlyBadge" class="hide" role="status" aria-live="polite">
+  <div class="room-code-label">Room code</div>
+  <div id="cameraOnlyRoomCode" class="room-code" aria-live="polite"></div>
+  <p id="cameraOnlyStatusText" class="hint">Starting…</p>
+  <button id="cameraOnlyStopBtn" class="hud-btn reticle-btn-secondary">Show full controls</button>
+</div>
+
+<div id="hud" class="hide">
+  <label id="blendWrap" class="hud-slider" title="0% shows the true camera image. 100% shows the fully corrected image.">
+    True &harr; Corrected: <span id="blendLabel">100%</span>
+    <input id="blendSlider" type="range" min="0" max="100" value="100">
+  </label>
+  <label id="cvdTypeWrap" class="hud-slider" title="Applies a whole-frame correction tuned to a diagnosed colour vision deficiency type, independent of any colours you calibrate by hand below.">
+    Colour blindness type:
+    <select id="cvdTypeSelect">
+      <option value="none">None (manual only)</option>
+      <option value="protan">Protanopia (red-weak)</option>
+      <option value="deutan">Deuteranopia (green-weak)</option>
+      <option value="tritan">Tritanopia (blue-yellow)</option>
+    </select>
+  </label>
+  <label id="cvdStrengthWrap" class="hud-slider hide" title="How strongly the type-based correction is applied. Lower it if the full correction looks over-saturated or unnatural for your degree of colour vision deficiency.">
+    Type correction: <span id="cvdStrengthLabel">100%</span>
+    <input id="cvdStrengthSlider" type="range" min="0" max="100" value="100">
+  </label>
+  <label id="spreadWrap" class="hud-slider" title="How far a saved colour's correction generalises to nearby colours. Tight keeps it local to the exact shade you calibrated; wide lets it cover more of the scene.">
+    Correction spread: <span id="spreadLabel">Medium</span>
+    <input id="spreadSlider" type="range" min="1" max="40" value="4">
+  </label>
+  <button id="audioTintBtn" class="hud-btn" aria-pressed="false" title="Uses the microphone as a second, artistic source of colour: live bass/mid/treble energy (same violet/cyan/pink mapping as Sound Nebula) nudges the corrected view's hue toward whatever's playing, instead of relying only on the camera.">Audio colour tint: Off</button>
+  <button id="audioTintResetBtn" class="hud-btn reticle-btn-secondary hide" title="Resets every audio colour tint slider below back to its shipped default (strength, saturation/lightness push, smoothing, resolution, update rate, and all 6 bands). Doesn't turn audio colour tint off.">Reset audio tint</button>
+  <button id="particlesBtn" class="hud-btn" aria-pressed="false" title="A swarm of glowing particles over the corrected view -- same idea as Sound Nebula's particle swarm, layered on top of your colour correction instead of a plain background. Driven by sound or by Tone, depending on the Source below.">Particle effects: Off</button>
+  <label id="particleSourceWrap" class="hud-slider hide" title="Audio: coloured particles (violet/cyan/pink) driven by the microphone's live bass/mid/treble energy -- needs mic permission. Tone: a single white/grey swarm driven by Freeze isolate's own Tone slider instead -- no microphone needed at all. Custom: same no-mic Tone energy, but with a hue you pick yourself below.">
+    Source:
+    <select id="particleSourceSelect">
+      <option value="audio">Audio (mic)</option>
+      <option value="tone">Tone (no mic)</option>
+      <option value="custom">Custom colour (no mic)</option>
+    </select>
+  </label>
+  <label id="particleCustomHueWrap" class="hud-slider hide" title="The fixed hue Custom-source particles glow -- drag to pick any colour around the wheel.">
+    Particle colour:
+    <span id="particleCustomHueSwatch" style="display:inline-block; width:1em; height:1em; border-radius:50%; vertical-align:middle; margin:0 4px; border:1px solid rgba(242,242,247,0.4);"></span>
+    <input id="particleCustomHueSlider" type="range" min="0" max="360" value="280">
+  </label>
+  <div id="particleBehaviorWrap" class="hud-slider hide" title="Combine any of these -- they are not exclusive, so a swarm can e.g. orbit AND seek brightness AND cluster by colour all at once.">
+    Behavior:
+    <label style="display:inline-flex; align-items:center; gap:4px; margin-right:10px;" title="Each particle keeps circling its target point at its own personal radius, instead of sitting still on top of it.">
+      <input type="checkbox" id="particleOrbitPathCheckbox"> Orbit path
+    </label>
+    <label style="display:inline-flex; align-items:center; gap:4px; margin-right:10px;" title="Each particle independently steers toward whichever distinct bright region of the live camera view is nearest to it -- a scene with two separate bright spots gets two separate groups of particles, not one shared destination everyone chases. A real reaction to the actual scene (brightness-seeking movement), not object recognition or true image understanding.">
+      <input type="checkbox" id="particleSeekBrightnessCheckbox"> Seek brightness
+    </label>
+    <label style="display:inline-flex; align-items:center; gap:4px; margin-right:10px;" title="Particles with a similar hue pull toward each other, clustering same-coloured particles together. No effect in Tone mode (no hue to compare).">
+      <input type="checkbox" id="particleColourAttractCheckbox"> Colour attraction
+    </label>
+    <label style="display:inline-flex; align-items:center; gap:4px;" title="Faster-moving particles pull nearby slower ones along with them.">
+      <input type="checkbox" id="particleMoveAttractCheckbox"> Movement attraction
+    </label>
+  </div>
+  <label id="particleOpacityWrap" class="hud-slider hide" title="How visible the particle swarm is over the corrected view.">
+    Particle opacity: <span id="particleOpacityLabel">70%</span>
+    <input id="particleOpacitySlider" type="range" min="0" max="100" value="70">
+  </label>
+  <label id="particleTrailWrap" class="hud-slider hide" title="Leaves a fading glow trail behind each particle instead of a clean instant swarm -- 0% is the classic look, higher values leave longer comet-like trails.">
+    Particle trails: <span id="particleTrailLabel">0%</span>
+    <input id="particleTrailSlider" type="range" min="0" max="100" value="0">
+  </label>
+  <label id="particleCountWrap" class="hud-slider hide" title="How many particles per group (Audio: per band; Tone/Custom: per third of the flat pool). More particles means a denser swarm, and re-seeds the swarm when changed.">
+    Particle count: <span id="particleCountLabel">30</span>
+    <input id="particleCountSlider" type="range" min="5" max="100" value="30" step="1">
+  </label>
+  <label id="particleSizeWrap" class="hud-slider hide" title="Scales every particle's glow size up or down, on top of each particle's own randomized size and live energy -- 100% is the shipped default look.">
+    Particle size: <span id="particleSizeLabel">100%</span>
+    <input id="particleSizeSlider" type="range" min="20" max="300" value="100" step="5">
+  </label>
+  <label id="audioTintStrengthWrap" class="hud-slider hide" title="How strongly the live audio hue pulls the corrected view's colour, from a subtle nudge to a full wash.">
+    Audio tint strength: <span id="audioTintStrengthLabel">40%</span>
+    <input id="audioTintStrengthSlider" type="range" min="0" max="100" value="40">
+  </label>
+  <label id="audioTintSatStrengthWrap" class="hud-slider hide" title="How much the live audio's overall loudness pushes saturation, on top of the hue tint. Negative desaturates on loud sound instead of boosting it.">
+    Audio tint saturation push: <span id="audioTintSatStrengthLabel">0%</span>
+    <input id="audioTintSatStrengthSlider" type="range" min="-100" max="100" step="5" value="0">
+  </label>
+  <label id="audioTintLightStrengthWrap" class="hud-slider hide" title="How much the live audio's overall loudness pushes lightness, on top of the hue tint. Negative darkens on loud sound instead of brightening.">
+    Audio tint lightness push: <span id="audioTintLightStrengthLabel">0%</span>
+    <input id="audioTintLightStrengthSlider" type="range" min="-100" max="100" step="5" value="0">
+  </label>
+  <label id="audioTintSmoothingWrap" class="hud-slider hide" title="How much the live audio analysis smooths out spikes. Lower reacts instantly and looks twitchy; higher glides between changes.">
+    Tint smoothing: <span id="audioTintSmoothingLabel">70%</span>
+    <input id="audioTintSmoothingSlider" type="range" min="0" max="95" step="5" value="70">
+  </label>
+  <label id="audioTintFftSizeWrap" class="hud-slider hide" title="Frequency resolution used to analyse the microphone. Higher gives finer-grained bands but reacts a little slower.">
+    Tint resolution: <span id="audioTintFftSizeLabel">1024</span>
+    <input id="audioTintFftSizeSlider" type="range" min="0" max="5" step="1" value="2">
+  </label>
+  <label id="audioTintUpdateMsWrap" class="hud-slider hide" title="How often the tint hue is recalculated from the microphone. Lower updates more often (smoother motion, more CPU); higher updates less often.">
+    Tint update rate: <span id="audioTintUpdateMsLabel">80ms</span>
+    <input id="audioTintUpdateMsSlider" type="range" min="20" max="300" step="10" value="80">
+  </label>
+  <label id="audioTintBassEnabledWrap" class="hud-slider camera-only-mode-wrap hide" title="Mutes the bass/kick band without losing its hue/gain/range settings.">
+    <input id="audioTintBassEnabledCheckbox" type="checkbox" checked>
+    Bass band on
+  </label>
+  <label id="audioTintBassHueWrap" class="hud-slider hide" title="Hue used for the bass/kick band's colour.">
+    Bass hue: <span id="audioTintBassHueLabel">262&deg;</span>
+    <input id="audioTintBassHueSlider" type="range" min="0" max="360" value="262">
+  </label>
+  <label id="audioTintBassGainWrap" class="hud-slider hide" title="How strongly the bass/kick band's energy pulls the blended tint hue.">
+    Bass gain: <span id="audioTintBassGainLabel">100%</span>
+    <input id="audioTintBassGainSlider" type="range" min="0" max="300" step="5" value="100">
+  </label>
+  <label id="audioTintBassFromHzWrap" class="hud-slider hide" title="Lower edge (Hz) of the bass/kick band sampled from the microphone.">
+    Bass low: <span id="audioTintBassFromHzLabel">20 Hz</span>
+    <input id="audioTintBassFromHzSlider" type="range" min="0" max="500" value="20">
+  </label>
+  <label id="audioTintBassToHzWrap" class="hud-slider hide" title="Upper edge (Hz) of the bass/kick band sampled from the microphone.">
+    Bass high: <span id="audioTintBassToHzLabel">150 Hz</span>
+    <input id="audioTintBassToHzSlider" type="range" min="0" max="500" value="150">
+  </label>
+  <label id="audioTintMidEnabledWrap" class="hud-slider camera-only-mode-wrap hide" title="Mutes the mid band without losing its hue/gain/range settings.">
+    <input id="audioTintMidEnabledCheckbox" type="checkbox" checked>
+    Mid band on
+  </label>
+  <label id="audioTintMidHueWrap" class="hud-slider hide" title="Hue used for the mid band's colour.">
+    Mid hue: <span id="audioTintMidHueLabel">189&deg;</span>
+    <input id="audioTintMidHueSlider" type="range" min="0" max="360" value="189">
+  </label>
+  <label id="audioTintMidGainWrap" class="hud-slider hide" title="How strongly the mid band's energy pulls the blended tint hue.">
+    Mid gain: <span id="audioTintMidGainLabel">100%</span>
+    <input id="audioTintMidGainSlider" type="range" min="0" max="300" step="5" value="100">
+  </label>
+  <label id="audioTintMidFromHzWrap" class="hud-slider hide" title="Lower edge (Hz) of the mid band sampled from the microphone.">
+    Mid low: <span id="audioTintMidFromHzLabel">150 Hz</span>
+    <input id="audioTintMidFromHzSlider" type="range" min="0" max="4000" value="150">
+  </label>
+  <label id="audioTintMidToHzWrap" class="hud-slider hide" title="Upper edge (Hz) of the mid band sampled from the microphone.">
+    Mid high: <span id="audioTintMidToHzLabel">2000 Hz</span>
+    <input id="audioTintMidToHzSlider" type="range" min="0" max="4000" value="2000">
+  </label>
+  <label id="audioTintTrebleEnabledWrap" class="hud-slider camera-only-mode-wrap hide" title="Mutes the treble band without losing its hue/gain/range settings.">
+    <input id="audioTintTrebleEnabledCheckbox" type="checkbox" checked>
+    Treble band on
+  </label>
+  <label id="audioTintTrebleHueWrap" class="hud-slider hide" title="Hue used for the treble band's colour.">
+    Treble hue: <span id="audioTintTrebleHueLabel">330&deg;</span>
+    <input id="audioTintTrebleHueSlider" type="range" min="0" max="360" value="330">
+  </label>
+  <label id="audioTintTrebleGainWrap" class="hud-slider hide" title="How strongly the treble band's energy pulls the blended tint hue.">
+    Treble gain: <span id="audioTintTrebleGainLabel">85%</span>
+    <input id="audioTintTrebleGainSlider" type="range" min="0" max="300" step="5" value="85">
+  </label>
+  <label id="audioTintTrebleFromHzWrap" class="hud-slider hide" title="Lower edge (Hz) of the treble band sampled from the microphone.">
+    Treble low: <span id="audioTintTrebleFromHzLabel">2000 Hz</span>
+    <input id="audioTintTrebleFromHzSlider" type="range" min="0" max="12000" value="2000">
+  </label>
+  <label id="audioTintTrebleToHzWrap" class="hud-slider hide" title="Upper edge (Hz) of the treble band sampled from the microphone.">
+    Treble high: <span id="audioTintTrebleToHzLabel">9000 Hz</span>
+    <input id="audioTintTrebleToHzSlider" type="range" min="0" max="12000" value="9000">
+  </label>
+  <label id="audioTintExtraBandsWrap" class="hud-slider camera-only-mode-wrap hide" title="Reveals three more fully configurable frequency bands beyond bass/mid/treble, each off by default until you tune and enable it.">
+    <input id="audioTintExtraBandsCheckbox" type="checkbox">
+    Show extra tint bands (4&ndash;6)
+  </label>
+  <label id="audioTintBand4EnabledWrap" class="hud-slider camera-only-mode-wrap hide" title="Turns on tint band 4.">
+    <input id="audioTintBand4EnabledCheckbox" type="checkbox">
+    Band 4 on
+  </label>
+  <label id="audioTintBand4HueWrap" class="hud-slider hide" title="Hue used for tint band 4's colour.">
+    Band 4 hue: <span id="audioTintBand4HueLabel">30&deg;</span>
+    <input id="audioTintBand4HueSlider" type="range" min="0" max="360" value="30">
+  </label>
+  <label id="audioTintBand4GainWrap" class="hud-slider hide" title="How strongly tint band 4's energy pulls the blended tint hue.">
+    Band 4 gain: <span id="audioTintBand4GainLabel">100%</span>
+    <input id="audioTintBand4GainSlider" type="range" min="0" max="300" step="5" value="100">
+  </label>
+  <label id="audioTintBand4FromHzWrap" class="hud-slider hide" title="Lower edge (Hz) of tint band 4 sampled from the microphone.">
+    Band 4 low: <span id="audioTintBand4FromHzLabel">20 Hz</span>
+    <input id="audioTintBand4FromHzSlider" type="range" min="0" max="20000" value="20">
+  </label>
+  <label id="audioTintBand4ToHzWrap" class="hud-slider hide" title="Upper edge (Hz) of tint band 4 sampled from the microphone.">
+    Band 4 high: <span id="audioTintBand4ToHzLabel">20000 Hz</span>
+    <input id="audioTintBand4ToHzSlider" type="range" min="0" max="20000" value="20000">
+  </label>
+  <label id="audioTintBand5EnabledWrap" class="hud-slider camera-only-mode-wrap hide" title="Turns on tint band 5.">
+    <input id="audioTintBand5EnabledCheckbox" type="checkbox">
+    Band 5 on
+  </label>
+  <label id="audioTintBand5HueWrap" class="hud-slider hide" title="Hue used for tint band 5's colour.">
+    Band 5 hue: <span id="audioTintBand5HueLabel">90&deg;</span>
+    <input id="audioTintBand5HueSlider" type="range" min="0" max="360" value="90">
+  </label>
+  <label id="audioTintBand5GainWrap" class="hud-slider hide" title="How strongly tint band 5's energy pulls the blended tint hue.">
+    Band 5 gain: <span id="audioTintBand5GainLabel">100%</span>
+    <input id="audioTintBand5GainSlider" type="range" min="0" max="300" step="5" value="100">
+  </label>
+  <label id="audioTintBand5FromHzWrap" class="hud-slider hide" title="Lower edge (Hz) of tint band 5 sampled from the microphone.">
+    Band 5 low: <span id="audioTintBand5FromHzLabel">20 Hz</span>
+    <input id="audioTintBand5FromHzSlider" type="range" min="0" max="20000" value="20">
+  </label>
+  <label id="audioTintBand5ToHzWrap" class="hud-slider hide" title="Upper edge (Hz) of tint band 5 sampled from the microphone.">
+    Band 5 high: <span id="audioTintBand5ToHzLabel">20000 Hz</span>
+    <input id="audioTintBand5ToHzSlider" type="range" min="0" max="20000" value="20000">
+  </label>
+  <label id="audioTintBand6EnabledWrap" class="hud-slider camera-only-mode-wrap hide" title="Turns on tint band 6.">
+    <input id="audioTintBand6EnabledCheckbox" type="checkbox">
+    Band 6 on
+  </label>
+  <label id="audioTintBand6HueWrap" class="hud-slider hide" title="Hue used for tint band 6's colour.">
+    Band 6 hue: <span id="audioTintBand6HueLabel">210&deg;</span>
+    <input id="audioTintBand6HueSlider" type="range" min="0" max="360" value="210">
+  </label>
+  <label id="audioTintBand6GainWrap" class="hud-slider hide" title="How strongly tint band 6's energy pulls the blended tint hue.">
+    Band 6 gain: <span id="audioTintBand6GainLabel">100%</span>
+    <input id="audioTintBand6GainSlider" type="range" min="0" max="300" step="5" value="100">
+  </label>
+  <label id="audioTintBand6FromHzWrap" class="hud-slider hide" title="Lower edge (Hz) of tint band 6 sampled from the microphone.">
+    Band 6 low: <span id="audioTintBand6FromHzLabel">20 Hz</span>
+    <input id="audioTintBand6FromHzSlider" type="range" min="0" max="20000" value="20">
+  </label>
+  <label id="audioTintBand6ToHzWrap" class="hud-slider hide" title="Upper edge (Hz) of tint band 6 sampled from the microphone.">
+    Band 6 high: <span id="audioTintBand6ToHzLabel">20000 Hz</span>
+    <input id="audioTintBand6ToHzSlider" type="range" min="0" max="20000" value="20000">
+  </label>
+  <button id="beatFlashBtn" class="hud-btn" aria-pressed="false" title="Uses the microphone to detect beats (borrowed from Sound Nebula) and fires camera torch and/or a full-screen colour flash in time with them. Beat detection listens to the Bass band's frequency range above.">Flash on beat: Off</button>
+  <label id="beatSensitivityWrap" class="hud-slider hide" title="How easily a beat triggers. Higher reacts to quieter/softer hits too; lower only fires on strong, obvious beats.">
+    Beat sensitivity: <span id="beatSensitivityLabel">50%</span>
+    <input id="beatSensitivitySlider" type="range" min="0" max="100" value="50">
+  </label>
+  <label id="beatFlashSpeedWrap" class="hud-slider hide" title="How fast beat flashes can retrigger, and how long each pulse lasts.">
+    Flash speed: <span id="beatFlashSpeedLabel">50%</span>
+    <input id="beatFlashSpeedSlider" type="range" min="0" max="100" value="50">
+  </label>
+  <label id="beatDimFlickerWrap" class="hud-slider camera-only-mode-wrap hide" title="Camera flashes are hardware on/off only — there's no real brightness control on the web. This flickers the torch rapidly to approximate a dimmer look; experimental and may look janky on slower hardware.">
+    <input id="beatDimFlickerCheckbox" type="checkbox">
+    Dim flicker (experimental)
+  </label>
+  <label id="beatTorchInvertedWrap" class="hud-slider camera-only-mode-wrap hide" title="Keeps the torch on continuously and briefly cuts it off on each beat, instead of the normal off-then-flash-on-beat behaviour.">
+    <input id="beatTorchInvertedCheckbox" type="checkbox">
+    Invert torch (on, cuts on beat)
+  </label>
+  <label id="beatScreenFlashWrap" class="hud-slider camera-only-mode-wrap hide" title="Flashes the whole screen on each beat, colour-blended from the same weighted band hue as audio colour tint above. Works on every device, even ones without a camera flash.">
+    <input id="beatScreenFlashCheckbox" type="checkbox">
+    Screen flash on beat
+  </label>
+  <label id="beatVibrateWrap" class="hud-slider hide" title="Vibrates the phone on each beat. Kept separate from Flash — the vibration motor's own mechanical buzz is loud enough for the mic to pick up, which could otherwise re-trigger the flash as if it were a new beat.">
+    <input id="beatVibrateCheckbox" type="checkbox">
+    Vibrate on beat
+  </label>
+  <button id="beatTestFlashBtn" class="hud-btn hide" title="Manually fires one flash, independent of beat detection — use this to check it works.">Test flash</button>
+  <label id="beatSyncDelayWrap" class="hud-slider hide" title="Delays torch/vibrate/screen flash after a beat is detected, to compensate for a slower device's own hardware response lag, or to match timing with another device.">
+    Sync delay: <span id="beatSyncDelayLabel">0 ms</span>
+    <input id="beatSyncDelaySlider" type="range" min="0" max="500" step="10" value="0">
+  </label>
+  <button id="outlinesBtn" class="hud-btn" aria-pressed="false" title="Overlays detected edges on the camera view, blended with the normal full-colour correction. Can be combined with Cartoon mode too.">Outlines mode: Off</button>
+  <label id="outlineThicknessWrap" class="hud-slider hide" title="How thick the edge lines are.">
+    Outline thickness: <span id="outlineThicknessLabel">2px</span>
+    <input id="outlineThicknessSlider" type="range" min="1" max="10" step="0.5" value="2">
+  </label>
+  <label id="outlineBlendWrap" class="hud-slider hide" title="0% is the normal filled/full-colour look. 100% is fully outlined.">
+    Outline blend: <span id="outlineBlendLabel">100%</span>
+    <input id="outlineBlendSlider" type="range" min="0" max="100" value="100">
+  </label>
+  <label id="outlineOpacityWrap" class="hud-slider hide" title="How strong/visible the outline lines themselves are.">
+    Outline opacity: <span id="outlineOpacityLabel">100%</span>
+    <input id="outlineOpacitySlider" type="range" min="0" max="100" value="100">
+  </label>
+  <label id="outlineColorWrap" class="hud-btn choose-picker-btn hide" title="Colour used for outline edge lines.">
+    Outline colour
+    <input id="outlineColorInput" type="color" value="#ffffff" aria-label="Outline colour">
+  </label>
+  <button id="freezeIsolateBtn" class="hud-btn" aria-pressed="false" title="Show only your saved (frozen) colours in their corrected true colour — everything else in shot fades to black. Needs at least one saved colour; with none saved, the whole frame goes black.">Freeze isolate: Off</button>
+  <label id="freezeBlendWrap" class="hud-slider hide" title="0% is the normal view. 100% is fully isolated — anything not near a saved colour goes fully black.">
+    Freeze blend: <span id="freezeBlendLabel">100%</span>
+    <input id="freezeBlendSlider" type="range" min="0" max="100" value="100">
+  </label>
+  <label id="freezeSpreadWrap" class="hud-slider hide" title="How close a shade in shot has to be to one of your saved colours to still show through. Lower is stricter (only the almost-exact shade shows); higher is looser (nearby shades show too).">
+    Freeze match distance: <span id="freezeSpreadLabel">15</span>
+    <input id="freezeSpreadSlider" type="range" min="1" max="40" value="15">
+  </label>
+  <label id="freezeToneWrap" class="hud-slider hide" title="0% matches your saved colours normally (hue and lightness both count). 100% ignores hue entirely and matches purely by brightness — a pure grey has no hue of its own, so this is what recreates that same-brightness-any-colour effect, live, on whatever you've already saved.">
+    Tone: <span id="freezeToneLabel">0%</span>
+    <input id="freezeToneSlider" type="range" min="0" max="100" value="0">
+  </label>
+  <button id="cartoonBtn" class="hud-btn" aria-pressed="false" title="Flattens the camera view into bold flat colour bands with dark edge lines, for a hand-drawn cartoon look.">Cartoon mode: Off</button>
+  <label id="cartoonLevelsWrap" class="hud-slider hide" title="How many flat colour bands the cartoon effect uses. Fewer levels look bolder/more graphic; more levels look closer to the original colours.">
+    Cartoon levels: <span id="cartoonLevelsLabel">6</span>
+    <input id="cartoonLevelsSlider" type="range" min="2" max="24" step="1" value="6">
+  </label>
+  <label id="cartoonEdgeThicknessWrap" class="hud-slider hide" title="How wide the cartoon ink lines are.">
+    Cartoon edge thickness: <span id="cartoonEdgeThicknessLabel">2px</span>
+    <input id="cartoonEdgeThicknessSlider" type="range" min="1" max="10" step="0.5" value="2">
+  </label>
+  <label id="cartoonEdgeStrengthWrap" class="hud-slider hide" title="How bold/dark the cartoon ink lines are, and how easily they trigger on softer edges.">
+    Cartoon edge strength: <span id="cartoonEdgeStrengthLabel">60%</span>
+    <input id="cartoonEdgeStrengthSlider" type="range" min="0" max="100" step="5" value="60">
+  </label>
+  <label id="cartoonSaturationWrap" class="hud-slider hide" title="How vivid the flat cartoon colour bands are.">
+    Cartoon saturation: <span id="cartoonSaturationLabel">135%</span>
+    <input id="cartoonSaturationSlider" type="range" min="100" max="300" step="5" value="135">
+  </label>
+  <label id="cartoonThemeWrap" class="hud-slider hide" title="Presets that fill in the duotone shadow/highlight colours below. Original colours turns the duotone recolour off.">
+    Cartoon colour theme:
+    <select id="cartoonThemeSelect">
+      <option value="none">Original colours</option>
+      <option value="greyscale">Greyscale</option>
+      <option value="sepia">Sepia</option>
+      <option value="desert">Desert</option>
+      <option value="oasis">Oasis</option>
+    </select>
+  </label>
+  <label id="cartoonThemeEnabledWrap" class="hud-slider camera-only-mode-wrap hide" title="Turns the duotone recolour on or off. When off, cartoon mode keeps its normal flat colours regardless of the shadow/highlight colours below.">
+    <input id="cartoonThemeEnabledCheckbox" type="checkbox">
+    Duotone recolour
+  </label>
+  <label id="cartoonThemeLoWrap" class="hud-btn choose-picker-btn hide" title="Shadow colour for the cartoon duotone recolour.">
+    Duotone shadows
+    <input id="cartoonThemeLoInput" type="color" value="#0d0d0d" aria-label="Cartoon duotone shadow colour">
+  </label>
+  <label id="cartoonThemeHiWrap" class="hud-btn choose-picker-btn hide" title="Highlight colour for the cartoon duotone recolour.">
+    Duotone highlights
+    <input id="cartoonThemeHiInput" type="color" value="#f2f2f2" aria-label="Cartoon duotone highlight colour">
+  </label>
+
+  <button id="calibrateBtn" class="hud-btn">Calibrate a colour</button>
+  <button id="pointsBtn" class="hud-btn">Saved colours (<span id="pointsCount">0</span>)</button>
+  <button id="pauseBtn" class="hud-btn" aria-pressed="false">Pause</button>
+  <button id="rotateBtn" class="hud-btn" aria-pressed="false" title="Some phones deliver the back camera feed upside-down. Toggle this if the picture looks flipped.">Rotate 180&deg;</button>
+  <button id="torchBtn" class="hud-btn hide" aria-pressed="false" title="Toggle the camera flashlight — useful for calibrating colours in low light.">Flashlight</button>
+  <button id="exposureModeBtn" class="hud-btn hide" aria-pressed="false" title="Lock the camera's exposure so it stops auto-adjusting brightness — colours read more consistently when the camera isn't hunting for exposure.">Exposure: Auto</button>
+  <label id="shutterWrap" class="hud-slider hide" title="Manual shutter speed. Lower is faster/darker, higher is slower/brighter.">
+    Shutter: <span id="shutterLabel"></span>
+    <input id="shutterSlider" type="range">
+  </label>
+  <label id="isoWrap" class="hud-slider hide" title="Manual ISO (sensor sensitivity). Higher brightens the image but can add noise.">
+    ISO: <span id="isoLabel"></span>
+    <input id="isoSlider" type="range">
+  </label>
+  <label id="evWrap" class="hud-slider hide" title="Exposure compensation — nudges brightness up or down without leaving auto exposure.">
+    EV: <span id="evLabel"></span>
+    <input id="evSlider" type="range">
+  </label>
+  <label id="cameraSelectWrap" class="hud-slider hide" title="Every camera the browser can see — a phone's own lenses, or a USB webcam / HDMI-to-USB capture card feeding a dedicated camera into this device — appear here the same way, labelled straight from the OS/driver. The browser doesn't distinguish 'phone lens' from 'camera hardware'.">
+    Camera: <select id="cameraSelect"></select>
+  </label>
+  <button id="photoBtn" class="hud-btn" title="Take a photo of the corrected view. On some Android browsers, the phone's volume-down button works as a shutter too.">&#128247; Photo</button>
+  <button id="shareCaptureBtn" class="hud-btn hide" disabled title="Share the most recent photo or video via the device's real native share sheet (Messages, Mail, AirDrop, any installed app that accepts files) -- the same share sheet any other app uses, not a link or a workaround.">&#128228; Share last capture</button>
+  <label id="recordFpsWrap" class="hud-slider" title="Frame rate for recorded video. Lower is a smaller file; higher is smoother motion. Locked once recording starts.">
+    Recording FPS:
+    <select id="recordFpsSelect">
+      <option value="15">15 fps</option>
+      <option value="24">24 fps</option>
+      <option value="30" selected>30 fps</option>
+      <option value="60">60 fps</option>
+    </select>
+  </label>
+  <button id="recordBtn" class="hud-btn" aria-pressed="false" title="Record a video of the corrected view.">&#9210; Record</button>
+  <label id="timelapseIntervalWrap" class="hud-slider" title="How long to wait between each captured still. Browsers throttle timers in a backgrounded tab, so keep this tab visible/foregrounded while capturing for an accurate interval.">
+    Time-lapse interval:
+    <select id="timelapseIntervalSelect">
+      <option value="1000">1s</option>
+      <option value="2000">2s</option>
+      <option value="5000" selected>5s</option>
+      <option value="10000">10s</option>
+      <option value="30000">30s</option>
+      <option value="60000">1 min</option>
+      <option value="300000">5 min</option>
+      <option value="600000">10 min</option>
+    </select>
+  </label>
+  <label id="timelapseFpsWrap" class="hud-slider" title="Playback frame rate for the compiled time-lapse video -- higher plays every captured shot back faster for the same shot count.">
+    Time-lapse output:
+    <select id="timelapseFpsSelect">
+      <option value="12">12 fps</option>
+      <option value="24" selected>24 fps</option>
+      <option value="30">30 fps</option>
+    </select>
+  </label>
+  <button id="timelapseBtn" class="hud-btn" aria-pressed="false" title="Capture a still of the corrected view on a timer; stopping compiles every captured still into a real sped-up video at the chosen output frame rate.">&#9201; Start Time-lapse</button>
+  <button id="histogramBtn" class="hud-btn" aria-pressed="false" title="A live per-channel (red/green/blue) value-distribution graph of the corrected view -- real data sampled from the actual pixels, not a decorative graphic. Useful for spotting clipping (a spike jammed against either edge) or checking a correction actually balanced the channels rather than just looking right.">&#128202; Histogram</button>
+  <button id="paletteBtn" class="hud-btn" aria-pressed="false" title="The dominant colours actually present in the corrected view right now, extracted live from the real pixels by grouping similar colours and ranking by how much of the frame each one covers -- not a fixed swatch set. Tap any swatch to copy its hex code.">&#127912; Palette</button>
+  <button id="correctAnimatedBtn" class="hud-btn hide" title="Decode an existing animated GIF or WebP (the real WebCodecs ImageDecoder API, not a re-implementation) and run every one of its frames through this exact same correction pipeline -- your calibrated colours, colour-blindness-type correction, and every other setting currently active -- exporting a real corrected video. Hidden entirely where ImageDecoder isn't supported.">&#127909; Correct an animated image&hellip;</button>
+  <input id="correctAnimatedFileInput" type="file" accept="image/gif,image/webp" hidden>
+  <p id="correctAnimatedStatus" class="hint hide" role="status" aria-live="polite"></p>
+  <button id="connectTabletBtn" class="hud-btn" title="Stream this corrected view to another device (e.g. a tablet) as a read-only viewer.">Connect tablet</button>
+  <button id="castBtn" class="hud-btn hide" aria-pressed="false" title="Cast the corrected view to a Chromecast or AirPlay TV using your browser's own built-in casting -- best-effort: support for casting a live view (rather than a video file) varies by browser and device, so this may not find or work with every TV. Hidden entirely if your browser doesn't expose either casting API at all.">&#128250; Cast to TV</button>
+  <a href="nebula.html" class="hud-btn">&larr; Sound Nebula</a>
+  <a href="colorassist.html" class="hud-btn">Colour Assist &rarr;</a>
+  <a href="video-production.html" class="hud-btn">Video Production &rarr;</a>
+  <a href="restore.html" class="hud-btn">Property Colour Reference &rarr;</a>
+  <a href="call.html" class="hud-btn">Video Call &rarr;</a>
+  <a href="batcount.html" class="hud-btn">Flying Fox Count &rarr;</a>
+  <a href="tutorials.html" class="hud-btn">Video Tutorials &rarr;</a>
+  <a href="colour-alarm.html" class="hud-btn">Colour Alarm &rarr;</a>
+</div>
+
+<p id="cameraStatus" class="flash-status hide" role="status" aria-live="polite"></p>
+<p id="recordingIndicator" class="hide" aria-hidden="true">&#9679; REC <span id="recordingIndicatorTime">0:00</span></p>
+<p id="timelapseStatus" class="hint hide" role="status" aria-live="polite"></p>
+<p id="viewerConnectedBadge" class="hide" aria-hidden="true">&#128250; Tablet connected</p>
+<p id="receiverStatusBadge" class="hide" role="status" aria-live="polite"></p>
+
+<div id="floatingCaptureBar" class="hide" role="group" aria-label="Calibrate, photo, video capture, time-lapse, and saved colours">
+  <button id="floatingCalibrateBtn" class="hud-btn" title="Aim the camera at a colour to calibrate. Long-press and drag to move this bar.">&#127919; Calibrate</button>
+  <button id="floatingPhotoBtn" class="hud-btn" title="Take a photo of the corrected view. Long-press and drag to move this bar.">&#128247; Photo</button>
+  <button id="floatingRecordBtn" class="hud-btn" aria-pressed="false" title="Record a video of the corrected view. Long-press and drag to move this bar.">&#9210; Record</button>
+  <button id="floatingTimelapseBtn" class="hud-btn" aria-pressed="false" title="Start/stop a time-lapse of the corrected view — the HUD's own button for this is hidden right now. Long-press and drag to move this bar.">&#9201; Time-lapse</button>
+  <button id="floatingPointsBtn" class="hud-btn" title="Open your saved colours — the HUD's own button for this is hidden right now. Long-press and drag to move this bar.">&#127912; Saved</button>
+</div>
+
+<!-- Always on screen, in both HUD and fullscreen states — unlike the rest
+     of the floating bar above, this doesn't disappear when the HUD is
+     showing, so there's one large, unmissable, fixed target to get in and
+     back out of fullscreen without hunting for a tiny gap of bare video. -->
+<button id="fullscreenBtn" class="hud-btn" aria-pressed="false" title="Fullscreen, HUD hidden. Tap again (this button stays put) to bring the HUD back.">&#9974; Fullscreen</button>
+
+<!-- Fixed outside #hud like #fullscreenBtn above, so it stays reachable at
+     the bottom of the screen in fullscreen too. Real camera-hardware zoom
+     (Image Capture API), hidden entirely unless the camera actually
+     reports support. -->
+<div id="zoomControl" class="hide" role="group" aria-label="Zoom">
+  <button id="zoomOutBtn" class="hud-btn" title="Zoom out">&#8722;</button>
+  <span id="zoomLabel">1.0x</span>
+  <button id="zoomInBtn" class="hud-btn" title="Zoom in">&#43;</button>
+</div>
+
+<div id="viewerPanel" class="hide" role="dialog" aria-modal="true" aria-labelledby="viewerPanelTitle">
+  <div id="viewerPanelInner">
+    <h2 id="viewerPanelTitle">Connect a tablet as a viewer</h2>
+    <p class="hint">On the other device, open <a href="viewer.html" target="_blank" rel="noopener">viewer.html</a> from this site, then type in the room code below and tap Connect.</p>
+
+    <button id="startShareBtn" class="hud-btn">Start live sharing</button>
+
+    <div id="shareCodeBlock" class="hide">
+      <div class="room-code-label">Room code</div>
+      <div id="shareRoomCode" class="room-code" aria-live="polite"></div>
+      <p class="hint">Or open this link directly on the other device:<br><span id="shareViewUrlText" class="share-url"></span></p>
+    </div>
+
+    <p id="viewerStatus" class="hint" role="status" aria-live="polite"></p>
+
+    <div class="tune-actions">
+      <button id="closeViewerPanelBtn" class="hud-btn reticle-btn-secondary">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="choosePanel" class="hide" role="dialog" aria-modal="true" aria-labelledby="choosePanelTitle">
+  <div id="choosePanelInner">
+    <h2 id="choosePanelTitle">Choose a colour to calibrate</h2>
+    <p class="hint">Aim at a real colour with the camera, pick one exactly, dial in a pure tone (brightness with no hue), or start from a colour commonly confused in colour vision deficiency.</p>
+
+    <div class="choose-actions">
+      <button id="chooseAimBtn" class="hud-btn">Aim with camera</button>
+      <label id="colourPickerWrap" class="hud-btn choose-picker-btn">
+        Colour picker
+        <input id="colourPickerInput" type="color" value="#ff0000" aria-label="Pick an exact colour to calibrate">
+      </label>
+      <button id="chooseEyedropperBtn" class="hud-btn hide" title="Samples a colour from anywhere on screen -- a reference photo in another tab, a colour swatch site, any app -- using the browser's own system-wide eyedropper, not just what the camera currently sees. Hidden entirely where this isn't supported.">&#128167; Sample from screen</button>
+      
+    </div>
+    
+
+    <h3 id="presetGridTitle">Common CVD confusion colours</h3>
+    <div id="presetGrid" aria-labelledby="presetGridTitle"></div>
+
+    <button id="closeChooseBtn" class="hud-btn reticle-btn-secondary">Close</button>
+  </div>
+</div>
+
+<div id="reticleLayer" class="hide">
+  <div id="reticle" aria-hidden="true"></div>
+  <div id="reticleSwatch" class="reticle-swatch" aria-hidden="true"></div>
+  <p id="reticleColorName" class="color-name reticle-color-name" aria-live="polite"></p>
+  <button id="freezeBtn" class="hud-btn reticle-btn">Freeze this colour</button>
+  <button id="cancelAimBtn" class="hud-btn reticle-btn reticle-btn-secondary">Cancel</button>
+</div>
+
+<div id="tunePanel" class="hide" role="dialog" aria-modal="true" aria-labelledby="tunePanelTitle">
+  <div id="tunePanelInner">
+    <h2 id="tunePanelTitle">Tune until it's recognisable</h2>
+
+    <div class="swatch-row">
+      <div class="swatch-block">
+        <div id="swatchOriginal" class="swatch"></div>
+        <span>What the camera sees</span>
+        <p id="swatchOriginalName" class="color-name"></p>
+      </div>
+      <div class="swatch-block">
+        <div id="swatchCorrected" class="swatch"></div>
+        <span>Your correction</span>
+        <p id="swatchCorrectedName" class="color-name"></p>
+      </div>
+    </div>
+
+    <label class="hud-slider">
+      Hue shift: <span id="hueLabel">0&deg;</span>
+      <input id="hueSlider" type="range" min="-180" max="180" value="0">
+    </label>
+    <label class="hud-slider">
+      Saturation: <span id="satLabel">0%</span>
+      <input id="satSlider" type="range" min="-100" max="100" value="0">
+    </label>
+    <label class="hud-slider">
+      Lightness: <span id="lightLabel">0%</span>
+      <input id="lightSlider" type="range" min="-100" max="100" value="0">
+    </label>
+    <label class="hud-slider">
+      Contrast: <span id="contrastLabel">0%</span>
+      <input id="contrastSlider" type="range" min="-100" max="100" value="0">
+    </label>
+    <label class="hud-slider">
+      Exposure: <span id="exposureLabel">0%</span>
+      <input id="exposureSlider" type="range" min="-100" max="100" value="0">
+    </label>
+    <label class="hud-slider">
+      Label (optional)
+      <input id="labelInput" type="text" placeholder="e.g. traffic light red" maxlength="40">
+    </label>
+
+    <div class="tune-actions">
+      <button id="savePointBtn" class="hud-btn">Save this colour</button>
+      <button id="deletePointBtn" class="hud-btn reticle-btn-secondary hide">Delete</button>
+      <button id="closeTuneBtn" class="hud-btn reticle-btn-secondary">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="pointsPanel" class="hide" role="dialog" aria-modal="true" aria-labelledby="pointsPanelTitle">
+  <div id="pointsPanelInner">
+    <h2 id="pointsPanelTitle">Saved colours</h2>
+    <p class="hint" id="pointsHint">Tap a colour to review or re-tune it.</p>
+    <div id="pointsGrid"></div>
+    <p id="importExportStatus" class="hint" role="status" aria-live="polite"></p>
+
+    <div class="points-actions">
+      <button id="selectModeBtn" class="hud-btn reticle-btn-secondary" aria-pressed="false">Select</button>
+      <button id="deleteSelectedBtn" class="hud-btn reticle-btn-secondary hide">Delete selected (<span id="selectedCount">0</span>)</button>
+      <button id="clearAllBtn" class="hud-btn reticle-btn-secondary">Clear all</button>
+    </div>
+    <div class="tune-actions">
+      <button id="exportBtn" class="hud-btn reticle-btn-secondary">Export</button>
+      <button id="importBtn" class="hud-btn reticle-btn-secondary">Import</button>
+      <input id="importFile" type="file" accept="application/json" hidden>
+    </div>
+    
+    <div class="tune-actions">
+      <button id="cvCopyPointsJsonBtn" class="hud-btn reticle-btn-secondary">Copy as JSON</button>
+      
+    </div>
+    
+    <div class="tune-actions hide" id="cvScanControls">
+      
+    </div>
+    
+
+    <div class="profiles-section">
+      <h3 id="profilesTitle">Templates</h3>
+      <p class="hint">Save the current saved colours and settings as a named template, then switch between templates instantly &mdash; handy for different circumstances (e.g. indoor vs outdoor lighting, or a specific colour vision deficiency type).</p>
+      <div class="profiles-row">
+        <select id="profileSelect" aria-label="Saved templates">
+          <option value="">&mdash; Select a template &mdash;</option>
+        </select>
+        <button id="loadProfileBtn" class="hud-btn reticle-btn-secondary">Load</button>
+        <button id="deleteProfileBtn" class="hud-btn reticle-btn-secondary">Delete</button>
+      </div>
+      <div class="profiles-row">
+        <input id="profileNameInput" type="text" placeholder="Template name" maxlength="40">
+        <button id="saveProfileBtn" class="hud-btn reticle-btn-secondary">Save as template</button>
+      </div>
+      <p id="profileStatus" class="hint" role="status" aria-live="polite"></p>
+    </div>
+
+    <button id="closePointsBtn" class="hud-btn reticle-btn-secondary">Close</button>
+  </div>
+</div>
+
+<script src="colour-math.js"></script>
+<script src="hud-common.js"></script>
+<script src="camera-hardware.js"></script>
+<script src="camera-lifecycle.js"></script>
+
+
+<script src="wake-lock.js"></script>
+<script src="gamepad-haptics.js"></script>
+<script src="colorvision.js"></script>
+<script type="module" src="ar.js"></script></body>
+</html>
