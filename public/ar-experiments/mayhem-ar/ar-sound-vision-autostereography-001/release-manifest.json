@@ -9,14 +9,29 @@
   "physicalPhone": "pending",
   "assets": [
     {
+      "file": "../collection-controls.css",
+      "bytes": 7769,
+      "sha256": "3b6a09b6d814f6eb511b86af20c9eb24336849991c3d7a1dc48c236748e06544"
+    },
+    {
+      "file": "../collection-controls.js",
+      "bytes": 3488,
+      "sha256": "61e33ae0ebed4f01ec3ee817d30c32dc8642ad17caaaa4415ab8d91b844b8eed"
+    },
+    {
+      "file": "../movement-speed.js",
+      "bytes": 3189,
+      "sha256": "3012794fca5e70bdb34e58da9849bb53df07f41a0ebfe1fe4e072ccfe6290d9d"
+    },
+    {
       "file": "app.js",
-      "bytes": 24746,
-      "sha256": "ba6fb5124d6a7410eec6584abef6fe31fa6f7289a0cd0c57577b7444012470a5"
+      "bytes": 26543,
+      "sha256": "27378faf0fbe2358ca777ccf9f4439811cc1e7d2f97cad40cb32f692cdd7a709"
     },
     {
       "file": "ar-sound-vision.bundle.js",
-      "bytes": 140198,
-      "sha256": "15abdb3f63283184a8bc6dbb4958734c980e455b7fd0ee4438f4faada3480c19"
+      "bytes": 153479,
+      "sha256": "620f2a3a71121e07fa31a356b756220a169e4252af9588309322013cddc3aedc"
     },
     {
       "file": "autostereogram.js",
@@ -50,8 +65,8 @@
     },
     {
       "file": "index.html",
-      "bytes": 18604,
-      "sha256": "169908b4260cd142043b049d00deaabb2dc1caa655795c95aa1334db7664c789"
+      "bytes": 21058,
+      "sha256": "f77dcbabc2a14b996bb5072bc7b3e1b5360dc0927a241ff4ff97e6299c7abfa8"
     },
     {
       "file": "invisibility-wall-004.bundle.js",
@@ -164,6 +179,11 @@
       "sha256": "b5a38586ac972f9767882de40425361429d96cfc2d7e78c3fdf690d123907768"
     },
     {
+      "file": "photo-import-controls.js",
+      "bytes": 6432,
+      "sha256": "6f3f18579968e7086dc2954ba8f9029a0f5f9a149eeafd5e9a8bef60465bd559"
+    },
+    {
       "file": "placement.js",
       "bytes": 1543,
       "sha256": "1c671e5cec740873f28d8dfa3c3165729de1b6f6037f9642b3bf558c1b5efbd3"
@@ -190,18 +210,23 @@
     },
     {
       "file": "stereo-controls.js",
-      "bytes": 9470,
-      "sha256": "42816210de16f205bda9f9947baaec889121282c4069bef358f815351c0f9032"
+      "bytes": 10296,
+      "sha256": "3839dce1e83a0e574e13f2400f25ec2595ac66f92b19080eafdb4c1cf13bf5a8"
     },
     {
       "file": "stereo-surface.js",
-      "bytes": 2785,
-      "sha256": "23bd2f7f70e828ae4f186a970fc76833cef25b69d76abb16d6dbca0a92795b1e"
+      "bytes": 3095,
+      "sha256": "7d300c56b2cad0fd8b6f7b0953c7f4029b0269a27abdab8235b4aaf197b505cf"
     },
     {
       "file": "sweep.js",
       "bytes": 2728,
       "sha256": "62919bf808b99866de32cc0eaa7de0ca1180e80a2539f2bc33ca626406bb539f"
+    },
+    {
+      "file": "uploaded-photo.js",
+      "bytes": 3172,
+      "sha256": "e35b6d76a34e0aee7ee66bde092180580a26ae95ebb1bfa8788e8b24f6453102"
     },
     {
       "file": "vendor/js/hit-test.js",
@@ -399,6 +424,11 @@
       "sha256": "51eca09f84d678a3f73fb69ff3e515ad87f2638d6370abd9a4fcc614f60a338a"
     },
     {
+      "file": "vendor/js/third-party/gl-matrix/src/gl-matrix.js",
+      "bytes": 564,
+      "sha256": "f024e7bc1b56895cc4e8a5a6a689d7bdcc28cf24a6f55fe9295a3e19b6f8ab24"
+    },
+    {
       "file": "vendor/js/third-party/gl-matrix/src/gl-matrix/common.js",
       "bytes": 1208,
       "sha256": "6a155ac1f48f89b0dbfc9aa7789ecb346a20debf91a76b43b2d5b38fbe57cbe1"
@@ -447,11 +477,6 @@
       "file": "vendor/js/third-party/gl-matrix/src/gl-matrix/vec4.js",
       "bytes": 14550,
       "sha256": "f6ddb7338ef4e1e7b3e1aaba63cf32ffab09312d3583431f6d9c8e42bdcfbd89"
-    },
-    {
-      "file": "vendor/js/third-party/gl-matrix/src/gl-matrix.js",
-      "bytes": 564,
-      "sha256": "f024e7bc1b56895cc4e8a5a6a689d7bdcc28cf24a6f55fe9295a3e19b6f8ab24"
     },
     {
       "file": "vendor/js/third-party/motion-controllers-LICENSE.txt",
@@ -555,23 +580,8 @@
     },
     {
       "file": "wall-set.js",
-      "bytes": 6006,
-      "sha256": "31d90dbcb22ba9e8dd9c53c108b3cfe47e3a83b5b9f66a3595467e22a1df094b"
-    },
-    {
-      "file": "../collection-controls.css",
-      "bytes": 7769,
-      "sha256": "3b6a09b6d814f6eb511b86af20c9eb24336849991c3d7a1dc48c236748e06544"
-    },
-    {
-      "file": "../collection-controls.js",
-      "bytes": 3488,
-      "sha256": "61e33ae0ebed4f01ec3ee817d30c32dc8642ad17caaaa4415ab8d91b844b8eed"
-    },
-    {
-      "file": "../movement-speed.js",
-      "bytes": 3189,
-      "sha256": "3012794fca5e70bdb34e58da9849bb53df07f41a0ebfe1fe4e072ccfe6290d9d"
+      "bytes": 9181,
+      "sha256": "049d62390ec04ea8efe0d67c72fbd33121571b5e554499673c042d77a1e18036"
     }
   ]
 }

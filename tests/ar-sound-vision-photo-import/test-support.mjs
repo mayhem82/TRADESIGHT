@@ -1,0 +1,5 @@
+// Synthetic depth worker for lifecycle tests; no device access.
+export function installDepthFixture(){
+ window.captureRequests=0;window.decodeDelay=0;window.depthMode='success';window.depthJobs=[];navigator.mediaDevices.getUserMedia=async()=>{captureRequests++;throw Error('No camera or microphone in tests');};const original=createImageBitmap;window.createImageBitmap=async(...args)=>{const delay=decodeDelay;if(delay)await new Promise(r=>setTimeout(r,delay));return original(...args);};
+ window.Worker=class{constructor(){this.terminated=false;}terminate(){this.terminated=true;}postMessage(data){const mode=depthMode;const job={worker:this,data};depthJobs.push(job);const finish=()=>{if(this.terminated)return;if(mode==='error')this.onmessage({data:{id:data.id,error:'Synthetic estimator failure'}});else this.onmessage({data:{id:data.id,width:data.width,height:data.height,values:Float32Array.from({length:data.width*data.height},(_,i)=>(i%data.width)/(data.width-1)),elapsedMs:10,inferenceMs:4}});};if(mode!=='deferred')setTimeout(finish,10);}};
+}

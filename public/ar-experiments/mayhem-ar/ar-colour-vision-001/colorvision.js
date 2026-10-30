@@ -2397,8 +2397,10 @@
       }
       if (uOutlineEnabled > 0.5) {
         float edge = cvEdgeStrength(vUv, uOutlineThickness) * uOutlineOpacity;
-        vec3 outlineColor = uOutlineColor * edge;
-        finalColor = mix(finalColor, outlineColor, uOutlineBlend);
+        // Blend only covered edge pixels over the effects already applied.
+        // Multiplying a full-frame edge image into the blend erases those effects.
+        float coverage = clamp(edge * uOutlineBlend, 0.0, 1.0);
+        finalColor = mix(finalColor, uOutlineColor, coverage);
       }
 
       // Audio colour tint: a final nudge toward the live mic's dominant band
