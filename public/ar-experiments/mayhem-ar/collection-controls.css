@@ -1,0 +1,56 @@
+/* Collection UI only: keep established control dimensions and scene behavior. */
+#overlay > #motion-controls, #overlay > #motion-dock {pointer-events:auto}
+body.xr #overlay > #motion-controls {
+ position:fixed!important;left:12px;right:12px;bottom:max(76px,calc(env(safe-area-inset-bottom) + 68px));
+ width:auto!important;max-width:370px;margin:0!important;padding:8px;background:#10282df5;
+ border:1px solid #55796c;border-radius:12px;z-index:1003;
+}
+body.xr #overlay > #motion-dock {bottom:max(76px,calc(env(safe-area-inset-bottom) + 68px))}
+body.xr:has(#overlay > #motion-controls) #panel {
+ top:max(12px,env(safe-area-inset-top));bottom:calc(var(--collection-motion-height,174px) + max(76px,calc(env(safe-area-inset-bottom) + 68px)) + 10px)!important;max-height:none!important;
+}
+body.xr:has(#overlay > #motion-dock) #panel {
+ top:max(12px,env(safe-area-inset-top));bottom:calc(var(--collection-motion-height,244px) + max(76px,calc(env(safe-area-inset-bottom) + 68px)) + 10px)!important;max-height:none!important;
+}
+#collection-actions {position:fixed;top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));
+ right:max(132px,env(safe-area-inset-right));z-index:1004;pointer-events:auto;
+ max-height:calc(100dvh - 290px);overflow:auto;background:#10282ded;border-radius:12px;padding:8px}
+#collection-actions[hidden] {display:none!important}
+#collection-actions .row {display:flex;flex-wrap:wrap;gap:8px}
+#walking-overlay .collection-menu {position:absolute;top:max(12px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right));pointer-events:auto;z-index:30}
+#walking-overlay .walking-info {max-height:calc(100dvh - 220px);overflow:auto}
+#walking-overlay #walking-joystick {width:132px;height:132px;box-sizing:content-box}
+#walking-overlay .joystick-knob {left:39px;top:39px}
+.collection-info-hidden .walking-info {display:none!important}
+#collection-room-menu {position:fixed;right:12px;top:max(12px,env(safe-area-inset-top));z-index:30;pointer-events:auto}
+.collection-room-hidden #toolbar,.collection-room-hidden #npcpanel,.collection-room-hidden #ar-options,
+.collection-room-hidden #ar-diagnostics,.collection-room-hidden #ar-graphics,.collection-room-hidden #texture-panel {display:none!important}
+/* The room's walkthrough stick is deliberately inactive in AR. Keep its AR actions. */
+body:not(.in-ar) #joystick {width:120px;height:120px}
+@media (orientation:landscape) and (max-height:600px) {
+ body.xr:has(#overlay > #motion-controls) #overlay > #motion-controls,
+ body.xr:has(#overlay > #motion-dock) #overlay > #motion-dock {
+  left:auto;right:max(12px,env(safe-area-inset-right));width:310px!important;bottom:76px;max-height:none;overflow:visible;
+ }
+ body.xr:has(#overlay > #motion-controls) #panel,
+ body.xr:has(#overlay > #motion-dock) #panel {
+  left:max(12px,env(safe-area-inset-left));right:334px;top:max(12px,env(safe-area-inset-top));
+  bottom:76px!important;width:auto!important;max-width:none!important;max-height:none!important;
+ }
+ body.xr #panel {max-height:calc(100dvh - 100px)!important}
+ #collection-actions {right:334px;max-height:calc(100dvh - 100px)}
+ #walking-overlay .walking-info {right:250px;max-width:none;max-height:calc(100dvh - 190px)}
+ #walking-overlay .walking-actions {max-height:calc(100dvh - 76px);overflow:auto}
+ #toolbar {right:136px;max-height:calc(100dvh - 170px);overflow:auto}
+ #npcpanel {max-height:calc(100dvh - 190px)}
+}
+
+#collection-simple-menu {position:fixed;right:12px;top:max(12px,env(safe-area-inset-top));z-index:30;pointer-events:auto}
+.collection-simple-page main>header {padding-top:64px}
+body.collection-simple-page>header {padding-top:64px;max-height:calc(100dvh - 24px);overflow:auto}
+.collection-simple-hidden main>h1,.collection-simple-hidden main>p,.collection-simple-hidden main>a,
+.collection-simple-hidden main>details,.collection-simple-hidden main>header>:not(.row),
+body.collection-simple-hidden>header {display:none!important}
+.collection-simple-hidden main>header {padding-top:64px}
+@media(min-height:501px){.in-ar #texture-dock {top:70px}}
+.collection-simple-page main>h1 {padding-right:132px}

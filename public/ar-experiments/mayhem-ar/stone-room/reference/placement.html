@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Companion - Sunflower demo build</title><link rel="stylesheet" href="css/common.css"><style>
 body{margin:12px}header{max-width:440px;box-sizing:border-box;padding:14px}h1{font-size:22px}label{display:block;font-weight:600;margin-top:12px}select{display:block;width:100%;padding:12px;font:inherit;margin:6px 0}#model-status{padding:10px;background:#e7f2e6}small{display:block}a{color:#1456a0}header button{max-width:100%}#preview{position:relative;width:100%;aspect-ratio:420/320;background:#1f2b33}#preview canvas{position:absolute;width:100%;height:100%}
-</style></head><body><header>
+</style><link rel="stylesheet" href="../../collection-controls.css"></head><body><header>
 <h1>Companion - real surroundings</h1><small>Build: companion-base-2</small>
 <p>Built from the START AR sunflower demo you confirmed works. Wait for the model preview, start AR, find the circle, then tap to place the companion in your real surroundings. This first build tests placement; animation is not enabled. Tap again to reposition.</p>
 <label for="model-choice">Model</label><select id="model-choice"><option value="sunflower">1. Original sunflower</option><option value="companion">2. Companion - life size</option></select>
 <p id="model-status" role="status"></p><div id="preview"></div><p id="startup-status" role="status">Loading AR controls...</p><p><a id="open-chrome" hidden>Open in Chrome</a></p>
 <p><a href="https://immersive-web.github.io/webxr-samples/hit-test.html">Original working demo</a> · <a href="/TRADESIGHT/ar-experiments/mayhem-ar/projects/stone-room/index.html">Library</a></p>
-</header><script src="startup.js?v=companion-base-2" data-entry="placement.bundle.js?v=companion-base-2" defer></script></body></html>
+</header><script src="startup.js?v=companion-base-2" data-entry="placement.bundle.js?v=companion-base-2" defer></script><script src="../../collection-controls.js" defer></script></body></html>

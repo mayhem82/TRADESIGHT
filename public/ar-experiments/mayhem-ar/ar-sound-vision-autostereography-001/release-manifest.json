@@ -10,13 +10,13 @@
   "assets": [
     {
       "file": "app.js",
-      "bytes": 24725,
-      "sha256": "0eebb60f32ed32f21ade061d6be2f078c6522adc110a507e2f327cbceeba4b77"
+      "bytes": 24704,
+      "sha256": "e4334c1f895b93e6ded5a3d6086a1791f88d9781c7e7782deb252bbb584dc770"
     },
     {
       "file": "ar-sound-vision.bundle.js",
-      "bytes": 140051,
-      "sha256": "49deb626fff0f15fcabb98939505ace6b4e6493bda3ae5ea2f1b65fbd8f9e39b"
+      "bytes": 140030,
+      "sha256": "b8e3ba192317b95b45df610fb4b5eedc8152e558fd5c11cb8614a9be95f57171"
     },
     {
       "file": "autostereogram.js",
@@ -50,8 +50,8 @@
     },
     {
       "file": "index.html",
-      "bytes": 18492,
-      "sha256": "2ee20445c9deb96b15ef8202b0c3d76c6cfeef65ce343a33247cdf2cf9965d1d"
+      "bytes": 18604,
+      "sha256": "169908b4260cd142043b049d00deaabb2dc1caa655795c95aa1334db7664c789"
     },
     {
       "file": "invisibility-wall-004.bundle.js",
@@ -557,6 +557,16 @@
       "file": "wall-set.js",
       "bytes": 6006,
       "sha256": "31d90dbcb22ba9e8dd9c53c108b3cfe47e3a83b5b9f66a3595467e22a1df094b"
+    },
+    {
+      "file": "../collection-controls.css",
+      "bytes": 4113,
+      "sha256": "a181b885f1955627cadc5fbaee1c4856e87b94c3b6c9dcf1becffcd8c4691eed"
+    },
+    {
+      "file": "../collection-controls.js",
+      "bytes": 3341,
+      "sha256": "0efdf4507dea6d507e9de48e549089f7bb908fd02a3d8bb30a0e5a7c33772c03"
     }
   ]
 }
