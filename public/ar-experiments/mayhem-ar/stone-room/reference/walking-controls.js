@@ -76,7 +76,7 @@ export class WalkingControls {
       const [fx,fz]=this.forward;vx=-fz*x+fx*y;vz=fx*x+fz*y;this.lastDirection=[vx/strength,vz/strength];
     }
     this.moving=true;this.motionRatio=strength*this.speed/.75;
-    const previous=this.node.matrix,position=[previous[12]+vx*this.speed*dt,previous[13],previous[14]+vz*this.speed*dt];
+    const previous=this.node.matrix,position=[previous[12]+vx*this.speed*dt*((this.navigation?.active||this.autoWalk)?1:(globalThis.ARTravelSpeed?.multiplier??1)),previous[13],previous[14]+vz*this.speed*dt*((this.navigation?.active||this.autoWalk)?1:(globalThis.ARTravelSpeed?.multiplier??1))];
     const matrix=mat4.create();mat4.fromYRotation(matrix,Math.atan2(vx,vz));matrix[12]=position[0];matrix[13]=position[1];matrix[14]=position[2];this.node.matrix=matrix;
     this.status.textContent=this.autoWalk?'Auto walking. Tap Stop or touch the joystick.':'Walking. Release the joystick to stop.';
   }

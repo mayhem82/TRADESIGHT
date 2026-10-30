@@ -1,5 +1,7 @@
 // Bounded collection compatibility. Reuse existing nodes so input listeners survive.
 (() => {
+ const speedModule=new URL('movement-speed.js',document.currentScript.src);
+ import(speedModule.href).then(module=>module.installMovementSpeed());
  const panel=document.querySelector('#panel'),overlay=document.querySelector('#overlay');
  if(panel&&overlay&&!document.querySelector('#ar-tools')){
   const actions=panel.querySelector('#exit')?.closest('.row');

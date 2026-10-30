@@ -30,11 +30,11 @@ body:not(.in-ar) #joystick {width:120px;height:120px}
 @media (orientation:landscape) and (max-height:600px) {
  body.xr:has(#overlay > #motion-controls) #overlay > #motion-controls,
  body.xr:has(#overlay > #motion-dock) #overlay > #motion-dock {
-  left:auto;right:max(12px,env(safe-area-inset-right));width:310px!important;bottom:76px;max-height:none;overflow:visible;
+  left:auto;right:max(12px,env(safe-area-inset-right));width:var(--collection-landscape-dock-width,310px)!important;bottom:76px;max-height:none;overflow:visible;
  }
  body.xr:has(#overlay > #motion-controls) #panel,
  body.xr:has(#overlay > #motion-dock) #panel {
-  left:max(12px,env(safe-area-inset-left));right:334px;top:max(12px,env(safe-area-inset-top));
+  left:max(12px,env(safe-area-inset-left));right:var(--collection-landscape-panel-right,334px);top:max(12px,env(safe-area-inset-top));
   bottom:76px!important;width:auto!important;max-width:none!important;max-height:none!important;
  }
  body.xr #panel {max-height:calc(100dvh - 100px)!important}
@@ -54,3 +54,43 @@ body.collection-simple-hidden>header {display:none!important}
 .collection-simple-hidden main>header {padding-top:64px}
 @media(min-height:501px){.in-ar #texture-dock {top:70px}}
 .collection-simple-page main>h1 {padding-right:132px}
+/* Persistent translation speed. The existing sticks keep their original dimensions. */
+.travel-speed {box-sizing:border-box;flex:1 1 64px;min-width:52px;max-width:120px;align-self:center;text-align:center;
+ color:inherit;background:#10282dde;border:1px solid #55796c;border-radius:10px;padding:5px;pointer-events:auto;font-size:14px;line-height:1.2;text-shadow:none}
+.travel-speed label {display:block!important;font:inherit!important;margin:0!important;color:inherit}
+.travel-speed output {float:none!important;display:block;margin:3px 0;font-variant-numeric:tabular-nums;white-space:nowrap}
+.travel-speed output span {display:block;font-size:12px;white-space:normal}
+.travel-speed input[type=range] {display:block;width:100%;min-width:0;max-width:100%;height:44px;min-height:44px;margin:0;touch-action:none;accent-color:#b8f6d4;pointer-events:auto}
+.travel-speed button {box-sizing:border-box;display:block;width:100%;min-width:0;min-height:44px!important;margin:0;padding:3px!important;font:inherit!important}
+#ar-sticks.has-travel-speed {gap:8px;align-items:center}
+#motion-controls.has-travel-speed {align-items:center;gap:8px!important}
+#motion-controls.has-travel-speed .stick-column {flex:1 1 0;min-width:86px}
+#motion-controls>.travel-speed {flex:0 1 96px;max-width:104px}
+body.xr #joystick-dock:has(.travel-speed),#joystick-dock:has(.travel-speed) {width:min(420px,calc(100% - 20px))}
+#joystick-dock .sticks.has-travel-speed {grid-template-columns:136px minmax(52px,1fr) 136px;align-items:center;gap:8px}
+#walking-overlay:has(.travel-speed) .walking-info {max-height:calc(100dvh - 250px)}
+#walking-overlay .walking-pad.has-travel-speed {grid-template-columns:136px 100px;column-gap:8px;align-items:center}
+#walking-overlay .walking-pad.has-travel-speed #walking-joystick {grid-column:1;grid-row:1}
+#walking-overlay .walking-pad.has-travel-speed #joystick-hint {grid-column:1;grid-row:2}
+#walking-overlay .walking-pad.has-travel-speed .travel-speed {grid-column:2;grid-row:1;width:100px}
+.room-travel-speed {position:fixed;left:calc(50% - 10px);transform:translateX(-50%);bottom:70px;width:clamp(52px,calc(100vw - 304px),100px);z-index:6}
+body.in-ar .room-travel-speed {display:none}
+@media(max-height:500px) and (orientation:landscape){.room-travel-speed {bottom:30px}}
+@media(max-width:390px){
+ #joystick-dock .sticks.has-travel-speed {grid-template-columns:136px 136px;justify-content:space-between}
+ #joystick-dock .sticks.has-travel-speed .travel-speed {grid-column:1 / -1;grid-row:1;justify-self:center;max-width:none;width:180px}
+ #walking-overlay .walking-pad.has-travel-speed {grid-template-columns:136px}
+ #walking-overlay .walking-pad.has-travel-speed .travel-speed {grid-column:1;grid-row:1;width:132px;max-width:none}
+ #walking-overlay .walking-pad.has-travel-speed #walking-joystick {grid-row:2}
+ #walking-overlay .walking-pad.has-travel-speed #joystick-hint {grid-row:3}
+ #walking-overlay:has(.travel-speed) .walking-info {max-height:calc(100dvh - 390px)}
+}
+@media(max-width:355px){
+ #ar-sticks.has-travel-speed {display:grid;grid-template-columns:132px 132px;justify-content:space-between}
+ #ar-sticks.has-travel-speed .travel-speed {grid-column:1 / -1;grid-row:1;justify-self:center;max-width:none;width:180px}
+ .room-travel-speed {left:24px;transform:none;bottom:200px;width:120px}
+}
+@media (orientation:landscape) and (max-height:600px){
+ body.xr:has(#motion-dock .travel-speed) {--collection-landscape-dock-width:354px;--collection-landscape-panel-right:378px}
+ body.xr:has(#overlay>#motion-dock .travel-speed) #collection-actions {right:378px}
+}

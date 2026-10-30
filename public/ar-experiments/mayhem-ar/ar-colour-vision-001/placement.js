@@ -8,13 +8,13 @@ export class Placement {
   cancelReposition(){this.repositioning=false;this.scanning=false;this.pending=false;}
   request(){if(!this.worldMatrix||this.repositioning)this.pending=true;}
   cancelPending(){this.pending=false;}
-  resolve(hit,viewer){
+  resolve(hit,viewer,faceOpeningToViewer=false){
     const intent=this.pending;this.pending=false;
     if(!intent||(this.worldMatrix&&!this.repositioning)||!hit||!viewer||hit.length!==16||!Array.from(hit).every(Number.isFinite))return false;
     const point=[hit[12],hit[13],hit[14]];
     if(![viewer.x,viewer.y,viewer.z].every(Number.isFinite))return false;
     this.worldMatrix=new Float32Array(hit); // Same copy boundary as accepted newFlower.matrix = reticle.matrix.
-    const m=mat4.create(),yaw=Math.atan2(viewer.x-point[0],viewer.z-point[2])+Math.PI; // Open front (+local Z) faces away; closed back faces placement viewer.
+    const m=mat4.create(),yaw=Math.atan2(viewer.x-point[0],viewer.z-point[2])+(faceOpeningToViewer?0:Math.PI); // Cube opening is +Z; preserve the historical orientation for other models.
     mat4.fromYRotation(m,yaw);m[12]=point[0];m[13]=point[1]+.7;m[14]=point[2];
     this.matrix=m;this.scanning=false;this.repositioning=false;return true;
   }
