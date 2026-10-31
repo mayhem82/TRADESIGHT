@@ -1,0 +1,462 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "TRADESIGHT · source-bounded Terminus history"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0,
+        1,
+        2
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "1900-wing-roof-envelope",
+      "mesh": 0,
+      "extras": {
+        "measurementStatus": "estimated",
+        "sourceIds": [
+          "plaque"
+        ],
+        "representation": "roof-envelope",
+        "unknowns": [
+          "Metric size unverified",
+          "Photo perspective has not been rectified",
+          "No surveyed alignment",
+          "Wall elevations and architectural detail unresolved",
+          "Traced roof outline is not a proven wall-line footprint",
+          "Vertical extent is an adjustable illustration, not historical evidence"
+        ],
+        "provenance": {
+          "reviewer": "Image-viewing researcher; trace reviewed and supplied by parent",
+          "reference": "Private user-supplied Terminus heritage plaque, 9595.jpg",
+          "coordinateUnits": "dimensionless-plan-ratios",
+          "nativeSize": [
+            1536,
+            2048
+          ],
+          "rectification": "None; photographed plan is visibly projective",
+          "displayOrigin": [
+            531,
+            549
+          ],
+          "displayPixelsPerUnit": 205,
+          "coordinateUse": "Supplied UV trace used directly; display normalization is not a native-pixel metric calibration",
+          "direction": "u right toward rear; v down toward John Street. Not georeferenced.",
+          "traceUncertainty": "Typically 3–6 displayed pixels; up to 10 on faint dashed corners. Excludes photographic distortion and plaque drafting error.",
+          "footprint": [
+            [
+              -0.0195,
+              -1.2683
+            ],
+            [
+              1.2049,
+              -1.3122
+            ],
+            [
+              1.2098,
+              -0.9366
+            ],
+            [
+              0.9024,
+              -0.9317
+            ],
+            [
+              0.8195,
+              -0.8439
+            ],
+            [
+              0.8293,
+              0.0049
+            ],
+            [
+              -0.0049,
+              0.0341
+            ]
+          ],
+          "height": 0.45,
+          "bottom": 0,
+          "heightStatus": "interpretive unless separately evidenced",
+          "metricCalibration": "unverified"
+        }
+      },
+      "scale": [
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "name": "1917-corner-roof-envelope",
+      "mesh": 1,
+      "extras": {
+        "measurementStatus": "estimated",
+        "sourceIds": [
+          "plaque"
+        ],
+        "representation": "roof-envelope",
+        "unknowns": [
+          "Metric size unverified",
+          "Photo perspective has not been rectified",
+          "No surveyed alignment",
+          "Wall elevations and architectural detail unresolved",
+          "Traced roof outline is not a proven wall-line footprint",
+          "Vertical extent is an adjustable illustration, not historical evidence"
+        ],
+        "provenance": {
+          "reviewer": "Image-viewing researcher; trace reviewed and supplied by parent",
+          "reference": "Private user-supplied Terminus heritage plaque, 9595.jpg",
+          "coordinateUnits": "dimensionless-plan-ratios",
+          "nativeSize": [
+            1536,
+            2048
+          ],
+          "rectification": "None; photographed plan is visibly projective",
+          "displayOrigin": [
+            531,
+            549
+          ],
+          "displayPixelsPerUnit": 205,
+          "coordinateUse": "Supplied UV trace used directly; display normalization is not a native-pixel metric calibration",
+          "direction": "u right toward rear; v down toward John Street. Not georeferenced.",
+          "traceUncertainty": "Typically 3–6 displayed pixels; up to 10 on faint dashed corners. Excludes photographic distortion and plaque drafting error.",
+          "footprint": [
+            [
+              0,
+              0.0341
+            ],
+            [
+              0.9951,
+              0
+            ],
+            [
+              1.0049,
+              1.5268
+            ],
+            [
+              0.9122,
+              1.561
+            ],
+            [
+              0.1561,
+              1.5659
+            ],
+            [
+              0.0146,
+              1.4293
+            ]
+          ],
+          "height": 0.45,
+          "bottom": 0,
+          "heightStatus": "interpretive unless separately evidenced",
+          "metricCalibration": "unverified"
+        }
+      },
+      "scale": [
+        2,
+        2,
+        2
+      ]
+    },
+    {
+      "name": "2017-visible-deck-area",
+      "mesh": 2,
+      "extras": {
+        "measurementStatus": "estimated",
+        "sourceIds": [
+          "plaque"
+        ],
+        "representation": "visible-deck-envelope",
+        "unknowns": [
+          "Metric size unverified",
+          "Photo perspective has not been rectified",
+          "No surveyed alignment",
+          "Wall elevations and architectural detail unresolved",
+          "Historical footprint does not establish original height",
+          "Vertical extent is an adjustable illustration, not historical evidence"
+        ],
+        "provenance": {
+          "reviewer": "Image-viewing researcher; trace reviewed and supplied by parent",
+          "reference": "Private user-supplied Terminus heritage plaque, 9595.jpg",
+          "coordinateUnits": "dimensionless-plan-ratios",
+          "nativeSize": [
+            1536,
+            2048
+          ],
+          "rectification": "None; photographed plan is visibly projective",
+          "displayOrigin": [
+            531,
+            549
+          ],
+          "displayPixelsPerUnit": 205,
+          "coordinateUse": "Supplied UV trace used directly; display normalization is not a native-pixel metric calibration",
+          "direction": "u right toward rear; v down toward John Street. Not georeferenced.",
+          "traceUncertainty": "Typically 3–6 displayed pixels; up to 10 on faint dashed corners. Excludes photographic distortion and plaque drafting error.",
+          "footprint": [
+            [
+              1.0049,
+              0.3756
+            ],
+            [
+              1.5073,
+              0.3659
+            ],
+            [
+              1.5317,
+              1.4146
+            ],
+            [
+              1.3756,
+              1.4195
+            ],
+            [
+              1.3756,
+              1.5512
+            ],
+            [
+              1.0098,
+              1.5561
+            ]
+          ],
+          "height": 0.2025,
+          "bottom": 0,
+          "heightStatus": "interpretive unless separately evidenced",
+          "metricCalibration": "unverified"
+        }
+      },
+      "scale": [
+        2,
+        2,
+        2
+      ]
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 0
+          },
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1
+          },
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 2
+          },
+          "material": 2,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "materials": [
+    {
+      "name": "1900-wing-roof-envelope",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.72,
+          0.52,
+          0.39,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.9
+      },
+      "doubleSided": true
+    },
+    {
+      "name": "1917-corner-roof-envelope",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.84,
+          0.67,
+          0.48,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.9
+      },
+      "doubleSided": true
+    },
+    {
+      "name": "2017-visible-deck-area",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.58,
+          0.65,
+          0.45,
+          1
+        ],
+        "metallicFactor": 0,
+        "roughnessFactor": 0.9
+      },
+      "doubleSided": true
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 864,
+      "uri": "data:application/octet-stream;base64,LpCguwAAAABxrAs9d76fvAAAAACoV6K/KjqaPwAAAAAr9qe/KjqaP2Zm5j4r9qe/d76fvGZm5j6oV6K/LpCgu2Zm5j5xrAs9KjqaPwAAAAAr9qe/utqaPwAAAAAFxW+/sANnPwAAAADkg26/sANnP2Zm5j7kg26/utqaP2Zm5j4FxW+/KjqaP2Zm5j4r9qe/KjqaPwAAAAAr9qe/sANnPwAAAADkg26/wcpRPwAAAADVCVi/wcpRP2Zm5j7VCVi/sANnP2Zm5j7kg26/KjqaP2Zm5j4r9qe/LpCguwAAAABxrAs9KjqaPwAAAAAr9qe/wcpRPwAAAADVCVi/wcpRP2Zm5j7VCVi/KjqaP2Zm5j4r9qe/LpCgu2Zm5j5xrAs9wcpRPwAAAADVCVi/AU1UPwAAAAAukKA7LpCguwAAAABxrAs9LpCgu2Zm5j5xrAs9AU1UP2Zm5j4ukKA7wcpRP2Zm5j7VCVi/d76fvAAAAACoV6K/KjqaP2Zm5j4r9qe/KjqaPwAAAAAr9qe/d76fvAAAAACoV6K/d76fvGZm5j6oV6K/KjqaP2Zm5j4r9qe/KjqaPwAAAAAr9qe/utqaP2Zm5j4FxW+/utqaPwAAAAAFxW+/KjqaPwAAAAAr9qe/KjqaP2Zm5j4r9qe/utqaP2Zm5j4FxW+/utqaPwAAAAAFxW+/sANnP2Zm5j7kg26/sANnPwAAAADkg26/utqaPwAAAAAFxW+/utqaP2Zm5j4FxW+/sANnP2Zm5j7kg26/sANnPwAAAADkg26/wcpRP2Zm5j7VCVi/wcpRPwAAAADVCVi/sANnPwAAAADkg26/sANnP2Zm5j7kg26/wcpRP2Zm5j7VCVi/wcpRPwAAAADVCVi/AU1UP2Zm5j4ukKA7AU1UPwAAAAAukKA7wcpRPwAAAADVCVi/wcpRP2Zm5j7VCVi/AU1UP2Zm5j4ukKA7AU1UPwAAAAAukKA7LpCgu2Zm5j5xrAs9LpCguwAAAABxrAs9AU1UPwAAAAAukKA7AU1UP2Zm5j4ukKA7LpCgu2Zm5j5xrAs9LpCguwAAAABxrAs9d76fvGZm5j6oV6K/d76fvAAAAACoV6K/LpCguwAAAABxrAs9LpCgu2Zm5j5xrAs9d76fvGZm5j6oV6K/"
+    },
+    {
+      "byteLength": 720,
+      "uri": "data:application/octet-stream;base64,1zRvPAAAAABN87Y/AAAAAAAAAABxrAs94L5+PwAAAAAAAAAA4L5+P2Zm5j4AAAAAAAAAAGZm5j5xrAs91zRvPGZm5j5N87Y/1zRvPAAAAABN87Y/4L5+PwAAAAAAAAAAkKCAPwAAAAAvbsM/kKCAP2Zm5j4vbsM/4L5+P2Zm5j4AAAAA1zRvPGZm5j5N87Y/1zRvPAAAAABN87Y/kKCAPwAAAAAvbsM/8IVpPwAAAADZzsc/8IVpP2Zm5j7Zzsc/kKCAP2Zm5j4vbsM/1zRvPGZm5j5N87Y/8IVpPwAAAADZzsc/rtgfPgAAAABpb8g/1zRvPAAAAABN87Y/1zRvPGZm5j5N87Y/rtgfPmZm5j5pb8g/8IVpP2Zm5j7Zzsc/AAAAAAAAAABxrAs94L5+P2Zm5j4AAAAA4L5+PwAAAAAAAAAAAAAAAAAAAABxrAs9AAAAAGZm5j5xrAs94L5+P2Zm5j4AAAAA4L5+PwAAAAAAAAAAkKCAP2Zm5j4vbsM/kKCAPwAAAAAvbsM/4L5+PwAAAAAAAAAA4L5+P2Zm5j4AAAAAkKCAP2Zm5j4vbsM/kKCAPwAAAAAvbsM/8IVpP2Zm5j7Zzsc/8IVpPwAAAADZzsc/kKCAPwAAAAAvbsM/kKCAP2Zm5j4vbsM/8IVpP2Zm5j7Zzsc/8IVpPwAAAADZzsc/rtgfPmZm5j5pb8g/rtgfPgAAAABpb8g/8IVpPwAAAADZzsc/8IVpP2Zm5j7Zzsc/rtgfPmZm5j5pb8g/rtgfPgAAAABpb8g/1zRvPGZm5j5N87Y/1zRvPAAAAABN87Y/rtgfPgAAAABpb8g/rtgfPmZm5j5pb8g/1zRvPGZm5j5N87Y/1zRvPAAAAABN87Y/AAAAAGZm5j5xrAs9AAAAAAAAAABxrAs91zRvPAAAAABN87Y/1zRvPGZm5j5N87Y/AAAAAGZm5j5xrAs9"
+    },
+    {
+      "byteLength": 720,
+      "uri": "data:application/octet-stream;base64,IEGBPwAAAABJLsc/kKCAPwAAAAClTsA+Ne/APwAAAAA/V7s+Ne/APylcTz4/V7s+kKCAPylcTz6lTsA+IEGBPylcTz5JLsc/Ne/APwAAAAA/V7s+vw7EPwAAAACdEbU/qROwPwAAAAAtsrU/qROwPylcTz4tsrU/vw7EPylcTz6dEbU/Ne/APylcTz4/V7s+IEGBPwAAAABJLsc/Ne/APwAAAAA/V7s+qROwPwAAAAAtsrU/qROwPylcTz4tsrU/Ne/APylcTz4/V7s+IEGBPylcTz5JLsc/qROwPwAAAAAtsrU/qROwPwAAAAC5jcY/IEGBPwAAAABJLsc/IEGBPylcTz5JLsc/qROwPylcTz65jcY/qROwPylcTz4tsrU/kKCAPwAAAAClTsA+Ne/APylcTz4/V7s+Ne/APwAAAAA/V7s+kKCAPwAAAAClTsA+kKCAPylcTz6lTsA+Ne/APylcTz4/V7s+Ne/APwAAAAA/V7s+vw7EPylcTz6dEbU/vw7EPwAAAACdEbU/Ne/APwAAAAA/V7s+Ne/APylcTz4/V7s+vw7EPylcTz6dEbU/vw7EPwAAAACdEbU/qROwPylcTz4tsrU/qROwPwAAAAAtsrU/vw7EPwAAAACdEbU/vw7EPylcTz6dEbU/qROwPylcTz4tsrU/qROwPwAAAAAtsrU/qROwPylcTz65jcY/qROwPwAAAAC5jcY/qROwPwAAAAAtsrU/qROwPylcTz4tsrU/qROwPylcTz65jcY/qROwPwAAAAC5jcY/IEGBPylcTz5JLsc/IEGBPwAAAABJLsc/qROwPwAAAAC5jcY/qROwPylcTz65jcY/IEGBPylcTz5JLsc/IEGBPwAAAABJLsc/kKCAPylcTz6lTsA+kKCAPwAAAAClTsA+IEGBPwAAAABJLsc/IEGBPylcTz5JLsc/kKCAPylcTz6lTsA+"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 864,
+      "target": 34962
+    },
+    {
+      "buffer": 1,
+      "byteLength": 720,
+      "target": 34962
+    },
+    {
+      "buffer": 2,
+      "byteLength": 720,
+      "target": 34962
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5126,
+      "count": 72,
+      "type": "VEC3",
+      "min": [
+        -0.019500000402331352,
+        0,
+        -1.3121999502182007
+      ],
+      "max": [
+        1.2098000049591064,
+        0.44999998807907104,
+        0.0340999998152256
+      ]
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 60,
+      "type": "VEC3",
+      "min": [
+        0,
+        0,
+        0
+      ],
+      "max": [
+        1.0048999786376953,
+        0.44999998807907104,
+        1.5658999681472778
+      ]
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 60,
+      "type": "VEC3",
+      "min": [
+        1.0048999786376953,
+        0,
+        0.3659000098705292
+      ],
+      "max": [
+        1.5317000150680542,
+        0.20250000059604645,
+        1.5561000108718872
+      ]
+    }
+  ],
+  "extras": {
+    "stageId": "documented",
+    "geometryStatus": "reviewed-proportional-plan-envelope",
+    "units": "dimensionless ratios with display scaling; real dimensions unverified",
+    "unknowns": "Uses the reviewed plaque envelope for comparison, not a verified 2023 or October 2026 as-built. Council record access returned HTTP 403; later dimensional changes remain unverified.",
+    "viewCalibration": {
+      "metresPerPlanUnit": 2,
+      "status": "display-only; real dimensions unverified"
+    },
+    "illustrativeHeight": 0.45,
+    "sourceRegistry": [
+      {
+        "id": "plaque",
+        "label": "User-supplied heritage plaque",
+        "kind": "private-reference",
+        "public": false,
+        "status": "Actual image inspected by the source researcher. Approximate manual footprint/roof trace supplied for this build; no measured scale or photographic rectification."
+      },
+      {
+        "id": "venue",
+        "label": "Terminus Hotel · official venue",
+        "url": "https://www.terminuspyrmont.com/",
+        "kind": "primary",
+        "status": "Operating venue; no measured exterior supplied"
+      },
+      {
+        "id": "architect",
+        "label": "Luchetti Krelle · completed restoration",
+        "url": "https://luchettikrelle.com/portfolio-items/terminus-hotel/",
+        "kind": "primary",
+        "status": "Completed 2018 restoration; project area is not footprint area",
+        "accessStatus": "text-read",
+        "checkedOn": "2026-10-31"
+      },
+      {
+        "id": "council-history",
+        "label": "City of Sydney · hotel history and archival photograph",
+        "url": "https://news.cityofsydney.nsw.gov.au/photos/thirsty-for-history-order-a-drink-with-a-dash-of-old-sydney",
+        "kind": "primary",
+        "publishedOn": "2024-04-18",
+        "accessStatus": "text-read",
+        "checkedOn": "2026-10-31",
+        "status": "Confirms a hotel at this corner since 1841; identifies archive photograph A-00036442, circa 1909. Adjacent residence and extension context; not a measured plan."
+      },
+      {
+        "id": "heritage-2016",
+        "label": "Council · 2016 heritage report",
+        "url": "https://eplanning.cityofsydney.nsw.gov.au/Common/Integration/FileDownload.ashx?ext=PDF&filesize=1130848&id=%21%218iyIZ4gBiFdiz6175YHnR5qTPT4Qu3tfrhEK6Q%3D%3DGbPZYhYn%2Bw%3D%3D&modified=2016-11-25T05%3A34%3A26Z",
+        "kind": "primary",
+        "accessStatus": "http-403",
+        "checkedOn": "2026-10-31",
+        "status": "Source identified; document access returned HTTP 403. Geometry has not been independently inspected in this build."
+      },
+      {
+        "id": "assessment-2025",
+        "label": "Council · April 2025 assessment",
+        "url": "https://eplanning.cityofsydney.nsw.gov.au/Common/Integration/FileDownload.ashx?ext=PDF&filesize=1327918&id=%21%21N7YLnGdMfpqVLvLT3RaUJ%2FpGYV%2FyV8807VYAJg%3D%3D3uJqmJsnyT0%3D&modified=2025-04-10T00%3A42%3A04Z",
+        "kind": "primary",
+        "accessStatus": "http-403",
+        "checkedOn": "2026-10-31",
+        "status": "Research identifies November 2023 photographs in this record; document access returned HTTP 403 in this build. No verified 2026 as-built."
+      }
+    ]
+  }
+}

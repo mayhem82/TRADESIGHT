@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#152b2b"><title>Terminus · Layers of place</title><link rel="icon" href="data:,"><link rel="stylesheet" href="style.css"></head>
+<body>
+<canvas id="stage" aria-label="Three-dimensional reference alignment preview"></canvas>
+<div id="overlay">
+ <button id="menu" type="button" aria-expanded="true" aria-controls="tools">Hide menu</button>
+ <section id="tools" aria-label="Historical comparison controls">
+  <p class="eyebrow">PYRMONT / HARRIS × JOHN</p><h1>Terminus<span>Layers of place</span></h1>
+  <p class="intro">Explore the hotel's documented building phases, from 1841 to the restored venue.</p>
+  <p class="notice"><strong>Proportional reconstruction candidate</strong>Footprints and roof outlines follow a reviewed trace of your plan. Photo perspective is preserved; metres and building heights are unverified. Vertical forms are adjustable illustrations. The current comparison is not an exact October 2026 as-built.</p>
+  <div class="row"><button id="start" disabled>Check AR support…</button><button id="exit" hidden>Exit AR</button><button id="fullscreen">Fullscreen</button></div>
+  <label>Placement mode<select id="mode"><option value="remote">Remote · place in any area</option><option value="onsite">On site · manual reference alignment</option></select></label>
+  <p id="mode-help" class="hint">Find a floor surface and tap its ring. The reference stays at that world position as you move.</p>
+  <div class="row"><button id="reposition">Reposition shared reference</button><button id="reset">Reset alignment</button></div>
+  <label>Comparison<select id="comparison"><option value="overlay">Overlay · shared origin</option><option value="side">Side by side · reference spacing</option><option value="single">Selected version only</option></select></label>
+  <fieldset><legend>Versions</legend><label>Version A<select id="version-a"></select></label><label>Version B<select id="version-b"></select></label><label>Adjust<select id="selected"><option value="0">Version A · terracotta</option><option value="1">Version B · sage</option></select></label></fieldset>
+  <label>Shared display size (m per plan unit)<input id="display-size" type="number" min="0.1" max="100" step="0.1" value="2"></label><p class="hint">Proportions can follow the plan without establishing metres. This setting changes display size for both versions; it is not a measured building dimension.</p>
+  <label>Illustrative height (relative plan units)<input id="illustrative-height" type="range" min="0" max="1" step="0.01" value="0.45"><output id="height-value">0.45 · illustrative</output></label><p class="hint">Set to zero for the plan only. Roof envelopes do not establish wall lines or original roof profiles. This height is shared by the comparison and is not a measured storey height.</p>
+  <div class="ranges"><label>Scale multiplier<input id="scale" type="number" min="0.01" max="100" step="0.01" value="1"></label><label>Rotation °<input id="rotation" type="number" min="-360" max="360" step="1" value="0"></label><label>Opacity <output id="opacity-value">100%</output><input id="opacity" type="range" min="0" max="1" step="0.01" value="1"></label></div>
+  <label>Selected version distance from viewer (m)<div class="row"><input id="distance" type="number" min="0.25" max="1000" step="0.25" value="3"><button id="apply-distance">Apply distance</button></div></label>
+  <p class="hint">Distance and scale are independent. Distances describe local tracking coordinates; building size is unverified. Align each version to the same corner manually. No GPS registration.</p>
+  <details id="evidence" open><summary>Evidence & reconstruction limits</summary><div id="stage-evidence"></div><div id="sources"></div><p class="hint">No photograph, camera image or microphone audio is captured or uploaded. AR uses the device's spatial tracking. No survey measurements have been established.</p></details>
+  <div class="row"><button id="export-model" disabled>Export selected glTF</button><button id="export-evidence">Export evidence JSON</button></div>
+ </section>
+ <aside id="readout" role="status" aria-live="polite">Loading local viewer…</aside>
+ <div id="ar-sticks"><div class="stick-wrap">Move reference<div id="move" class="stick"><span></span></div></div><div class="speed"><label for="speed">Travel speed</label><output id="speed-value">1×</output><input id="speed" type="range" min="-3" max="5" step="0.125" value="0"><button id="speed-reset">1×</button></div><div class="stick-wrap">Turn / height<div id="turn" class="stick"><span></span></div></div>
+ <div id="caption">PLAN PROPORTIONS · ILLUSTRATIVE HEIGHT · UNVERIFIED METRES</div>
+</div>
+<script type="module" src="app.js"></script></body></html>
