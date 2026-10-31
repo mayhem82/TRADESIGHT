@@ -1,3 +1,4 @@
+import {imageSize,distanceStep} from './image-surface.js';
 import {MAX_BYTES,MAX_EDGE} from './multi-view.js';
 import {StereoSurface} from './stereo-surface.js';
 import {CaptureWall} from './capture-wall.js';
@@ -25,6 +26,8 @@ export class WallSet {
  clear(){const w=this.active;if(!w)return;this.stereoRenderer?.release(w.stereo);w.stereo=null;w.surface="capture";for(const s of w.views)this.release(s);w.views=[];w.plan=null;w.snapshot=null;w.version++;this.mount();}
  resetAll(){for(const w of this.items){this.stereoRenderer?.release(w.stereo);for(const s of w.views)this.release(s);}this.items=[];this.activeId=null;this.nextId=1;this.totalBytes=0;this.refreshReservation();this.mount();}
  resize(radius,height){const w=this.active;if(!w)return;this.clear();w.model[12]+=w.model[8]*(radius-w.radius);w.model[14]+=w.model[10]*(radius-w.radius);w.model[13]+=(height-w.height)/2;w.radius=radius;w.height=height;}
+ resizeImage(width,height){const w=this.active;if(!w?.stereo)throw Error('Prepare and place an image/autostereogram first');const size=imageSize(width,height),delta=size.width-w.radius;for(let i=0;i<3;i++)w.model[12+i]+=w.model[8+i]*delta;w.radius=size.width;w.height=size.height;if(w.surface==='capture'&&w.stereo.shot.sourceKind!=='uploaded')w.surface='photo';w.plan=null;this.mount();return size;}
+ setDistance(viewer,distance){const w=this.active;if(!w?.stereo)throw Error('Prepare and place an image/autostereogram first');const [dx,dz]=distanceStep(w,viewer,distance);this.move(dx,dz);return distance;}
  setStereo(depth,pattern,shot,w=this.active){if(!w||!this.items.includes(w)||!w.views.includes(shot))throw Error('The selected photo no longer belongs to this wall');const next=this.stereoRenderer.create(depth,pattern,shot);this.stereoRenderer.release(w.stereo);w.stereo=next;w.surface='pattern';return next;}
  importPhoto({photo,depth,pattern,options}){
  const w=this.active,g=this.gl;if(!w)throw Error('Place a wall first');if(w.views.length)throw Error('Use a new wall for an uploaded photo');
