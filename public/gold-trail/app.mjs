@@ -1,6 +1,9 @@
 import {SEAMLESS,rockQueryUrl,parseRockInfo} from './geology.mjs';
 import {parseRecords,queryUrl,retrieve,distance,projected,cameraHeading,validPoint,gpsMessage} from './core.mjs';
 const $=id=>document.getElementById(id), esc=s=>String(s??'Unknown / not recorded').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const textSizes=[22,26,30],textLabels=['Large','Extra large','Largest'];let textIndex=0;try{const saved=Number(localStorage.getItem('gold-trail-text-size'));if(Number.isInteger(saved)&&saved>=0&&saved<textSizes.length)textIndex=saved}catch{}
+function applyTextSize(){document.documentElement.style.setProperty('--field-text',textSizes[textIndex]+'px');$('textSizeStatus').textContent=textLabels[textIndex];$('textSmaller').disabled=textIndex===0;$('textLarger').disabled=textIndex===textSizes.length-1;try{localStorage.setItem('gold-trail-text-size',String(textIndex))}catch{}}
+$('textSmaller').onclick=()=>{textIndex=Math.max(0,textIndex-1);applyTextSize()};$('textLarger').onclick=()=>{textIndex=Math.min(textSizes.length-1,textIndex+1);applyTextSize()};applyTextSize();
 let records=[], snapshot=[],selected=null, center={lat:-30.92,lng:152.51},radius=50,gps=null,gpsAt=0,watch=null,gpsGeneration=0,heading=null,headingAt=0,stream=null,cameraGeneration=0,queryGeneration=0,tileLayer=null;
 const map=L.map('map',{zoomControl:true}).setView([center.lat,center.lng],10),markers=L.layerGroup().addTo(map),uncertainties=L.layerGroup().addTo(map),position=L.layerGroup().addTo(map);
 map.attributionControl.addAttribution('Occurrence data © Geological Survey of NSW · CC BY 4.0');
