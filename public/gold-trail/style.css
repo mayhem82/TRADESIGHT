@@ -50,3 +50,9 @@
  .leaflet-control-attribution,.leaflet-control-attribution a{font-size:var(--field-text,22px)!important}.leaflet-control-zoom a{font-size:30px!important}
  .leaflet-popup-content,.leaflet-tooltip{font-size:var(--field-text,22px)!important}
 }
+@media(min-width:761px) and (min-height:551px){
+ body :is(p,small,span,label,li,dt,dd,summary,a,button,input,select,textarea,b,strong,option,output){font-size:var(--field-text,22px)!important;line-height:1.45}
+ body h2{font-size:calc(var(--field-text,22px) + 5px)!important}body h3{font-size:calc(var(--field-text,22px) + 3px)!important}
+ .leaflet-control-attribution,.leaflet-control-attribution a{font-size:var(--field-text,22px)!important}.leaflet-control-zoom a{font-size:30px!important}
+ main{height:calc(100dvh - 150px)}#workspace{overflow:auto}nav{flex-wrap:wrap}.layer-bar label{min-width:0}.brand-icon{font-size:34px!important}
+}
