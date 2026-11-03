@@ -5,3 +5,5 @@
 .button-row{flex-wrap:wrap}
 
 .layer-bar{display:flex;align-items:center;gap:12px;padding:8px 14px;background:#1a271f;border-bottom:1px solid #35423a;flex-wrap:wrap}.layer-bar label{margin:0;min-width:210px;flex:0 1 280px}.layer-bar select{margin-top:3px}.layer-bar p{margin:0;flex:1 1 200px;font-size:11px;line-height:1.35}.layer-bar a{font-size:11px}@media(max-width:760px){.layer-bar{gap:4px;padding:5px 12px}.layer-bar label{flex:1 1 100%;font-size:10px}.layer-bar select{min-height:38px;padding:5px}.layer-bar p{font-size:10px}.camera-page .layer-bar{font-size:10px}}
+
+.fault-toggle{display:flex!important;align-items:center;gap:6px;min-width:0!important;flex:0 0 auto!important}.fault-toggle input{width:auto;min-height:20px;margin:0}#identifyRock{font-size:11px}#rockInfo{width:100%;font-size:11px;line-height:1.4;max-height:110px;overflow:auto;color:#d8e4d2}
