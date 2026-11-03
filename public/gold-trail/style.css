@@ -57,3 +57,4 @@
  main{height:calc(100dvh - 150px)}#workspace{overflow:auto}nav{flex-wrap:wrap}.layer-bar label{min-width:0}.brand-icon{font-size:34px!important}
 }
 @media(max-width:760px), (orientation:landscape) and (max-height:550px){.fault-toggle{flex:1 1 100%!important;width:100%;max-width:100%;min-width:0}.fault-toggle input{flex:none}}
+.gps-bar{padding:12px 16px;background:#21352a;border-bottom:1px solid var(--line)}.gps-bar .button-row{align-items:center}.gps-bar p{margin:8px 0}.gps-bar details summary{cursor:pointer;color:#ecd08b;font-weight:700}.gps-bar #gps{background:#edc875;color:#18241a;font-weight:750}
