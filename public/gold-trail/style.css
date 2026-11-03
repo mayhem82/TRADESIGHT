@@ -56,3 +56,4 @@
  .leaflet-control-attribution,.leaflet-control-attribution a{font-size:var(--field-text,22px)!important}.leaflet-control-zoom a{font-size:30px!important}
  main{height:calc(100dvh - 150px)}#workspace{overflow:auto}nav{flex-wrap:wrap}.layer-bar label{min-width:0}.brand-icon{font-size:34px!important}
 }
+@media(max-width:760px), (orientation:landscape) and (max-height:550px){.fault-toggle{flex:1 1 100%!important;width:100%;max-width:100%;min-width:0}.fault-toggle input{flex:none}}
