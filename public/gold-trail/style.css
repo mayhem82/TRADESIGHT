@@ -27,3 +27,19 @@
  aside{overflow:visible}#workspace,.panel-hidden #workspace{height:auto;min-height:0;overflow:visible}#map{height:45dvh;min-height:180px}#detail{max-height:none}.ar-status{font-size:16px}
 }
 @media(max-width:760px), (orientation:landscape) and (max-height:550px){.leaflet-container,.leaflet-popup-content,.leaflet-tooltip{font-size:16px}.fault-toggle input{width:24px;height:24px;min-height:24px;flex:none}}
+
+/* Field readability: larger text in both phone orientations. */
+@media(max-width:760px), (orientation:landscape) and (max-height:550px){
+ body{font-size:21px;line-height:1.5}
+ body :is(p,small,span,label,li,dt,dd,summary,a,button,input,select,textarea,b,strong,option){font-size:20px!important;line-height:1.45}
+ body h1{font-size:36px!important;line-height:1.15}body h2{font-size:25px!important}body h3{font-size:22px!important}
+ .brand-icon{font-size:34px!important}.brand small{font-size:18px!important;letter-spacing:normal}
+ .leaflet-control-attribution,.leaflet-control-attribution a{font-size:18px!important;line-height:1.3}
+ .leaflet-control-zoom a{font-size:28px!important;line-height:46px!important;width:48px!important;height:48px!important}
+ .leaflet-popup-content,.leaflet-tooltip{font-size:20px!important}
+ header{gap:8px}nav{flex-wrap:wrap}nav button{flex:1 1 auto}
+ .inputs{flex-wrap:wrap}.inputs label{width:100%}input,select,textarea,button{min-height:48px}
+ .layer-bar label{min-width:0;flex:1 1 100%}.layer-bar select{min-height:48px}.fault-toggle input{width:26px;height:26px;min-height:26px}
+ .map-legend{gap:8px}.map-head{flex-wrap:wrap}.map-head small{padding-left:0}
+ #rockInfo{max-height:220px}.camera-toolbar{flex-wrap:wrap}.camera-toolbar button{min-height:48px}
+}
