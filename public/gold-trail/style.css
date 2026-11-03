@@ -7,3 +7,23 @@
 .layer-bar{display:flex;align-items:center;gap:12px;padding:8px 14px;background:#1a271f;border-bottom:1px solid #35423a;flex-wrap:wrap}.layer-bar label{margin:0;min-width:210px;flex:0 1 280px}.layer-bar select{margin-top:3px}.layer-bar p{margin:0;flex:1 1 200px;font-size:11px;line-height:1.35}.layer-bar a{font-size:11px}@media(max-width:760px){.layer-bar{gap:4px;padding:5px 12px}.layer-bar label{flex:1 1 100%;font-size:10px}.layer-bar select{min-height:38px;padding:5px}.layer-bar p{font-size:10px}.camera-page .layer-bar{font-size:10px}}
 
 .fault-toggle{display:flex!important;align-items:center;gap:6px;min-width:0!important;flex:0 0 auto!important}.fault-toggle input{width:auto;min-height:20px;margin:0}#identifyRock{font-size:11px}#rockInfo{width:100%;font-size:11px;line-height:1.4;max-height:110px;overflow:auto;color:#d8e4d2}
+
+/* Readable field text and a scrollable map workspace on phones. */
+.fault-help{flex:1 1 100%;color:#d8e4d2}.fault-help summary{cursor:pointer;color:#ecd08b}.fault-help p{margin:8px 0}
+@media(max-width:760px), (orientation:landscape) and (max-height:550px){
+ body{font-size:16px;line-height:1.5}
+ .brand small,.eyebrow,.intro p,nav button,label,.micro,#dataStatus,.record strong,.record small,.source-card,.map-head b,.map-head small,.map-head button,.map-legend,.empty p,.empty small,.badge,dl,#detail p,.camera-toolbar b,.camera-toolbar button,.ar-status,#bearingMarker,.camera-footer,.annotation span,#notes article,.camera-link,.layer-bar label,.layer-bar p,.layer-bar a,.camera-page .layer-bar,#identifyRock,#rockInfo,header>button{font-size:16px}
+ .leaflet-control-attribution{font-size:14px!important;line-height:1.35}
+ .leaflet-control-zoom a{width:44px!important;height:44px!important;line-height:44px!important}
+ .layer-bar select{font-size:16px;min-height:44px}.layer-bar{gap:8px}
+ #workspace,.panel-hidden #workspace{height:auto;min-height:0;overflow:visible}
+ #map{flex:none;height:40dvh;min-height:250px}
+ #detail{max-height:none}.map-legend{line-height:1.4}
+ #cameraView{position:fixed;inset:0}.camera-toolbar button{min-height:44px}.camera-footer{line-height:1.3}
+ header{height:auto;min-height:66px;flex-wrap:wrap;padding:10px 14px}.brand small{letter-spacing:1px}.camera-link{white-space:normal}
+}
+@media(orientation:landscape) and (max-height:550px){
+ main{height:auto;min-height:calc(100dvh - 56px);display:grid;grid-template-columns:minmax(260px,310px) minmax(0,1fr)}
+ aside{overflow:visible}#workspace,.panel-hidden #workspace{height:auto;min-height:0;overflow:visible}#map{height:45dvh;min-height:180px}#detail{max-height:none}.ar-status{font-size:16px}
+}
+@media(max-width:760px), (orientation:landscape) and (max-height:550px){.leaflet-container,.leaflet-popup-content,.leaflet-tooltip{font-size:16px}.fault-toggle input{width:24px;height:24px;min-height:24px;flex:none}}
