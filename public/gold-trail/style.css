@@ -3,3 +3,5 @@
 .main-page #camera,.camera-page .main-camera-link{display:none}.camera-link{font-size:12px;white-space:nowrap}.camera-page .intro{display:none}.camera-page nav{margin-top:0}
 @media(max-width:760px){.camera-page aside{order:0}.camera-page #workspace{order:1}}
 .button-row{flex-wrap:wrap}
+
+.layer-bar{display:flex;align-items:center;gap:12px;padding:8px 14px;background:#1a271f;border-bottom:1px solid #35423a;flex-wrap:wrap}.layer-bar label{margin:0;min-width:210px;flex:0 1 280px}.layer-bar select{margin-top:3px}.layer-bar p{margin:0;flex:1 1 200px;font-size:11px;line-height:1.35}.layer-bar a{font-size:11px}@media(max-width:760px){.layer-bar{gap:4px;padding:5px 12px}.layer-bar label{flex:1 1 100%;font-size:10px}.layer-bar select{min-height:38px;padding:5px}.layer-bar p{font-size:10px}.camera-page .layer-bar{font-size:10px}}
