@@ -71,3 +71,5 @@ main{height:auto;min-height:0;align-items:start}aside{overflow:visible}#workspac
 .places-panel{padding:16px;background:#17241f;border:1px solid #586b5e;border-radius:12px;margin:12px 0}.places-panel h2{margin:0 0 12px}.places-panel #togglePlaces{margin-top:12px}
 
 .sample-marker{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:16px solid #52bfe5;filter:drop-shadow(0 0 2px #000)}
+
+.terrain-symbol{width:18px;height:18px;border:3px solid #d8a8ff;border-radius:50%;background:transparent;box-shadow:0 0 2px 2px #111}
