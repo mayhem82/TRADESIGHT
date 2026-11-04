@@ -67,3 +67,5 @@ main{height:auto;min-height:0;align-items:start}aside{overflow:visible}#workspac
 @media(max-width:760px), (orientation:landscape) and (max-height:550px){header .brand-icon,header .brand small{display:none}.rights-jump{padding:8px 12px}.text-size{padding:6px 12px}.install-help{padding:6px 12px}.gps-bar{padding:8px 12px}#map{height:48dvh;min-height:300px}.map-legend{padding:6px 12px}aside{overflow:visible}.map-head{gap:8px}}
 .quick-links{display:flex;gap:8px;flex-wrap:wrap;padding:8px 12px;background:#d9bd72}.quick-links a{color:#16241b;font-weight:800;padding:4px 8px;text-decoration:underline;flex:1 1 auto}#panel{scroll-margin-top:12px}
 #workspace{width:100%;max-width:100%}#detail{min-width:0;overflow-wrap:anywhere}.detail-title h2{min-width:0;overflow-wrap:anywhere}.badge{white-space:normal;overflow-wrap:anywhere}
+
+.places-panel{padding:16px;background:#17241f;border:1px solid #586b5e;border-radius:12px;margin:12px 0}.places-panel h2{margin:0 0 12px}.places-panel #togglePlaces{margin-top:12px}
