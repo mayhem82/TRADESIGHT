@@ -69,3 +69,5 @@ main{height:auto;min-height:0;align-items:start}aside{overflow:visible}#workspac
 #workspace{width:100%;max-width:100%}#detail{min-width:0;overflow-wrap:anywhere}.detail-title h2{min-width:0;overflow-wrap:anywhere}.badge{white-space:normal;overflow-wrap:anywhere}
 
 .places-panel{padding:16px;background:#17241f;border:1px solid #586b5e;border-radius:12px;margin:12px 0}.places-panel h2{margin:0 0 12px}.places-panel #togglePlaces{margin-top:12px}
+
+.sample-marker{width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:16px solid #52bfe5;filter:drop-shadow(0 0 2px #000)}
