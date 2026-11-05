@@ -2,17 +2,18 @@ import {Scene} from './vendor/js/render/scenes/scene.js';
 import {RenderView,createWebGLContext} from './vendor/js/render/core/renderer.js';
 import {Node} from './vendor/js/render/core/node.js';
 import {Gltf2Node} from './vendor/js/render/nodes/gltf2.js';
-import {mat4} from './vendor/js/render/math/gl-matrix.js';
+import {mat4,vec3} from './vendor/js/render/math/gl-matrix.js';
 import {Joystick,horizontalStep,elevationYawStep} from './vendor/joystick.js';
 import {DURATION} from './timeline.mjs';
 import {GROUND_BUILD,clamp,floorHit,freshFloorHit,manualGroundAt,floorStep,boundsFromGltf,groundedFrame,groundedActor} from './grounding.mjs';
-import {TRACKING_BUILD,WorldTracking,acquireTrackedSession} from './world-tracking.mjs';
-import {WALL_BUILD,newWallControls,wallMotion,wallActor,wallFrame,wallMechanisms} from './enclosure.mjs?v=animation-screens-009';
+import {TRACKING_BUILD,WorldTracking,acquireTrackedSession} from './world-tracking.mjs?v=screen-tracking-010';
+import {WALL_BUILD,newWallControls,wallMotion,wallActor,wallFrame,wallMechanisms} from './enclosure.mjs?v=screen-tracking-010';
 import {PortraitRenderer} from './portrait.mjs';
 import {reactiveState,beatEmission} from './beat-response.mjs';
 import {wallScoreAt,wallGlow} from './wall-score.mjs';
 import {AnimationScreen} from './screen-node.mjs';
-import {screenPlans,MAX_SCREENS} from './screen-plan.mjs';
+import {screenPlans,viewSafeScreens,MAX_SCREENS} from './screen-plan.mjs?v=screen-tracking-010';
+import {renderNativeFrame} from './native-frame.mjs';
 const $=id=>document.getElementById(id),song=$('song'),cameraVideo=$('camera');
 const status=text=>{$('status').textContent=text;};
 let ready=false,mode='preview',stream=null,session=null,ref=null,hit=null,hitMatrix=null,hitTime=-Infinity,placing=false,placed=true,starting=false,epoch=0,held=false,heldTime=0,last=0;
@@ -46,7 +47,7 @@ function collect(node){
 }
 function primitives(node,result=[]){for(const p of node.renderPrimitives||[])result.push(p);for(const c of node.children||[])primitives(c,result);return result;}
 function energyAt(t){return energy.rms[Math.min(energy.rms.length-1,Math.max(0,Math.floor(t/energy.secondsPerSample)))]||0;}
-function animate(t){
+function animate(t,viewerPosition){
  formTime=held?heldTime:t;const s=reactiveState(formTime,energyAt(formTime),beatFeatures);
  for(const [primitive,original] of mechanicalLights)primitive.uniforms.emissiveFactor.value=beatEmission(original,s.beat);
  for(const [name,p] of groundedFrame(s,modelBounds)){
@@ -54,10 +55,12 @@ function animate(t){
   if(name.startsWith('face-'))for(const primitive of facePrimitives.get(Number(name.slice(5)))||[])if(primitive.uniforms.modelOpacity)primitive.uniforms.modelOpacity.value=p.opacity;
  }
  $('phase').textContent=s.phase;
- currentScreens=screenPlans(s);for(let i=0;i<animationScreens.length;i++)animationScreens[i].update(currentScreens[i],screensEnabled);
+ const actorMatrix=groundedActor(anchor,pose,yaw,size,heightScale,modelBounds.get('base').min[1]),inverseActor=mat4.invert(mat4.create(),actorMatrix);
+ const localViewer=viewerPosition&&inverseActor?Array.from(vec3.transformMat4(vec3.create(),viewerPosition,inverseActor)):null;
+ currentScreens=viewSafeScreens(screenPlans(s),s,localViewer);for(let i=0;i<animationScreens.length;i++)animationScreens[i].update(currentScreens[i],screensEnabled);
  const wm=wallFrame(walls,formTime,energyAt(formTime),wallScore,beatFeatures);for(let i=0;i<wallNodes.length;i++){wallNodes[i].matrix=wm[i];const heat=wallScoreAt(wallScore,beatFeatures,formTime,i).heat;for(const [p,original] of sectionLights[i])p.uniforms.emissiveFactor.value=wallGlow(original,heat);}outer.matrix=wallActor(wallAnchor,walls);outer.visible=walls.enabled&&(mode==='xr'?wallTracking.visible:mode==='preview'||wallPlaced);
  for(const [name,matrix] of wallMechanisms(walls,formTime,energyAt(formTime),wallScore,beatFeatures).frame)driveNodes.get(name).matrix=matrix;
- actor.matrix=groundedActor(anchor,pose,yaw,size,heightScale,modelBounds.get('base').min[1]);actor.visible=mode==='xr'?tracking.visible:mode==='preview'||placed;
+ actor.matrix=actorMatrix;actor.visible=mode==='xr'?tracking.visible:mode==='preview'||placed;
  return s;
 }
 function resize(){if(session)return;const ratio=Math.min(devicePixelRatio||1,1.5),w=Math.round(innerWidth*ratio),h=Math.round(innerHeight*ratio);if(gl.canvas.width!==w||gl.canvas.height!==h){gl.canvas.width=w;gl.canvas.height=h;}}
@@ -77,7 +80,7 @@ function motion(dt,view){
 }
 function paint(t){
  requestAnimationFrame(paint);if(session||!ready)return;resize();const {projection,view,eye}=projectionAndView(),dt=Math.max(0,Math.min(.05,(t-last)/1000));last=t;
- motion(dt,view);animate(song.currentTime);reticle.visible=mode==='camera'&&placing;if(reticle.visible)reticle.matrix=mat4.translate(mat4.create(),selected==='machine'?anchor:wallAnchor,selected==='machine'?[pose[0],0,pose[2]]:walls.pose);
+ motion(dt,view);animate(song.currentTime,eye);reticle.visible=mode==='camera'&&placing;if(reticle.visible)reticle.matrix=mat4.translate(mat4.create(),selected==='machine'?anchor:wallAnchor,selected==='machine'?[pose[0],0,pose[2]]:walls.pose);
  scene.startFrame();gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
  if(mode==='camera')gl.clearColor(0,0,0,0);else gl.clearColor(.043,.073,.08,1);
  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);scene.drawViewArray([new RenderView(projection,{inverse:{matrix:view},position:{x:eye[0],y:eye[1],z:eye[2]}})]);scene.endFrame();
@@ -173,11 +176,6 @@ async function xrStart(){
 }
 function xrEnded(ended){if(session!==ended)return;stop();song.pause();hit?.cancel();hit=null;session=null;ref=null;hitMatrix=null;tracking.end();wallTracking.end();wallPlaced=true;pendingPlacement=false;reticle.visible=false;setMode('preview');placed=true;placing=false;resetPose();placementUI(false,'');last=0;status('Tracked AR ended. A new AR session requires new ground placement.');}
 function pauseTracking(){stop();song.pause();pendingPlacement=false;hitMatrix=null;reticle.visible=false;actor.visible=false;outer.visible=false;last=0;}
-function clearXRFrame(){
- const layer=session?.renderState.baseLayer;if(!layer)return;
- const mask=gl.getParameter(gl.COLOR_WRITEMASK),depth=gl.getParameter(gl.DEPTH_WRITEMASK),scissor=gl.isEnabled(gl.SCISSOR_TEST);
- gl.bindFramebuffer(gl.FRAMEBUFFER,layer.framebuffer);gl.disable(gl.SCISSOR_TEST);gl.colorMask(true,true,true,true);gl.depthMask(true);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.colorMask(...mask);gl.depthMask(depth);if(scissor)gl.enable(gl.SCISSOR_TEST);
-}
 function xrFrame(t,frame){
  if(!session||frame.session!==session)return;session.requestAnimationFrame(xrFrame);const viewer=frame.getViewerPose(ref);reticle.visible=false;hitMatrix=null;
  let usable=tracking.observe(viewer,document.hidden?'hidden':session.visibilityState||'visible',session).usable;
@@ -189,15 +187,15 @@ function xrFrame(t,frame){
     if(pendingPlacement&&selectedTracking().place(hitMatrix,hitTime,performance.now())){stop();pendingPlacement=false;if(selected==='machine'){pose=[0,0,0];yaw=0;placed=true;}else{walls.pose=[0,0,0];walls.yaw=0;wallPlaced=true;}placing=false;reticle.visible=false;placementUI(false,'');selectedTracking().attachNative(result);status('Placed in world-tracked AR. Move the phone to look around the machine.');}break;}}
   $('state-label').textContent='World-tracked AR';
   if(lastTrackingReason!=='tracking'){status(placed?'Positional tracking restored. The world placement is retained; press Play to continue.':'Positional tracking active. Aim at the ground circle and tap to place.');lastTrackingReason='tracking';}
-  const dt=last?Math.max(0,Math.min(.05,(t-last)/1000)):0;last=t;if(selectedTracking().tracked)motion(dt,viewer.views[0].transform.inverse.matrix);else stop();animate(song.currentTime);
+  const dt=last?Math.max(0,Math.min(.05,(t-last)/1000)):0;last=t;if(selectedTracking().tracked)motion(dt,viewer.views[0].transform.inverse.matrix);else stop();animate(song.currentTime,Array.from(viewer.transform.matrix.slice(12,15)));
  }else{pauseTracking();$('state-label').textContent='AR: tracking paused';if(lastTrackingReason!==tracking.reason){status(tracking.reason==='position-emulated'||tracking.reason==='position-unverified'?'Native positional tracking is unavailable or unverified. The machine is hidden; a camera overlay would not be true AR.':'Tracking paused. The machine is hidden until positional tracking returns.');lastTrackingReason=tracking.reason;}}
- scene.startFrame();if(usable)scene.drawXRFrame(frame,viewer);else clearXRFrame();scene.endFrame();updateTransport();
+ renderNativeFrame(scene,frame,viewer,usable,gl);updateTransport();
 }
 window.addEventListener('resize',resize);window.addEventListener('blur',stop);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(session){tracking.suspend('visibility-suspended');wallTracking.suspend('visibility-suspended');pauseTracking();}stop();song.pause();held=false;$('hold').setAttribute('aria-pressed','false');$('hold').textContent='Hold form';}});
 window.addEventListener('pagehide',()=>{++epoch;stop();song.pause();stopCamera();session?.end().catch(()=>{});});
 // Read-only diagnostics for verification. No synthetic camera or tracking is claimed.
-Object.defineProperty(window,'WieldedExperience',{value:{get state(){return {build:'animation-screens-009',screensEnabled,screenPanels:currentScreens.map(p=>({slot:p.slot,kind:p.kind,opacity:p.opacity})),wallBuild:WALL_BUILD,trackingBuild:TRACKING_BUILD,selected,walls:{...walls,pose:[...walls.pose],placed:wallPlaced,tracking:wallTracking.state},groundBuild:GROUND_BUILD,tracking:tracking.state,ready,mode,placed,placing,playing:!song.paused,time:song.currentTime,formTime,held,beat:reactiveState(formTime,energyAt(formTime),beatFeatures).beat,size,heightScale,groundPoint:[anchor[12],anchor[13],anchor[14]],baseBottom:modelBounds?.get('base').min[1],pose:[...pose],yaw,parts:parts.size,faces:facePrimitives.size,cameraTracks:stream?.getVideoTracks().filter(t=>t.readyState==='live').length||0,xr:!!session,glError:gl.getError()};}}});
+Object.defineProperty(window,'WieldedExperience',{value:{get state(){return {build:'screen-tracking-010',screensEnabled,screenPanels:currentScreens.map(p=>({slot:p.slot,kind:p.kind,opacity:p.opacity})),wallBuild:WALL_BUILD,trackingBuild:TRACKING_BUILD,selected,walls:{...walls,pose:[...walls.pose],placed:wallPlaced,tracking:wallTracking.state},groundBuild:GROUND_BUILD,tracking:tracking.state,ready,mode,placed,placing,playing:!song.paused,time:song.currentTime,formTime,held,beat:reactiveState(formTime,energyAt(formTime),beatFeatures).beat,size,heightScale,groundPoint:[anchor[12],anchor[13],anchor[14]],baseBottom:modelBounds?.get('base').min[1],pose:[...pose],yaw,parts:parts.size,faces:facePrimitives.size,cameraTracks:stream?.getVideoTracks().filter(t=>t.readyState==='live').length||0,xr:!!session,glError:gl.getError()};}}});
 try{
  const response=await fetch('assets/energy.json');if(!response.ok)throw Error('Audio energy data missing');energy=await response.json();
  const beats=await fetch('assets/beats.json');if(!beats.ok)throw Error('Beat response data missing');beatFeatures=await beats.json();

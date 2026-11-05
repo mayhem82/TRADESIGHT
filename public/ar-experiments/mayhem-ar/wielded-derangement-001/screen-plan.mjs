@@ -19,3 +19,21 @@ export function screenPlans(state){
   return {slot,kind:(cycle+index)%SCREEN_LOOPS.length,phase:loopPhaseAt(time,slot),opacity:life*free*.92,matrix};
  });
 }
+const point=(m,p)=>[m[0]*p[0]+m[4]*p[1]+m[8]*p[2]+m[12],m[1]*p[0]+m[5]*p[1]+m[9]*p[2]+m[13],m[2]*p[0]+m[6]*p[1]+m[10]*p[2]+m[14]];
+// Fade a screen if it lies between the viewer and a bright portrait. Positions
+// stay world-relative: this changes opacity only, never camera-parents a panel.
+export function screenFaceRisk(plan,portraits,viewerInModel){
+ if(!viewerInModel?.every(Number.isFinite))return 0;
+ const inverse=mat4.invert(mat4.create(),plan.matrix);if(!inverse)return 0;const camera=point(inverse,viewerInModel);let risk=0;
+ for(const face of portraits){
+  if(face.strength<=0)continue;const target=point(inverse,face.position),dz=target[2]-camera[2];if(Math.abs(dz)<1e-7)continue;
+  const t=-camera[2]/dz;if(t<=0||t>=1)continue;
+  const x=camera[0]+(target[0]-camera[0])*t,y=camera[1]+(target[1]-camera[1])*t,margin=face.radius/SCREEN_WIDTH;
+  const overlap=Math.min(.5+margin-Math.abs(x),.28125+margin-Math.abs(y));
+  risk=Math.max(risk,smooth(overlap/Math.max(.001,margin))*face.strength);
+ }return risk;
+}
+export function viewSafeScreens(plans,state,viewerInModel){
+ const portraits=Array.from({length:12},(_,i)=>faceAt(i,state)).filter(p=>p.alpha>.15).map(p=>({position:[p.x+Math.sin(p.yaw)*p.scale*.1,p.y,p.z+Math.cos(p.yaw)*p.scale*.1],radius:p.scale*.19,strength:smooth((p.alpha-.15)/.5)}));
+ return plans.map(plan=>{const faceOcclusion=screenFaceRisk(plan,portraits,viewerInModel);return {...plan,faceOcclusion,opacity:plan.opacity*(1-faceOcclusion)};});
+}

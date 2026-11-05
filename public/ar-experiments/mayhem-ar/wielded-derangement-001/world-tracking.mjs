@@ -2,7 +2,7 @@ import {freshFloorHit} from './grounding.mjs';
 
 const identity=()=>new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
 const finiteMatrix=m=>m?.length===16&&Array.from(m).every(Number.isFinite);
-export const TRACKING_BUILD='world-003';
+export const TRACKING_BUILD='world-render-010';
 export function positionalPose(pose,visibility='visible'){
  if(visibility!=='visible')return {usable:false,reason:'visibility-suspended'};
  if(!pose)return {usable:false,reason:'tracking-lost'};
@@ -24,7 +24,9 @@ export class WorldTracking {
  begin(session){this.end();this.session=session;this.reason='waiting-for-tracking';}
  observe(pose,visibility,session){
   if(!this.session||session!==this.session)return {usable:false,reason:'inactive-session'};
-  const result=positionalPose(pose,visibility);this.tracked=result.usable;this.pose=result.usable?pose:null;this.reason=result.reason;return result;
+  const result=positionalPose(pose,visibility);this.tracked=result.usable;this.pose=result.usable?pose:null;this.reason=result.reason;
+  if(result.usable){const p=Array.from(pose.transform.matrix.slice(12,15));if(!this.motionOrigin)this.motionOrigin=p;this.viewerDisplacement=Math.hypot(...p.map((v,i)=>v-this.motionOrigin[i]));this.maxViewerDisplacement=Math.max(this.maxViewerDisplacement,this.viewerDisplacement);this.poseSamples++;}
+  return result;
  }
  place(matrix,hitTime,now){
   if(!this.tracked||!this.pose||!freshFloorHit(matrix,this.pose.transform.matrix[13],hitTime,now))return false;
@@ -46,9 +48,10 @@ export class WorldTracking {
   catch{this.suspend('anchor-lost');return false;}
  }
  suspend(reason='tracking-lost'){this.tracked=false;this.pose=null;this.reason=reason;}
- resetOrigin(){this.releaseAnchor();this.anchor.set(identity());this.placed=false;this.suspend('origin-reset');}
+ resetOrigin(){this.releaseAnchor();this.anchor.set(identity());this.placed=false;this.resetMotion();this.suspend('origin-reset');}
  reposition(){this.releaseAnchor();this.placed=false;}
- end(){this.releaseAnchor();this.session=null;this.placed=false;this.tracked=false;this.pose=null;this.reason='inactive';this.anchor.set(identity());}
+ resetMotion(){this.motionOrigin=null;this.poseSamples=0;this.viewerDisplacement=0;this.maxViewerDisplacement=0;}
+ end(){this.releaseAnchor();this.session=null;this.placed=false;this.tracked=false;this.pose=null;this.reason='inactive';this.anchor.set(identity());this.resetMotion();}
  get visible(){return this.tracked&&this.placed;}
- get state(){return {active:!!this.session,tracked:this.tracked,placed:this.placed,reason:this.reason,emulatedPosition:this.pose?.emulatedPosition??null,referenceSpace:'local',anchorKind:this.anchorKind,anchorError:this.anchorError,anchor:Array.from(this.anchor)};}
+ get state(){return {active:!!this.session,tracked:this.tracked,placed:this.placed,reason:this.reason,emulatedPosition:this.pose?.emulatedPosition??null,referenceSpace:'local',anchorKind:this.anchorKind,anchorError:this.anchorError,poseSamples:this.poseSamples,viewerDisplacementMetres:this.viewerDisplacement,maxViewerDisplacementMetres:this.maxViewerDisplacement,anchor:Array.from(this.anchor)};}
 }
