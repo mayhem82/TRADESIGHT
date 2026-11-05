@@ -1,0 +1,59 @@
+{
+  "sourceSha256": "52364f8dd70f4a149974c2350693dd09f122d67d60d4cba64ff4ff36271ac214",
+  "duration": 269.32,
+  "secondsPerSample": 0.05,
+  "method": "Three spectral-band envelopes; five strongest isolated 3 s before/after timbral contrasts, at least 28 s apart. Analysis-selected editorial cues, not verified lyric/chorus timestamps.",
+  "events": [
+    {
+      "time": 16.05,
+      "mode": "compression",
+      "novelty": 0.78989,
+      "beforeRms": 0.046905,
+      "afterRms": 0.115956
+    },
+    {
+      "time": 67.95,
+      "mode": "crown",
+      "novelty": 0.55019,
+      "beforeRms": 0.085279,
+      "afterRms": 0.149058
+    },
+    {
+      "time": 98.7,
+      "mode": "counterwave",
+      "novelty": 0.86729,
+      "beforeRms": 0.109138,
+      "afterRms": 0.082337
+    },
+    {
+      "time": 137.1,
+      "mode": "surge",
+      "novelty": 0.64538,
+      "beforeRms": 0.153143,
+      "afterRms": 0.181137
+    },
+    {
+      "time": 228.35,
+      "mode": "cascade",
+      "novelty": 1.64099,
+      "beforeRms": 0.130605,
+      "afterRms": 0.180049
+    }
+  ],
+  "samples": 5387,
+  "bandRangesHz": [
+    [
+      35,
+      190
+    ],
+    [
+      190,
+      2000
+    ],
+    [
+      2000,
+      9000
+    ]
+  ],
+  "bytes": 110161
+}
