@@ -12,3 +12,5 @@ body.world-xr #artwork,body.world-xr #camera{visibility:hidden!important}body.wo
 @media(max-width:700px) and (min-height:541px){.panel{top:134px;max-height:calc(100dvh - 410px)}#placement{top:134px}}
 
 .screen-option{display:flex;align-items:center;gap:10px;min-height:44px}.screen-option input{width:20px;height:20px;accent-color:#ddba7b}
+
+.panel select{font:inherit;width:100%;min-height:44px;background:#17383b;color:#eceddb;border:1px solid #698482;border-radius:5px;padding:8px}.panel input[type=color]{min-height:44px}.panel #camera-effects-controls .row{flex-wrap:wrap}

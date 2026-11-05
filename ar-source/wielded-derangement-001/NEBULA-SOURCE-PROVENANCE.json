@@ -1,0 +1,29 @@
+{
+  "source_located": true,
+  "sources": [
+    {
+      "source": "C:\\Users\\minko\\Documents\\Codex\\2026-11-03\\what-can-you-work-with-on\\colour-vision-extreme\\script.js",
+      "copy": "C:\\Users\\minko\\Documents\\Codex\\2026-11-05\\task-5\\camera-source-013\\script.js",
+      "bytes": 199416,
+      "sha256": "4461173a82e2356219c78e8d879a5af55d5f8e6db17c1483cde0ddd61a483bd1"
+    },
+    {
+      "source": "C:\\Users\\minko\\Documents\\Codex\\2026-11-03\\what-can-you-work-with-on\\colour-vision-extreme\\nebula.html",
+      "copy": "C:\\Users\\minko\\Documents\\Codex\\2026-11-05\\task-5\\camera-source-013\\nebula.html",
+      "bytes": 32443,
+      "sha256": "f91c6db59ec07788ca9aa6e2661c900f599134da08a25d65b5bb020faf6dca3d"
+    },
+    {
+      "source": "C:\\Users\\minko\\Documents\\Codex\\2026-11-03\\what-can-you-work-with-on\\colour-vision-extreme\\gamepad-haptics.js",
+      "copy": "C:\\Users\\minko\\Documents\\Codex\\2026-11-05\\task-5\\camera-source-013\\gamepad-haptics.js",
+      "bytes": 2060,
+      "sha256": "020e5245e160b707621add67e843d22c3f2fdf090aa0cc5b24aca98c3b14c576"
+    }
+  ],
+  "shader_adaptations": [
+    "GLSL ES 3.00 inputs/output and texture syntax",
+    "DOM video vertical orientation flag",
+    "Outlines can combine after cartoon; individual modes retain original formulas"
+  ],
+  "camera_only": true
+}

@@ -11,9 +11,9 @@ export function positionalPose(pose,visibility='visible'){
  if(!finiteMatrix(pose.transform?.matrix)||!pose.views?.length||!pose.views.every(v=>finiteMatrix(v.projectionMatrix)&&finiteMatrix(v.transform?.inverse?.matrix)))return {usable:false,reason:'invalid-pose'};
  return {usable:true,reason:'tracking'};
 }
-export function nativeSessionOptions(root){return {requiredFeatures:['local','hit-test'],optionalFeatures:['dom-overlay','anchors'],domOverlay:{root}};}
-export async function acquireTrackedSession(xr,root,current){
- const requested=await xr.requestSession('immersive-ar',nativeSessionOptions(root));
+export function nativeSessionOptions(root,features={}){return {requiredFeatures:['local','hit-test'],optionalFeatures:['dom-overlay','anchors',...(features.cameraAccess?['camera-access']:[])],domOverlay:{root}};}
+export async function acquireTrackedSession(xr,root,current,features={}){
+ const requested=await xr.requestSession('immersive-ar',nativeSessionOptions(root,features));
  if(!current()){await requested.end();return null;}
  if(!requested.domOverlayState){await requested.end();throw Error('This browser did not grant the AR controls overlay. Tracked AR was ended; the separate camera overlay is untracked.');}
  return requested;

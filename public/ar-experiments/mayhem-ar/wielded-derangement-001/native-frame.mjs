@@ -8,8 +8,8 @@ export function clearNativeLayer(gl,layer){
  finally{gl.colorMask(...colourMask);gl.depthMask(depthMask);gl.clearDepth(clearDepth);if(scissor)gl.enable(gl.SCISSOR_TEST);}
  return true;
 }
-export function renderNativeFrame(scene,frame,pose,usable,gl){
+export function renderNativeFrame(scene,frame,pose,usable,gl,underlay=null){
  scene.startFrame();
- try{const ready=clearNativeLayer(gl,frame.session.renderState.baseLayer);if(ready&&usable&&pose){scene.drawXRFrame(frame,pose);return true;}return false;}
+ try{const ready=clearNativeLayer(gl,frame.session.renderState.baseLayer);if(ready&&usable&&pose){if(underlay)underlay(frame,pose,frame.session.renderState.baseLayer);scene.drawXRFrame(frame,pose);return true;}return false;}
  finally{scene.endFrame();}
 }
