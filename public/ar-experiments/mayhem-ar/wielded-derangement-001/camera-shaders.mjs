@@ -4,12 +4,13 @@ export const CAMERA_VERTEX=`#version 300 es
 
     in vec2 aPos;
     out mediump vec2 vUv;
+    out mediump vec2 layerUv;
     uniform float uRotate180;
     uniform float uFlipY;
     uniform vec2 uUvScale;
     uniform vec2 uUvOffset;
     void main() {
-      vec2 uv = aPos * 0.5 + 0.5;
+      vec2 uv = aPos * 0.5 + 0.5;layerUv=uv;
       uv = uv * uUvScale + uUvOffset;
       if(uFlipY>.5)uv.y=1.0-uv.y;
       vUv = uRotate180 > 0.5 ? (1.0 - uv) : uv;
@@ -21,6 +22,14 @@ export const CAMERA_FRAGMENT=`#version 300 es
     precision mediump float;
     out vec4 cameraColor;
     in mediump vec2 vUv;
+    in mediump vec2 layerUv;
+    uniform sampler2D uNebula;
+    uniform float uNebulaEnabled;
+    uniform float uCameraAvailable;
+    uniform vec3 uFlashColor;
+    uniform float uFlashAlpha;
+    uniform float uFlashBlack;
+    uniform float uBlackout;
     uniform sampler2D uTex;
     uniform float uBlend;
     uniform float uOutlineEnabled;
@@ -168,7 +177,13 @@ export const CAMERA_FRAGMENT=`#version 300 es
       return smoothstep(lo, hi, edge) * opacity;
     }
 
+    vec4 cameraLayer(vec3 rgb,float alpha){
+      if(uNebulaEnabled>.5){if(alpha>.5)rgb=mix(rgb,vec3(5.0/255.0,5.0/255.0,10.0/255.0),.35);vec4 p=texture(uNebula,vec2(layerUv.x,1.0-layerUv.y));float a=p.a+alpha*(1.0-p.a);rgb=a>.0001?(p.rgb*p.a+rgb*alpha*(1.0-p.a))/a:vec3(0.0);alpha=a;}
+      if(uFlashAlpha>0.0){if(alpha>.999){rgb=uFlashBlack>.5?mix(rgb,vec3(0.0),uFlashAlpha):1.0-(1.0-rgb)*(1.0-uFlashColor*uFlashAlpha);}else{float a=uFlashAlpha+alpha*(1.0-uFlashAlpha);vec3 c=uFlashBlack>.5?vec3(0.0):uFlashColor;rgb=a>.0001?(c*uFlashAlpha+rgb*alpha*(1.0-uFlashAlpha))/a:vec3(0.0);alpha=a;}}
+      if(uBlackout>.5)return vec4(0.0,0.0,0.0,1.0);return vec4(rgb*alpha,alpha);
+    }
     void main() {
+      if(uCameraAvailable<.5){cameraColor=cameraLayer(vec3(0.0),0.0);return;}
       vec3 original = texture(uTex, vUv).rgb;
       vec3 base = daltonize(original, uCvdType, uCvdStrength);
       vec3 correction = vec3(0.0);
@@ -223,6 +238,6 @@ export const CAMERA_FRAGMENT=`#version 300 es
         finalColor = mix(finalColor, outlineColor, uOutlineBlend);
       }
 
-      cameraColor = vec4(finalColor, 1.0);
+      cameraColor = cameraLayer(finalColor,1.0);
     }
   `;

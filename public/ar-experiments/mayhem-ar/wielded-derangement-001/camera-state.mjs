@@ -1,5 +1,5 @@
 const limit=(v,a,b,f)=>Number.isFinite(Number(v))?Math.max(a,Math.min(b,Number(v))):f;
-export const CAMERA_FX_BUILD='camera-only-013';
+export const CAMERA_FX_BUILD='nebula-camera-014';
 export function cameraSettings(raw={}){return {enabled:!!raw.enabled,cartoon:!!raw.cartoon,outlines:!!raw.outlines,levels:limit(raw.levels,2,12,6),cartoonThickness:limit(raw.cartoonThickness,1,10,2),cartoonStrength:limit(raw.cartoonStrength,0,1,.6),saturation:limit(raw.saturation,1,3,1.35),outlineThickness:limit(raw.outlineThickness,1,10,2),outlineBlend:limit(raw.outlineBlend,0,1,1),outlineOpacity:limit(raw.outlineOpacity,0,1,1),outlineColor:/^#[0-9a-f]{6}$/i.test(raw.outlineColor)?raw.outlineColor:'#ffffff',rotate180:!!raw.rotate180,cvd:['none','protan','deutan','tritan'].includes(raw.cvd)?raw.cvd:'none',cvdStrength:limit(raw.cvdStrength,0,1,1),blend:limit(raw.blend,0,1,1),spread:limit(raw.spread,1,40,4)};}
 // Same object-fit:cover transform used by the original Nebula camera shader.
 export function cameraCover(vw,vh,w,h){if(!(vw>0&&vh>0&&w>0&&h>0))return {sx:1,sy:1,ox:0,oy:0};const va=vw/vh,ca=w/h;if(va>ca){const sx=ca/va;return {sx,sy:1,ox:(1-sx)/2,oy:0};}const sy=va/ca;return {sx:1,sy,ox:0,oy:(1-sy)/2};}

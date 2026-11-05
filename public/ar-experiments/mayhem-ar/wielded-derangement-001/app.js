@@ -16,9 +16,10 @@ import {WALL_TILE_BUILD,wallTilePlans,buildWallWalk,walkingWallActor,wallWalkAt}
 import {ClipPlayback} from './clip-playback.mjs?v=walking-wall-tiles-012';
 import {ClipTexture} from './clip-texture.mjs';
 import {renderNativeFrame} from './native-frame.mjs?v=camera-only-013';
-import {CameraEffects} from './camera-effects.mjs';
-import {installCameraControls} from './camera-controls.mjs';
-import {CAMERA_FX_BUILD} from './camera-state.mjs';
+import {CameraEffects} from './camera-effects.mjs?v=nebula-camera-014';
+import {installCameraControls} from './camera-controls.mjs?v=nebula-camera-014';
+import {NebulaRuntime} from './nebula-runtime.mjs?v=nebula-camera-014';
+import {CAMERA_FX_BUILD} from './camera-state.mjs?v=nebula-camera-014';
 const $=id=>document.getElementById(id),song=$('song'),cameraVideo=$('camera');
 const status=text=>{$('status').textContent=text;};
 let ready=false,mode='preview',stream=null,session=null,ref=null,hit=null,hitMatrix=null,hitTime=-Infinity,placing=false,placed=true,starting=false,epoch=0,held=false,heldTime=0,last=0;
@@ -32,6 +33,7 @@ if(!gl)throw Error('This browser could not create a WebGL renderer.');
 gl.canvas.id='artwork';gl.canvas.setAttribute('aria-label','Interactive morphing machine sculpture');document.body.prepend(gl.canvas);
 const renderer=new PortraitRenderer(gl),scene=new Scene();scene.enableStats(false);scene.clear=false;scene.setRenderer(renderer);
 const cameraEffects=new CameraEffects(gl),cameraUI=installCameraControls($('panel'),cameraEffects);
+const nebula=new NebulaRuntime({song,effects:cameraEffects,panel:$('panel'),cameraUI,getMode:()=>mode,getTrack:()=>mode==='camera'?stream?.getVideoTracks()[0]:null});
 const actor=new Node();scene.addNode(actor);
 const machine=new Gltf2Node({url:'assets/machine.gltf'});actor.addNode(machine);
 const clipPlayers=Array.from({length:4},()=>new ClipPlayback(document.createElement('video'))),clipTextures=clipPlayers.map(p=>new ClipTexture(p));
@@ -92,7 +94,7 @@ function motion(dt,view){
 }
 function paint(t){
  requestAnimationFrame(paint);if(session||!ready)return;resize();const {projection,view,eye}=projectionAndView(),dt=Math.max(0,Math.min(.05,(t-last)/1000));last=t;
- motion(dt,view);animate(song.currentTime);reticle.visible=mode==='camera'&&placing;if(reticle.visible)reticle.matrix=mat4.translate(mat4.create(),selected==='machine'?anchor:wallAnchor,selected==='machine'?[pose[0],0,pose[2]]:walls.pose);
+ nebula.update(t,gl.canvas.width,gl.canvas.height);motion(dt,view);animate(song.currentTime);reticle.visible=mode==='camera'&&placing;if(reticle.visible)reticle.matrix=mat4.translate(mat4.create(),selected==='machine'?anchor:wallAnchor,selected==='machine'?[pose[0],0,pose[2]]:walls.pose);
  scene.startFrame();gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
  if(mode==='camera')gl.clearColor(0,0,0,0);else gl.clearColor(.043,.073,.08,1);
  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);if(mode==='camera')cameraEffects.drawVideo(cameraVideo,{x:0,y:0,width:gl.canvas.width,height:gl.canvas.height});scene.drawViewArray([new RenderView(projection,{inverse:{matrix:view},position:{x:eye[0],y:eye[1],z:eye[2]}})]);scene.endFrame();
@@ -111,7 +113,7 @@ function aimManualGround(x=innerWidth/2,y=clamp(Math.min(innerHeight*.68,$('tran
 }
 function resetPose(){stop();if(selected==='walls'){Object.assign(walls,newWallControls());syncWallUI();if(mode==='preview'||(mode==='xr'&&!wallPlaced))mat4.identity(wallAnchor);else if(mode==='camera'&&placing)aimManualGround();return;}pose=[0,0,0];yaw=0;size=.7;heightScale=1;$('size').value='70';$('size-value').textContent='70%';if(mode==='preview'||(mode==='xr'&&!placed))mat4.identity(anchor);else if(mode==='camera'&&placing)aimManualGround();}
 function placementUI(show,message){$('placement').hidden=!show;$('placement-hint').textContent=message;$('place').hidden=mode==='xr';}
-function setMode(next){mode=next;document.body.classList.toggle('world-xr',next==='xr');$('state-label').textContent=next==='xr'?'AR: waiting for tracking':next==='camera'?'Camera overlay - UNTRACKED':'3D preview';$('exit').hidden=next==='preview';$('exit').textContent=next==='xr'?'Exit AR':'Exit overlay';}
+function setMode(next){if(mode!==next)nebula.suspend();mode=next;document.body.classList.toggle('world-xr',next==='xr');$('state-label').textContent=next==='xr'?'AR: waiting for tracking':next==='camera'?'Camera overlay - UNTRACKED':'3D preview';$('exit').hidden=next==='preview';$('exit').textContent=next==='xr'?'Exit AR':'Exit overlay';}
 function collapse(){document.body.classList.add('menu-hidden');$('menu').textContent='Show controls';$('menu').setAttribute('aria-expanded','false');}
 async function cameraStart(){
  if(starting)return;const generation=++epoch;startup(true);stop();
@@ -189,7 +191,7 @@ async function xrStart(){
  finally{if(generation===epoch)startup(false);}
 }
 function xrEnded(ended){if(session!==ended)return;cameraEffects.endSession();stop();song.pause();hit?.cancel();hit=null;session=null;ref=null;hitMatrix=null;tracking.end();wallTracking.end();wallPlaced=true;pendingPlacement=false;reticle.visible=false;setMode('preview');placed=true;placing=false;resetPose();placementUI(false,'');last=0;status('Tracked AR ended. A new AR session requires new ground placement.');}
-function pauseTracking(){stop();clipPlayers.forEach(p=>p.stop());song.pause();pendingPlacement=false;hitMatrix=null;reticle.visible=false;actor.visible=false;outer.visible=false;last=0;}
+function pauseTracking(){nebula.suspend();stop();clipPlayers.forEach(p=>p.stop());song.pause();pendingPlacement=false;hitMatrix=null;reticle.visible=false;actor.visible=false;outer.visible=false;last=0;}
 function xrFrame(t,frame){
  if(!session||frame.session!==session)return;session.requestAnimationFrame(xrFrame);const viewer=frame.getViewerPose(ref);reticle.visible=false;hitMatrix=null;
  let usable=tracking.observe(viewer,document.hidden?'hidden':session.visibilityState||'visible',session).usable;
@@ -204,13 +206,14 @@ function xrFrame(t,frame){
   const dt=last?Math.max(0,Math.min(.05,(t-last)/1000)):0;last=t;if(selectedTracking().tracked)motion(dt,viewer.views[0].transform.inverse.matrix);else stop();animate(song.currentTime);
  }else{pauseTracking();$('state-label').textContent='AR: tracking paused';if(lastTrackingReason!==tracking.reason){status(tracking.reason==='position-emulated'||tracking.reason==='position-unverified'?'Native positional tracking is unavailable or unverified. The machine is hidden; a camera overlay would not be true AR.':'Tracking paused. The machine is hidden until positional tracking returns.');lastTrackingReason=tracking.reason;}}
  if(!usable&&cameraEffects.settings.enabled)cameraEffects.status='Camera effects paused while positional tracking is unavailable';
+ if(usable)nebula.update(t,gl.canvas.width,gl.canvas.height);
  renderNativeFrame(scene,frame,viewer,usable,gl,(f,p,layer)=>cameraEffects.drawXR(f,p,layer));cameraUI.update(mode);updateTransport();
 }
 window.addEventListener('resize',resize);window.addEventListener('blur',stop);
-document.addEventListener('visibilitychange',()=>{if(document.hidden){if(session){tracking.suspend('visibility-suspended');wallTracking.suspend('visibility-suspended');pauseTracking();}stop();song.pause();held=false;$('hold').setAttribute('aria-pressed','false');$('hold').textContent='Hold form';}});
-window.addEventListener('pagehide',()=>{clipPlayers.forEach(p=>p.stop());++epoch;stop();song.pause();stopCamera();session?.end().catch(()=>{});});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){nebula.suspend();if(session){tracking.suspend('visibility-suspended');wallTracking.suspend('visibility-suspended');pauseTracking();}stop();song.pause();held=false;$('hold').setAttribute('aria-pressed','false');$('hold').textContent='Hold form';}});
+window.addEventListener('pagehide',()=>{nebula.suspend();clipPlayers.forEach(p=>p.stop());++epoch;stop();song.pause();stopCamera();session?.end().catch(()=>{});});
 // Read-only diagnostics for verification. No synthetic camera or tracking is claimed.
-Object.defineProperty(window,'WieldedExperience',{value:{get state(){return {build:CAMERA_FX_BUILD,wallTileBuild:WALL_TILE_BUILD,cameraEffects:{settings:{...cameraEffects.settings},enabled:cameraEffects.settings.enabled,status:cameraEffects.status,error:cameraEffects.error,calibrationPoints:cameraEffects.points.count},wallWalkEnabled,wallWalkRadians:wallWalkEnabled?wallWalkAt(wallWalk,formTime)+wallWalkOffset:wallWalkFrozen,screensEnabled,clipsEnabled,clipPlayback:clipPlayers.map(p=>p.state),screenPanels:currentScreens.map(p=>({section:p.section,gates:[...p.gates]})),wallBuild:WALL_BUILD,trackingBuild:TRACKING_BUILD,selected,walls:{...walls,pose:[...walls.pose],placed:wallPlaced,tracking:wallTracking.state},groundBuild:GROUND_BUILD,tracking:tracking.state,ready,mode,placed,placing,playing:!song.paused,time:song.currentTime,formTime,held,beat:reactiveState(formTime,energyAt(formTime),beatFeatures).beat,size,heightScale,groundPoint:[anchor[12],anchor[13],anchor[14]],baseBottom:modelBounds?.get('base').min[1],pose:[...pose],yaw,parts:parts.size,faces:facePrimitives.size,cameraTracks:stream?.getVideoTracks().filter(t=>t.readyState==='live').length||0,xr:!!session,glError:gl.getError()};}}});
+Object.defineProperty(window,'WieldedExperience',{value:{get state(){return {build:CAMERA_FX_BUILD,nebula:nebula.state,wallTileBuild:WALL_TILE_BUILD,cameraEffects:{settings:{...cameraEffects.settings},enabled:cameraEffects.settings.enabled,status:cameraEffects.status,error:cameraEffects.error,calibrationPoints:cameraEffects.points.count},wallWalkEnabled,wallWalkRadians:wallWalkEnabled?wallWalkAt(wallWalk,formTime)+wallWalkOffset:wallWalkFrozen,screensEnabled,clipsEnabled,clipPlayback:clipPlayers.map(p=>p.state),screenPanels:currentScreens.map(p=>({section:p.section,gates:[...p.gates]})),wallBuild:WALL_BUILD,trackingBuild:TRACKING_BUILD,selected,walls:{...walls,pose:[...walls.pose],placed:wallPlaced,tracking:wallTracking.state},groundBuild:GROUND_BUILD,tracking:tracking.state,ready,mode,placed,placing,playing:!song.paused,time:song.currentTime,formTime,held,beat:reactiveState(formTime,energyAt(formTime),beatFeatures).beat,size,heightScale,groundPoint:[anchor[12],anchor[13],anchor[14]],baseBottom:modelBounds?.get('base').min[1],pose:[...pose],yaw,parts:parts.size,faces:facePrimitives.size,cameraTracks:stream?.getVideoTracks().filter(t=>t.readyState==='live').length||0,xr:!!session,glError:gl.getError()};}}});
 try{
  const response=await fetch('assets/energy.json');if(!response.ok)throw Error('Audio energy data missing');energy=await response.json();
  const beats=await fetch('assets/beats.json');if(!beats.ok)throw Error('Beat response data missing');beatFeatures=await beats.json();

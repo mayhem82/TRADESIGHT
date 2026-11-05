@@ -25,5 +25,18 @@
     "DOM video vertical orientation flag",
     "Outlines can combine after cartoon; individual modes retain original formulas"
   ],
-  "camera_only": true
+  "camera_only": true,
+  "public_sources": [
+    "https://github.com/mayhem82/Sound-visualiser-/blob/main/nebula.html",
+    "https://github.com/mayhem82/Sound-visualiser-/blob/main/script.js"
+  ],
+  "public_source_matches_local_after_newline_normalization": true,
+  "adaptations_014": [
+    "Bounded camera-layer particles, 640-pixel canvas at 30 fps",
+    "Original song analysis or explicitly enabled microphone; song route remains connected on stop",
+    "Existing-camera torch only; no second camera during XR",
+    "Frame-local owned readback for calibration/capture; 640-pixel long edge at 15 fps",
+    "Public MQTT signaling and WebRTC; explicit start only, two-peer cap; no TURN",
+    "Remote video kept in labelled untracked preview, never replacing native AR"
+  ]
 }
