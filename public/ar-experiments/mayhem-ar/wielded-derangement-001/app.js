@@ -2,19 +2,19 @@ import {Scene} from './vendor/js/render/scenes/scene.js';
 import {RenderView,createWebGLContext} from './vendor/js/render/core/renderer.js';
 import {Node} from './vendor/js/render/core/node.js';
 import {Gltf2Node} from './vendor/js/render/nodes/gltf2.js';
-import {mat4,vec3} from './vendor/js/render/math/gl-matrix.js';
+import {mat4} from './vendor/js/render/math/gl-matrix.js';
 import {Joystick,horizontalStep,elevationYawStep} from './vendor/joystick.js';
 import {DURATION} from './timeline.mjs';
 import {GROUND_BUILD,clamp,floorHit,freshFloorHit,manualGroundAt,floorStep,boundsFromGltf,groundedFrame,groundedActor} from './grounding.mjs';
 import {TRACKING_BUILD,WorldTracking,acquireTrackedSession} from './world-tracking.mjs?v=screen-tracking-010';
-import {WALL_BUILD,newWallControls,wallMotion,wallActor,wallFrame,wallMechanisms} from './enclosure.mjs?v=screen-tracking-010';
+import {WALL_BUILD,newWallControls,wallMotion,wallFrame,wallMechanisms} from './enclosure.mjs?v=screen-tracking-010';
 import {PortraitRenderer} from './portrait.mjs?v=recovered-clips-011';
 import {reactiveState,beatEmission} from './beat-response.mjs';
 import {wallScoreAt,wallGlow} from './wall-score.mjs';
-import {AnimationScreen} from './screen-node.mjs?v=recovered-clips-011';
-import {ClipPlayback,clipIndex} from './clip-playback.mjs';
+import {WallTilePanel} from './wall-tile-node.mjs';
+import {WALL_TILE_BUILD,wallTilePlans,buildWallWalk,walkingWallActor,wallWalkAt} from './wall-tiles.mjs';
+import {ClipPlayback} from './clip-playback.mjs?v=walking-wall-tiles-012';
 import {ClipTexture} from './clip-texture.mjs';
-import {screenPlans,viewSafeScreens,MAX_SCREENS} from './screen-plan.mjs?v=recovered-clips-011';
 import {renderNativeFrame} from './native-frame.mjs';
 const $=id=>document.getElementById(id),song=$('song'),cameraVideo=$('camera');
 const status=text=>{$('status').textContent=text;};
@@ -30,10 +30,11 @@ gl.canvas.id='artwork';gl.canvas.setAttribute('aria-label','Interactive morphing
 const renderer=new PortraitRenderer(gl),scene=new Scene();scene.enableStats(false);scene.clear=false;scene.setRenderer(renderer);
 const actor=new Node();scene.addNode(actor);
 const machine=new Gltf2Node({url:'assets/machine.gltf'});actor.addNode(machine);
-const clipPlayers=Array.from({length:MAX_SCREENS},()=>new ClipPlayback(document.createElement('video')));
-const animationScreens=Array.from({length:MAX_SCREENS},(_,i)=>{const node=new AnimationScreen(new ClipTexture(clipPlayers[i]));actor.addNode(node);return node;});let screensEnabled=true,clipsEnabled=true,currentScreens=[],lastScreenStatus='';
+const clipPlayers=Array.from({length:4},()=>new ClipPlayback(document.createElement('video'))),clipTextures=clipPlayers.map(p=>new ClipTexture(p));
+let screensEnabled=true,clipsEnabled=true,wallWalkEnabled=true,currentScreens=[],lastScreenStatus='',wallWalk=null,wallWalkOffset=0,wallWalkFrozen=0;
 const outer=new Node();scene.addNode(outer);const enclosure=new Gltf2Node({url:'assets/enclosure-wave.gltf'});outer.addNode(enclosure);
 const drive=new Gltf2Node({url:'assets/wall-drive.gltf'});outer.addNode(drive);const driveNodes=new Map();
+const animationScreens=Array.from({length:20},()=>{const node=new WallTilePanel(clipTextures);outer.addNode(node);return node;});
 const walls=newWallControls(),wallNodes=[],wallAnchor=mat4.create(),wallTracking=new WorldTracking(wallAnchor);let selected='machine',wallPlaced=true;
 const selectedTracking=()=>selected==='machine'?tracking:wallTracking;
 const reticle=new Gltf2Node({url:'vendor/media/reticle/reticle.gltf'});reticle.visible=false;scene.addNode(reticle);
@@ -50,7 +51,7 @@ function collect(node){
 }
 function primitives(node,result=[]){for(const p of node.renderPrimitives||[])result.push(p);for(const c of node.children||[])primitives(c,result);return result;}
 function energyAt(t){return energy.rms[Math.min(energy.rms.length-1,Math.max(0,Math.floor(t/energy.secondsPerSample)))]||0;}
-function animate(t,viewerPosition){
+function animate(t){
  formTime=held?heldTime:t;const s=reactiveState(formTime,energyAt(formTime),beatFeatures);
  for(const [primitive,original] of mechanicalLights)primitive.uniforms.emissiveFactor.value=beatEmission(original,s.beat);
  for(const [name,p] of groundedFrame(s,modelBounds)){
@@ -58,11 +59,14 @@ function animate(t,viewerPosition){
   if(name.startsWith('face-'))for(const primitive of facePrimitives.get(Number(name.slice(5)))||[])if(primitive.uniforms.modelOpacity)primitive.uniforms.modelOpacity.value=p.opacity;
  }
  $('phase').textContent=s.phase;
- const actorMatrix=groundedActor(anchor,pose,yaw,size,heightScale,modelBounds.get('base').min[1]),inverseActor=mat4.invert(mat4.create(),actorMatrix);
- const localViewer=viewerPosition&&inverseActor?Array.from(vec3.transformMat4(vec3.create(),viewerPosition,inverseActor)):null;
- currentScreens=viewSafeScreens(screenPlans(s),s,localViewer);for(let i=0;i<animationScreens.length;i++){const p=currentScreens[i],active=!!p&&p.opacity>.01&&screensEnabled&&clipsEnabled&&(mode==='preview'||(mode==='xr'?tracking.visible:placed));clipPlayers[i].update(clipIndex(formTime,i),formTime,p?.slot||0,active,!song.paused&&!held&&!document.hidden);animationScreens[i].update(p,screensEnabled);}
- const media=clipPlayers.filter(p=>p.active),errors=media.map(p=>p.error).filter(Boolean);const mediaMessage=!screensEnabled?'Screens hidden':!clipsEnabled?'Procedural screen loops':errors.length?'Procedural fallback: '+errors[0]:media.length?'Recovered clips: '+media.filter(p=>p.ready).length+'/'+media.length+' ready':'Recovered clips ready when screens appear';if(mediaMessage!==lastScreenStatus){$('screen-media-status').textContent=mediaMessage;lastScreenStatus=mediaMessage;}
- const wm=wallFrame(walls,formTime,energyAt(formTime),wallScore,beatFeatures);for(let i=0;i<wallNodes.length;i++){wallNodes[i].matrix=wm[i];const heat=wallScoreAt(wallScore,beatFeatures,formTime,i).heat;for(const [p,original] of sectionLights[i])p.uniforms.emissiveFactor.value=wallGlow(original,heat);}outer.matrix=wallActor(wallAnchor,walls);outer.visible=walls.enabled&&(mode==='xr'?wallTracking.visible:mode==='preview'||wallPlaced);
+ const actorMatrix=groundedActor(anchor,pose,yaw,size,heightScale,modelBounds.get('base').min[1]);
+ currentScreens=wallTilePlans(walls,formTime,wallScore,beatFeatures);
+ const wallVisible=walls.enabled&&(mode==='preview'||(mode==='xr'?wallTracking.visible:wallPlaced));
+ for(let i=0;i<4;i++){const active=screensEnabled&&clipsEnabled&&wallVisible&&currentScreens.some(p=>p.gates[i]>.01);clipPlayers[i].update(i,formTime,0,active,!song.paused&&!held&&!document.hidden);}
+ for(let i=0;i<animationScreens.length;i++)animationScreens[i].update(currentScreens[i],screensEnabled&&wallVisible);
+ const media=clipPlayers.filter(p=>p.active),errors=media.map(p=>p.error).filter(Boolean),activeTiles=currentScreens.reduce((n,p)=>n+p.gates.filter(g=>g>.01).length,0);
+ const mediaMessage=!screensEnabled?'Wall tiles hidden':!clipsEnabled?'Procedural wall tiles':errors.length?'Per-type procedural fallback: '+errors[0]:media.length?'Wall tiles: '+activeTiles+' active / '+media.filter(p=>p.ready).length+'/4 clips ready':'Wall clips ready when tiles activate';if(mediaMessage!==lastScreenStatus){$('screen-media-status').textContent=mediaMessage;lastScreenStatus=mediaMessage;}
+ const wm=wallFrame(walls,formTime,energyAt(formTime),wallScore,beatFeatures);for(let i=0;i<wallNodes.length;i++){wallNodes[i].matrix=wm[i];const heat=wallScoreAt(wallScore,beatFeatures,formTime,i).heat;for(const [p,original] of sectionLights[i])p.uniforms.emissiveFactor.value=wallGlow(original,heat);}outer.matrix=walkingWallActor(wallAnchor,walls,formTime,wallWalk,wallWalkEnabled,wallWalkOffset,wallWalkFrozen);outer.visible=walls.enabled&&(mode==='xr'?wallTracking.visible:mode==='preview'||wallPlaced);
  for(const [name,matrix] of wallMechanisms(walls,formTime,energyAt(formTime),wallScore,beatFeatures).frame)driveNodes.get(name).matrix=matrix;
  actor.matrix=actorMatrix;actor.visible=mode==='xr'?tracking.visible:mode==='preview'||placed;
  return s;
@@ -84,7 +88,7 @@ function motion(dt,view){
 }
 function paint(t){
  requestAnimationFrame(paint);if(session||!ready)return;resize();const {projection,view,eye}=projectionAndView(),dt=Math.max(0,Math.min(.05,(t-last)/1000));last=t;
- motion(dt,view);animate(song.currentTime,eye);reticle.visible=mode==='camera'&&placing;if(reticle.visible)reticle.matrix=mat4.translate(mat4.create(),selected==='machine'?anchor:wallAnchor,selected==='machine'?[pose[0],0,pose[2]]:walls.pose);
+ motion(dt,view);animate(song.currentTime);reticle.visible=mode==='camera'&&placing;if(reticle.visible)reticle.matrix=mat4.translate(mat4.create(),selected==='machine'?anchor:wallAnchor,selected==='machine'?[pose[0],0,pose[2]]:walls.pose);
  scene.startFrame();gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
  if(mode==='camera')gl.clearColor(0,0,0,0);else gl.clearColor(.043,.073,.08,1);
  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);scene.drawViewArray([new RenderView(projection,{inverse:{matrix:view},position:{x:eye[0],y:eye[1],z:eye[2]}})]);scene.endFrame();
@@ -124,6 +128,7 @@ $('preview').onclick=async()=>{const generation=++epoch;startup(false);stop();if
 $('exit').onclick=()=>$('preview').click();
 $('reposition').onclick=()=>{stop();if(mode==='xr'){selectedTracking().reposition();pendingPlacement=false;if(selected==='machine')placed=false;else wallPlaced=false;placing=true;hitMatrix=null;placementUI(true,'Point at the floor. Find its circle and tap the clear centre to place the base.');}else if(mode==='camera'){placing=true;if(selected==='machine')placed=false;else wallPlaced=false;placementUI(true,'UNTRACKED overlay: choose a visible ground point and align the base.');}else resetPose();};
 $('reset').onclick=resetPose;
+$('wall-walk').onchange=e=>{const angle=wallWalkAt(wallWalk,formTime);if(e.target.checked)wallWalkOffset=wallWalkFrozen-angle;else wallWalkFrozen=angle+wallWalkOffset;wallWalkEnabled=e.target.checked;};
 $('clips-enabled').onchange=e=>{clipsEnabled=e.target.checked;if(!clipsEnabled)clipPlayers.forEach(p=>p.stop());};
 $('screens-enabled').onchange=e=>{screensEnabled=e.target.checked;for(let i=0;i<animationScreens.length;i++)animationScreens[i].update(currentScreens[i],screensEnabled);};
 function syncWallUI(){for(const key of ['diameter','height']){$('wall-'+key).value=walls[key];$('wall-'+key+'-value').textContent=walls[key].toFixed(1)+' m';}$('wall-visible').checked=walls.enabled;}
@@ -192,7 +197,7 @@ function xrFrame(t,frame){
     if(pendingPlacement&&selectedTracking().place(hitMatrix,hitTime,performance.now())){stop();pendingPlacement=false;if(selected==='machine'){pose=[0,0,0];yaw=0;placed=true;}else{walls.pose=[0,0,0];walls.yaw=0;wallPlaced=true;}placing=false;reticle.visible=false;placementUI(false,'');selectedTracking().attachNative(result);status('Placed in world-tracked AR. Move the phone to look around the machine.');}break;}}
   $('state-label').textContent='World-tracked AR';
   if(lastTrackingReason!=='tracking'){status(placed?'Positional tracking restored. The world placement is retained; press Play to continue.':'Positional tracking active. Aim at the ground circle and tap to place.');lastTrackingReason='tracking';}
-  const dt=last?Math.max(0,Math.min(.05,(t-last)/1000)):0;last=t;if(selectedTracking().tracked)motion(dt,viewer.views[0].transform.inverse.matrix);else stop();animate(song.currentTime,Array.from(viewer.transform.matrix.slice(12,15)));
+  const dt=last?Math.max(0,Math.min(.05,(t-last)/1000)):0;last=t;if(selectedTracking().tracked)motion(dt,viewer.views[0].transform.inverse.matrix);else stop();animate(song.currentTime);
  }else{pauseTracking();$('state-label').textContent='AR: tracking paused';if(lastTrackingReason!==tracking.reason){status(tracking.reason==='position-emulated'||tracking.reason==='position-unverified'?'Native positional tracking is unavailable or unverified. The machine is hidden; a camera overlay would not be true AR.':'Tracking paused. The machine is hidden until positional tracking returns.');lastTrackingReason=tracking.reason;}}
  renderNativeFrame(scene,frame,viewer,usable,gl);updateTransport();
 }
@@ -200,11 +205,11 @@ window.addEventListener('resize',resize);window.addEventListener('blur',stop);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(session){tracking.suspend('visibility-suspended');wallTracking.suspend('visibility-suspended');pauseTracking();}stop();song.pause();held=false;$('hold').setAttribute('aria-pressed','false');$('hold').textContent='Hold form';}});
 window.addEventListener('pagehide',()=>{clipPlayers.forEach(p=>p.stop());++epoch;stop();song.pause();stopCamera();session?.end().catch(()=>{});});
 // Read-only diagnostics for verification. No synthetic camera or tracking is claimed.
-Object.defineProperty(window,'WieldedExperience',{value:{get state(){return {build:'recovered-clips-011',screensEnabled,clipsEnabled,clipPlayback:clipPlayers.map(p=>p.state),screenPanels:currentScreens.map(p=>({slot:p.slot,kind:p.kind,opacity:p.opacity})),wallBuild:WALL_BUILD,trackingBuild:TRACKING_BUILD,selected,walls:{...walls,pose:[...walls.pose],placed:wallPlaced,tracking:wallTracking.state},groundBuild:GROUND_BUILD,tracking:tracking.state,ready,mode,placed,placing,playing:!song.paused,time:song.currentTime,formTime,held,beat:reactiveState(formTime,energyAt(formTime),beatFeatures).beat,size,heightScale,groundPoint:[anchor[12],anchor[13],anchor[14]],baseBottom:modelBounds?.get('base').min[1],pose:[...pose],yaw,parts:parts.size,faces:facePrimitives.size,cameraTracks:stream?.getVideoTracks().filter(t=>t.readyState==='live').length||0,xr:!!session,glError:gl.getError()};}}});
+Object.defineProperty(window,'WieldedExperience',{value:{get state(){return {build:WALL_TILE_BUILD,wallWalkEnabled,wallWalkRadians:wallWalkEnabled?wallWalkAt(wallWalk,formTime)+wallWalkOffset:wallWalkFrozen,screensEnabled,clipsEnabled,clipPlayback:clipPlayers.map(p=>p.state),screenPanels:currentScreens.map(p=>({section:p.section,gates:[...p.gates]})),wallBuild:WALL_BUILD,trackingBuild:TRACKING_BUILD,selected,walls:{...walls,pose:[...walls.pose],placed:wallPlaced,tracking:wallTracking.state},groundBuild:GROUND_BUILD,tracking:tracking.state,ready,mode,placed,placing,playing:!song.paused,time:song.currentTime,formTime,held,beat:reactiveState(formTime,energyAt(formTime),beatFeatures).beat,size,heightScale,groundPoint:[anchor[12],anchor[13],anchor[14]],baseBottom:modelBounds?.get('base').min[1],pose:[...pose],yaw,parts:parts.size,faces:facePrimitives.size,cameraTracks:stream?.getVideoTracks().filter(t=>t.readyState==='live').length||0,xr:!!session,glError:gl.getError()};}}});
 try{
  const response=await fetch('assets/energy.json');if(!response.ok)throw Error('Audio energy data missing');energy=await response.json();
  const beats=await fetch('assets/beats.json');if(!beats.ok)throw Error('Beat response data missing');beatFeatures=await beats.json();
- const scoreResponse=await fetch('assets/wall-score.json');if(!scoreResponse.ok)throw Error('Wall music score missing');wallScore=await scoreResponse.json();if(wallScore.duration!==DURATION||wallScore.sourceSha256!==beatFeatures.sourceSha256)throw Error('Wall score does not match the original song');
+ const scoreResponse=await fetch('assets/wall-score.json');if(!scoreResponse.ok)throw Error('Wall music score missing');wallScore=await scoreResponse.json();wallWalk=buildWallWalk(wallScore,beatFeatures);if(wallScore.duration!==DURATION||wallScore.sourceSha256!==beatFeatures.sourceSha256)throw Error('Wall score does not match the original song');
  const geometry=await fetch('assets/machine.gltf');if(!geometry.ok)throw Error('Machine bounds could not load');modelBounds=boundsFromGltf(await geometry.json());
  await Promise.all([machine.waitForComplete(),reticle.waitForComplete(),enclosure.waitForComplete(),drive.waitForComplete(),...animationScreens.map(n=>n.waitForComplete())]);collect(machine);for(const node of animationScreens)allPrimitives.push(...primitives(node));
  function gatherDrive(n){if(/^wall-(gear|rod|shaft|pin)-/.test(n.name||''))driveNodes.set(n.name,n);for(const c of n.children||[])gatherDrive(c);}gatherDrive(drive);if(driveNodes.size!==80)throw Error('Outer drive mechanism missing');for(const p of primitives(drive))allPrimitives.push(p);
