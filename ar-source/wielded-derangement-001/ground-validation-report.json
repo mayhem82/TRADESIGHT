@@ -1,0 +1,16 @@
+{
+  "build": "ground-002",
+  "base_commit": "b13f0e1d27c7ec8e0a90e33c90e7d0c960b194a0",
+  "syntax_files_passed": 63,
+  "entry_modules_resolved": 30,
+  "dom_ids_match": true,
+  "html_relative_references_resolved": 6,
+  "tests_passed": 8,
+  "test_output": "\u00e2\u0153\u201d floor targets reject walls, ceilings, above-viewer targets and stale taps (0.7384ms)\n\u00e2\u0153\u201d manual ground picks the visible base point rather than a camera-height offset (0.2254ms)\n\u00e2\u0153\u201d the actual base bottom remains on the chosen floor through rotation, size and height changes (14.2019ms)\n\u00e2\u0153\u201d all parts stay above the base over the full song at minimum and maximum audio pulse (168.5787ms)\n\u00e2\u0153\u201d decoded geometry vertices remain above flat and sloped ground at extreme scales and key forms (142.5135ms)\n\u00e2\u0153\u201d camera-relative movement is projected along the chosen ground plane (0.2108ms)\n\u00e2\u0153\u201d complete song timeline produces finite reversible sculpture states (15.447ms)\n\u00e2\u0153\u201d machine grows, contracts, changes shape and forms/fades faces (0.3019ms)\n\u00e2\u201e\u00b9 tests 8\n\u00e2\u201e\u00b9 suites 0\n\u00e2\u201e\u00b9 pass 8\n\u00e2\u201e\u00b9 fail 0\n\u00e2\u201e\u00b9 cancelled 0\n\u00e2\u201e\u00b9 skipped 0\n\u00e2\u201e\u00b9 todo 0\n\u00e2\u201e\u00b9 duration_ms 451.9433\n",
+  "preexisting_audio_geometry_vendor_assets_unchanged": 73,
+  "wav_sha256": "52364f8dd70f4a149974c2350693dd09f122d67d60d4cba64ff4ff36271ac214",
+  "wav_seconds": 269.32,
+  "browser_rendering_verified": false,
+  "physical_phone_retest": false,
+  "browser_restriction_respected": true
+}

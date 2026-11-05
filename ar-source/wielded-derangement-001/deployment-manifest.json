@@ -1,9 +1,10 @@
 {
+  "build": "ground-002",
   "production_files": [
     {
       "path": "public/ar-experiments/mayhem-ar/wielded-derangement-001/app.js",
-      "bytes": 16279,
-      "sha256": "772992324fdf273af470fc760ebce5321b8f99169b7c6ed8448537a04ca13548"
+      "bytes": 17323,
+      "sha256": "34039108cc9ad3373ea65a2198eff4708538642cde3c9eac9436e2699633893f"
     },
     {
       "path": "public/ar-experiments/mayhem-ar/wielded-derangement-001/assets/energy.json",
@@ -21,9 +22,14 @@
       "sha256": "631de2534bedab3dad288b71eceb219b47339b7ec642f8db92c5f8a5b626e08a"
     },
     {
+      "path": "public/ar-experiments/mayhem-ar/wielded-derangement-001/grounding.mjs",
+      "bytes": 4568,
+      "sha256": "9f51bbfa974c706809b4450bbc0158ce5609d57d43665f79ecd906c3eabca9d4"
+    },
+    {
       "path": "public/ar-experiments/mayhem-ar/wielded-derangement-001/index.html",
-      "bytes": 3727,
-      "sha256": "f9cca7b0ec553edcc5535f3649a0a87101bfe54c7c71dee8d499baf8ba19ff7d"
+      "bytes": 3890,
+      "sha256": "d411cdaf0ccc5f5d5308c615b21e236805e4ff4fbf10f5d89a13ff6b06b71c2b"
     },
     {
       "path": "public/ar-experiments/mayhem-ar/wielded-derangement-001/lyrics.txt",
@@ -32,8 +38,8 @@
     },
     {
       "path": "public/ar-experiments/mayhem-ar/wielded-derangement-001/style.css",
-      "bytes": 5329,
-      "sha256": "d56f2d230c570757a36addfcd83940f8e40fe78349fa3d59852eac41e9fc0d9c"
+      "bytes": 5814,
+      "sha256": "0c97fda82fb720b44ab4e44782277cf1af3007c71cc9c877c41ddc4ff3ca8603"
     },
     {
       "path": "public/ar-experiments/mayhem-ar/wielded-derangement-001/timeline.mjs",
@@ -382,5 +388,5 @@
     }
   ],
   "browser_verified": false,
-  "phone_verified": false
+  "phone_retested": false
 }

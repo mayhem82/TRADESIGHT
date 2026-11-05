@@ -15,3 +15,7 @@ All production code is readable directly under the new public folder, with no ad
 Run `node --test tests/wielded-derangement-001/timeline.test.mjs` for finite deterministic timeline, growth/contraction and face appearance checks. The inherited deployment workflow builds the existing site and copies `public/` into its Pages artifact. No workflow, audience, permissions, old application or attribution change is required for this additive integration.
 
 Provenance and retained notices are recorded in PROVENANCE-AND-NOTICES.md. validation-report.json is the pre-integration filesystem/unit report, not a browser acceptance report.
+
+## Ground placement update
+
+See [GROUND-PLACEMENT.md](GROUND-PLACEMENT.md) for the ground-002 correction. Place on ground prefers tracked floor hits. Align ground manually selects a visible ground point without claiming tracking. The base pivot stays on that selected plane as the machine morphs, rotates or changes size/height. After placement, the second stick changes height from the base. A physical phone retest remains pending.
