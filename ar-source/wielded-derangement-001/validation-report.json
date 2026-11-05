@@ -1,0 +1,345 @@
+{
+  "result": "passed static/unit checks",
+  "failures": [],
+  "checks": {
+    "relative_imports_and_required_assets": {
+      "status": "passed",
+      "entry_module_count": 29,
+      "references_checked": 75,
+      "scope": "Application entry import closure, HTML URLs, explicit runtime asset loads, and every included glTF buffer/image/accessor."
+    },
+    "audio": {
+      "sha256": "52364f8dd70f4a149974c2350693dd09f122d67d60d4cba64ff4ff36271ac214",
+      "bytes": 51723282,
+      "duration_seconds": 269.32,
+      "channels": 2,
+      "sample_rate": 48000,
+      "pcm_bits": 16,
+      "source_hash_match": true
+    },
+    "timeline_unit_tests": {
+      "passed": true,
+      "output": "\u00e2\u0153\u201d complete song timeline produces finite reversible sculpture states (15.7962ms)\n\u00e2\u0153\u201d machine grows, contracts, changes shape and forms/fades faces (0.2601ms)\n\u00e2\u201e\u00b9 tests 2\n\u00e2\u201e\u00b9 suites 0\n\u00e2\u201e\u00b9 pass 2\n\u00e2\u201e\u00b9 fail 0\n\u00e2\u201e\u00b9 cancelled 0\n\u00e2\u201e\u00b9 skipped 0\n\u00e2\u201e\u00b9 todo 0\n\u00e2\u201e\u00b9 duration_ms 82.9575\n"
+    },
+    "javascript_syntax": {
+      "files_checked": 64,
+      "all_passed": true,
+      "files": [
+        {
+          "path": "public\\app.js",
+          "passed": true
+        },
+        {
+          "path": "public\\timeline.mjs",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\camera-lifecycle.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\joystick.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\hit-test.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\core\\material.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\core\\node.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\core\\primitive.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\core\\program.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\core\\renderer-gpu.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\core\\renderer.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\core\\texture.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\geometry\\box-builder.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\geometry\\cone-builder.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\geometry\\primitive-stream.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\loaders\\gltf2-gpu.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\loaders\\gltf2.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\materials\\pbr-gpu.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\materials\\pbr.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\math\\gl-matrix.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\math\\ray.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\nodes\\bounds-renderer.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\nodes\\button.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\nodes\\cube-sea.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\nodes\\drop-shadow.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\nodes\\gltf2-gpu.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\nodes\\gltf2.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\nodes\\input-renderer.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\nodes\\menu-system.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\nodes\\quad-texture.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\nodes\\seven-segment-text-gpu.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\nodes\\seven-segment-text.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\nodes\\skybox-gpu.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\nodes\\skybox.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\nodes\\stats-viewer-gpu.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\nodes\\stats-viewer.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\nodes\\video.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\scenes\\scene-gpu.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\render\\scenes\\scene.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\stereo-util.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\third-party\\dat.gui.min.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\third-party\\gl-matrix\\src\\gl-matrix\\common.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\third-party\\gl-matrix\\src\\gl-matrix\\mat2.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\third-party\\gl-matrix\\src\\gl-matrix\\mat2d.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\third-party\\gl-matrix\\src\\gl-matrix\\mat3.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\third-party\\gl-matrix\\src\\gl-matrix\\mat4.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\third-party\\gl-matrix\\src\\gl-matrix\\quat.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\third-party\\gl-matrix\\src\\gl-matrix\\quat2.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\third-party\\gl-matrix\\src\\gl-matrix\\vec2.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\third-party\\gl-matrix\\src\\gl-matrix\\vec3.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\third-party\\gl-matrix\\src\\gl-matrix\\vec4.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\third-party\\gl-matrix\\src\\gl-matrix.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\third-party\\motion-controllers.module.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\third-party\\webxr-polyfill\\build\\webxr-polyfill.module.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\util\\inline-viewer-helper.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\util\\query-args.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\util\\texture-loader.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\util\\webxr-button.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\webxr-sample-app-gpu.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\webxr-sample-app.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\wglu\\wglu-program.js",
+          "passed": true
+        },
+        {
+          "path": "public\\vendor\\js\\wglu\\wglu-url.js",
+          "passed": true
+        },
+        {
+          "path": "serve.cjs",
+          "passed": true
+        },
+        {
+          "path": "timeline.test.mjs",
+          "passed": true
+        }
+      ]
+    },
+    "accepted_baseline": {
+      "sha256": "d0e78b45bad90485e51130f340d4f9e4472d4ed18a01641e3667bd94bde8a2e1",
+      "local_source_available": true,
+      "still_matches": true,
+      "modified_by_this_build": false
+    },
+    "byte_identical_reuse": {
+      "included_files_checked": 68,
+      "source_files_checked_when_available": true
+    },
+    "retained_notices": [
+      {
+        "path": "vendor/LICENSE.md",
+        "bytes": 1091,
+        "sha256": "efd05a964a7ec6c88250c84535117338ff6428a3e3844ce5e46221631181dcdf"
+      },
+      {
+        "path": "vendor/js/third-party/gl-matrix/LICENSE.md",
+        "bytes": 1101,
+        "sha256": "51eca09f84d678a3f73fb69ff3e515ad87f2638d6370abd9a4fcc614f60a338a"
+      },
+      {
+        "path": "vendor/js/third-party/motion-controllers-LICENSE.txt",
+        "bytes": 1094,
+        "sha256": "0ef0c87e8ffdd0681f332dc3b39f284dee2166d1f853fabc3853884fe81a6f30"
+      },
+      {
+        "path": "vendor/js/third-party/webxr-polyfill/LICENSE",
+        "bytes": 11543,
+        "sha256": "40984607a57a4f3546e31b257d400182dfc92acc1a4ecd66fae7f0cdc8c948d5"
+      }
+    ],
+    "upstream_optional_controller_code": {
+      "cdn_constant_retained_in_original_module": true,
+      "controller_profile_rendering_called_by_application": false,
+      "note": "Original input-renderer contains an optional controller-profile CDN path. This application does not call updateInputSources or addController; preview, camera composition and phone touch placement use local assets."
+    },
+    "browser_and_mobile_qa": {
+      "status": "not performed",
+      "reason": "Computer Use stopped native Chrome interaction because its current URL could not be determined confidently. No retry or alternate browser route followed.",
+      "rendered_pixels_verified": false,
+      "browser_audio_playback_verified": false,
+      "camera_placement_verified": false,
+      "surface_ar_verified": false,
+      "phone_verified": false,
+      "portrait_landscape_interactions_verified": false
+    },
+    "external_state": {
+      "published": false,
+      "purchased": false,
+      "library_uploaded": false
+    }
+  },
+  "deployment_size": {
+    "file_count": 76,
+    "public_bytes": 52850343,
+    "audio_bytes": 51723282,
+    "non_audio_public_bytes": 1127061
+  }
+}

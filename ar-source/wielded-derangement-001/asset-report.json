@@ -1,0 +1,11 @@
+{
+  "entity": "one continuous morphing machine",
+  "mechanical_cells": 48,
+  "struts": 24,
+  "original_relief_faces": 12,
+  "nodes": 560,
+  "materials": 267,
+  "audio_energy_samples": 5387,
+  "audio_seconds": 269.32,
+  "portal": false
+}
