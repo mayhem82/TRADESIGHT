@@ -7,7 +7,7 @@ import {Joystick,horizontalStep,elevationYawStep} from './vendor/joystick.js';
 import {DURATION} from './timeline.mjs';
 import {GROUND_BUILD,clamp,floorHit,freshFloorHit,manualGroundAt,floorStep,boundsFromGltf,groundedFrame,groundedActor} from './grounding.mjs';
 import {TRACKING_BUILD,WorldTracking,acquireTrackedSession} from './world-tracking.mjs';
-import {WALL_BUILD,newWallControls,wallMotion,wallActor,wallFrame,wallMechanisms} from './enclosure.mjs?v=continuous-drive-006';
+import {WALL_BUILD,newWallControls,wallMotion,wallActor,wallFrame,wallMechanisms} from './enclosure.mjs?v=circular-drive-007';
 import {PortraitRenderer} from './portrait.mjs';
 import {reactiveState,beatEmission} from './beat-response.mjs';
 const $=id=>document.getElementById(id),song=$('song'),cameraVideo=$('camera');
@@ -23,7 +23,7 @@ gl.canvas.id='artwork';gl.canvas.setAttribute('aria-label','Interactive morphing
 const renderer=new PortraitRenderer(gl),scene=new Scene();scene.enableStats(false);scene.clear=false;scene.setRenderer(renderer);
 const actor=new Node();scene.addNode(actor);
 const machine=new Gltf2Node({url:'assets/machine.gltf'});actor.addNode(machine);
-const outer=new Node();scene.addNode(outer);const enclosure=new Gltf2Node({url:'assets/enclosure.gltf'});outer.addNode(enclosure);
+const outer=new Node();scene.addNode(outer);const enclosure=new Gltf2Node({url:'assets/enclosure-circle.gltf'});outer.addNode(enclosure);
 const drive=new Gltf2Node({url:'assets/wall-drive.gltf'});outer.addNode(drive);const driveNodes=new Map();
 const walls=newWallControls(),wallNodes=[],wallAnchor=mat4.create(),wallTracking=new WorldTracking(wallAnchor);let selected='machine',wallPlaced=true;
 const selectedTracking=()=>selected==='machine'?tracking:wallTracking;
@@ -111,8 +111,8 @@ $('preview').onclick=async()=>{const generation=++epoch;startup(false);stop();if
 $('exit').onclick=()=>$('preview').click();
 $('reposition').onclick=()=>{stop();if(mode==='xr'){selectedTracking().reposition();pendingPlacement=false;if(selected==='machine')placed=false;else wallPlaced=false;placing=true;hitMatrix=null;placementUI(true,'Point at the floor. Find its circle and tap the clear centre to place the base.');}else if(mode==='camera'){placing=true;if(selected==='machine')placed=false;else wallPlaced=false;placementUI(true,'UNTRACKED overlay: choose a visible ground point and align the base.');}else resetPose();};
 $('reset').onclick=resetPose;
-function syncWallUI(){for(const key of ['width','depth','height']){$('wall-'+key).value=walls[key];$('wall-'+key+'-value').textContent=walls[key].toFixed(1)+' m';}$('wall-visible').checked=walls.enabled;}
-for(const key of ['width','depth','height'])$('wall-'+key).oninput=e=>{walls[key]=Number(e.target.value);syncWallUI();};
+function syncWallUI(){for(const key of ['diameter','height']){$('wall-'+key).value=walls[key];$('wall-'+key+'-value').textContent=walls[key].toFixed(1)+' m';}$('wall-visible').checked=walls.enabled;}
+for(const key of ['diameter','height'])$('wall-'+key).oninput=e=>{walls[key]=Number(e.target.value);syncWallUI();};
 $('wall-visible').onchange=e=>walls.enabled=e.target.checked;
 for(const choice of ['machine','walls'])$('select-'+choice).onclick=()=>{
  stop();pendingPlacement=false;selected=choice;hitMatrix=null;
@@ -190,7 +190,7 @@ window.addEventListener('resize',resize);window.addEventListener('blur',stop);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(session){tracking.suspend('visibility-suspended');wallTracking.suspend('visibility-suspended');pauseTracking();}stop();song.pause();held=false;$('hold').setAttribute('aria-pressed','false');$('hold').textContent='Hold form';}});
 window.addEventListener('pagehide',()=>{++epoch;stop();song.pause();stopCamera();session?.end().catch(()=>{});});
 // Read-only diagnostics for verification. No synthetic camera or tracking is claimed.
-Object.defineProperty(window,'WieldedExperience',{value:{get state(){return {build:'continuous-drive-006',wallBuild:WALL_BUILD,trackingBuild:TRACKING_BUILD,selected,walls:{...walls,pose:[...walls.pose],placed:wallPlaced,tracking:wallTracking.state},groundBuild:GROUND_BUILD,tracking:tracking.state,ready,mode,placed,placing,playing:!song.paused,time:song.currentTime,formTime,held,beat:reactiveState(formTime,energyAt(formTime),beatFeatures).beat,size,heightScale,groundPoint:[anchor[12],anchor[13],anchor[14]],baseBottom:modelBounds?.get('base').min[1],pose:[...pose],yaw,parts:parts.size,faces:facePrimitives.size,cameraTracks:stream?.getVideoTracks().filter(t=>t.readyState==='live').length||0,xr:!!session,glError:gl.getError()};}}});
+Object.defineProperty(window,'WieldedExperience',{value:{get state(){return {build:'circular-drive-007',wallBuild:WALL_BUILD,trackingBuild:TRACKING_BUILD,selected,walls:{...walls,pose:[...walls.pose],placed:wallPlaced,tracking:wallTracking.state},groundBuild:GROUND_BUILD,tracking:tracking.state,ready,mode,placed,placing,playing:!song.paused,time:song.currentTime,formTime,held,beat:reactiveState(formTime,energyAt(formTime),beatFeatures).beat,size,heightScale,groundPoint:[anchor[12],anchor[13],anchor[14]],baseBottom:modelBounds?.get('base').min[1],pose:[...pose],yaw,parts:parts.size,faces:facePrimitives.size,cameraTracks:stream?.getVideoTracks().filter(t=>t.readyState==='live').length||0,xr:!!session,glError:gl.getError()};}}});
 try{
  const response=await fetch('assets/energy.json');if(!response.ok)throw Error('Audio energy data missing');energy=await response.json();
  const beats=await fetch('assets/beats.json');if(!beats.ok)throw Error('Beat response data missing');beatFeatures=await beats.json();

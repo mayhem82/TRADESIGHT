@@ -1,40 +1,32 @@
 import {mat4,quat,vec3} from './vendor/js/render/math/gl-matrix.js';
 import {clamp,floorStep} from './grounding.mjs';
-export const WALL_BUILD='continuous-drive-006';
-export function newWallControls(){return {pose:[0,0,0],yaw:0,width:6,depth:6,height:2.4,enabled:true};}
+export const WALL_BUILD='circular-drive-007';
+export const WALL_SECTIONS=20;
+export function newWallControls(){return {pose:[0,0,0],yaw:0,diameter:6,height:2.4,enabled:true};}
 export function wallMotion(wall,anchor,dx,dz,dyaw,vertical,dt){
  const [x,z]=floorStep(anchor,dx,dz);wall.pose[0]=clamp(wall.pose[0]+x,-20,20);wall.pose[2]=clamp(wall.pose[2]+z,-20,20);wall.yaw+=dyaw;
  wall.height=clamp(wall.height*Math.exp(-vertical*Math.min(.05,dt)*.6),.8,5);
 }
 export function wallActor(anchor,wall){const m=mat4.create();mat4.translate(m,m,wall.pose);mat4.rotateY(m,m,wall.yaw);return mat4.multiply(m,anchor,m);}
-// Footprint is a user-set boundary, not a measurement of the physical room.
-// Individual modules retain their mechanical proportions as the boundary expands.
+// A single diameter keeps the footprint circular at every size. Curved panel
+// vertices are expressed relative to a unit radius and face into the enclosure.
+export function wallLayout(wall){const radius=wall.diameter/2;return Array.from({length:WALL_SECTIONS},(_,id)=>{const angle=id/WALL_SECTIONS*Math.PI*2;return {id,angle,yaw:angle+Math.PI,position:[Math.sin(angle)*radius,0,Math.cos(angle)*radius],normal:[-Math.sin(angle),0,-Math.cos(angle)],radius};});}
 export function wallFrame(wall,time,energy){
- const result=[];for(let side=0;side<4;side++)for(let bay=0;bay<5;bay++){
-  const u=(bay-2)/5,front=side===0||side===2,span=front?wall.width:wall.depth;
-  const x=front?u*wall.width:(side===1?wall.width/2:-wall.width/2),z=front?(side===0?-wall.depth/2:wall.depth/2):u*wall.depth;
-  const m=mat4.create();mat4.translate(m,m,[x,0,z]);mat4.rotateY(m,m,front?0:Math.PI/2);
-  // Subtle internal breathing grows from the ground; never changes the footprint.
-  const pulse=1+.025*Math.sin(time*.8+bay+side)*energy;mat4.scale(m,m,[span/5,wall.height*pulse,1]);result.push(m);
- }return result;
+ return wallLayout(wall).map(p=>{const m=mat4.create();mat4.translate(m,m,p.position);mat4.rotateY(m,m,p.yaw);const pulse=1+.025*Math.sin(time*.8+p.id)*energy;mat4.scale(m,m,[p.radius,wall.height*pulse,p.radius]);return m;});
 }
 
-// Clockwise physical circuit, including all four corner transfers. Original
-// panel IDs and independently adjustable footprint remain unchanged.
-export const DRIVE_CIRCUIT=Object.freeze([0,1,2,3,4,5,6,7,8,9,14,13,12,11,10,19,18,17,16,15]);
+// One closed circuit around the circle; last section joins the first.
+export const DRIVE_CIRCUIT=Object.freeze(Array.from({length:WALL_SECTIONS},(_,i)=>i));
 function segmentMatrix(a,b,thickness){
  const d=vec3.subtract(vec3.create(),b,a),length=vec3.length(d),q=quat.create();
  quat.rotationTo(q,[0,1,0],vec3.normalize(d,d));
  return mat4.fromRotationTranslationScale(mat4.create(),q,a.map((v,i)=>(v+b[i])/2),[thickness,length,thickness]);
 }
 export function wallMechanisms(wall,time,energy=0){
- const panels=wallFrame(wall,time,energy),joints=DRIVE_CIRCUIT.map((id,i)=>{
-  const side=Math.floor(id/5),normal=[[0,0,1],[-1,0,0],[0,0,-1],[1,0,0]][side],yaw=[0,-Math.PI/2,Math.PI,Math.PI/2][side];
-  const tangent=[Math.cos(yaw),0,-Math.sin(yaw)],span=side%2?wall.depth:wall.width;
-  const minimumSpan=Math.min(wall.width,wall.depth),inset=Math.min(.13,minimumSpan*.045);
-  // The two corner drives must retain clearance even at a 2 m footprint.
-  const radius=Math.min(span/5*.19,wall.height*.14,.2,minimumSpan*.035),phase=time*1.65+i*Math.PI*.5;
-  const centre=[panels[id][12]+normal[0]*inset,wall.height*.55,panels[id][14]+normal[2]*inset];
+ const layout=wallLayout(wall),joints=DRIVE_CIRCUIT.map((id,i)=>{
+  const p=layout[id],{normal,yaw}=p,tangent=[Math.cos(yaw),0,-Math.sin(yaw)],span=wall.diameter*Math.sin(Math.PI/WALL_SECTIONS);
+  const inset=Math.min(.13,wall.diameter*.045),radius=Math.min(span*.19,wall.height*.14,.2,wall.diameter*.035),phase=time*1.65+i*Math.PI*.5;
+  const centre=[p.position[0]+normal[0]*inset,wall.height*.55,p.position[2]+normal[2]*inset];
   const pin=centre.map((v,j)=>v+tangent[j]*radius*.64*Math.cos(phase)+normal[j]*radius*.28+(j===1?radius*.64*Math.sin(phase):0));
   const shaft=[centre[0],wall.height*.78,centre[2]];
   return {id,centre,pin,shaft,yaw,phase,radius};
