@@ -20,8 +20,8 @@ export function screenPlans(state){
  });
 }
 const point=(m,p)=>[m[0]*p[0]+m[4]*p[1]+m[8]*p[2]+m[12],m[1]*p[0]+m[5]*p[1]+m[9]*p[2]+m[13],m[2]*p[0]+m[6]*p[1]+m[10]*p[2]+m[14]];
-// Fade a screen if it lies between the viewer and a bright portrait. Positions
-// stay world-relative: this changes opacity only, never camera-parents a panel.
+// Detect a screen between the viewer and a bright portrait. The current
+// presentation uses local soft cutouts; it never camera-parents a panel.
 export function screenFaceRisk(plan,portraits,viewerInModel){
  if(!viewerInModel?.every(Number.isFinite))return 0;
  const inverse=mat4.invert(mat4.create(),plan.matrix);if(!inverse)return 0;const camera=point(inverse,viewerInModel);let risk=0;
@@ -34,6 +34,12 @@ export function screenFaceRisk(plan,portraits,viewerInModel){
  }return risk;
 }
 export function viewSafeScreens(plans,state,viewerInModel){
- const portraits=Array.from({length:12},(_,i)=>faceAt(i,state)).filter(p=>p.alpha>.15).map(p=>({position:[p.x+Math.sin(p.yaw)*p.scale*.1,p.y,p.z+Math.cos(p.yaw)*p.scale*.1],radius:p.scale*.19,strength:smooth((p.alpha-.15)/.5)}));
- return plans.map(plan=>{const faceOcclusion=screenFaceRisk(plan,portraits,viewerInModel);return {...plan,faceOcclusion,opacity:plan.opacity*(1-faceOcclusion)};});
+ const portraits=Array.from({length:12},(_,i)=>faceAt(i,state)).filter(p=>p.alpha>.15&&(!viewerInModel||(viewerInModel[0]-p.x)*Math.sin(p.yaw)+(viewerInModel[2]-p.z)*Math.cos(p.yaw)>0)).map(p=>({position:[p.x+Math.sin(p.yaw)*p.scale*.1,p.y,p.z+Math.cos(p.yaw)*p.scale*.1],radius:p.scale*.23,strength:smooth((p.alpha-.15)/.5)}));
+ return plans.map(plan=>{
+  const holes=Array(48).fill(0),inverse=mat4.invert(mat4.create(),plan.matrix);let count=0;
+  if(inverse&&viewerInModel?.every(Number.isFinite)){const camera=point(inverse,viewerInModel);
+   for(const face of portraits){const target=point(inverse,face.position),dz=target[2]-camera[2];if(Math.abs(dz)<1e-7)continue;const t=-camera[2]/dz;if(t<=0||t>=1)continue;const x=camera[0]+(target[0]-camera[0])*t,y=camera[1]+(target[1]-camera[1])*t,r=face.radius/SCREEN_WIDTH*t;if(Math.abs(x)>.5+r*1.2||Math.abs(y)>.28125+r*2)continue;holes.splice(count*4,4,x+.5,y/.5625+.5,r,face.strength);count++;}
+  }
+  return {...plan,faceOcclusion:screenFaceRisk(plan,portraits,viewerInModel),holes};
+ });
 }

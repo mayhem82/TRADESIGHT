@@ -11,6 +11,9 @@ uniform float loopPhase;
 uniform float screenKind;
 uniform float modelOpacity;
 uniform float modelExposure;
+uniform float clipReady;
+uniform sampler2D clipImage;
+uniform vec4 faceHoles[12];
 in vec2 screenUV;
 const float TAU=6.28318530718;
 float line(float d,float width){return 1.0-smoothstep(width,width+max(fwidth(d)*1.3,.001),abs(d));}
@@ -49,8 +52,16 @@ vec4 fragment_main(){
  else if(screenKind<.5)color=clockwork(p,loopPhase*TAU);
  else if(screenKind<1.5)color=weave(p,loopPhase*TAU);
  else color=loading(p,loopPhase*TAU);
+ if(gl_FrontFacing&&clipReady>.5){
+  // Fit the full 4:3 derivative inside the 16:9 frame; preserve composition.
+  vec2 uv=vec2((screenUV.x-.5)*1.3333333+.5,1.0-screenUV.y);
+  color=uv.x<0.0||uv.x>1.0?vec3(.012,.018,.02):texture(clipImage,uv).rgb;
+ }
  float frame=1.0-smoothstep(.018,.024,edge);color=mix(color,vec3(.35,.26,.14),frame);
  float corner=(step(abs(p.x),.85)*step(.80,abs(p.x))+step(abs(p.y),.46)*step(.41,abs(p.y)))*frame;
  color+=vec3(.28,.17,.04)*corner;
- return vec4(color*modelExposure,modelOpacity);
+ float faceClear=0.0;
+ for(int i=0;i<12;i++){vec4 hole=faceHoles[i];if(hole.z>.00001){float d=length((screenUV-hole.xy)*vec2(1.0,.5625/1.7))/hole.z;faceClear=max(faceClear,(1.0-smoothstep(.8,1.2,d))*hole.w);}}
+ float alpha=modelOpacity*(1.0-faceClear);if(alpha<.008)discard;
+ return vec4(color*modelExposure,alpha);
 }`;

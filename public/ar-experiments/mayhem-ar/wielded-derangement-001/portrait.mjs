@@ -7,6 +7,11 @@ export class PortraitMaterial extends PbrMaterial {
  get fragmentSource(){return PORTRAIT_FRAGMENT;}
 }
 export class PortraitRenderer extends Renderer {
+ _getRenderTexture(texture){
+  const rendered=super._getRenderTexture(texture);
+  if(rendered&&typeof texture?.updateFrame==='function')rendered._activeCallback=active=>texture.updateFrame(this.gl,active._texture);
+  return rendered;
+ }
  createRenderPrimitive(primitive,material){
   const texture=material?.baseColor?.texture;
   if(texture&&/frontal-head\.png(?:$|\?)/.test(texture.textureKey||''))material=new PortraitMaterial(texture);

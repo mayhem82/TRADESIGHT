@@ -8,11 +8,13 @@ import {DURATION} from './timeline.mjs';
 import {GROUND_BUILD,clamp,floorHit,freshFloorHit,manualGroundAt,floorStep,boundsFromGltf,groundedFrame,groundedActor} from './grounding.mjs';
 import {TRACKING_BUILD,WorldTracking,acquireTrackedSession} from './world-tracking.mjs?v=screen-tracking-010';
 import {WALL_BUILD,newWallControls,wallMotion,wallActor,wallFrame,wallMechanisms} from './enclosure.mjs?v=screen-tracking-010';
-import {PortraitRenderer} from './portrait.mjs';
+import {PortraitRenderer} from './portrait.mjs?v=recovered-clips-011';
 import {reactiveState,beatEmission} from './beat-response.mjs';
 import {wallScoreAt,wallGlow} from './wall-score.mjs';
-import {AnimationScreen} from './screen-node.mjs';
-import {screenPlans,viewSafeScreens,MAX_SCREENS} from './screen-plan.mjs?v=screen-tracking-010';
+import {AnimationScreen} from './screen-node.mjs?v=recovered-clips-011';
+import {ClipPlayback,clipIndex} from './clip-playback.mjs';
+import {ClipTexture} from './clip-texture.mjs';
+import {screenPlans,viewSafeScreens,MAX_SCREENS} from './screen-plan.mjs?v=recovered-clips-011';
 import {renderNativeFrame} from './native-frame.mjs';
 const $=id=>document.getElementById(id),song=$('song'),cameraVideo=$('camera');
 const status=text=>{$('status').textContent=text;};
@@ -28,7 +30,8 @@ gl.canvas.id='artwork';gl.canvas.setAttribute('aria-label','Interactive morphing
 const renderer=new PortraitRenderer(gl),scene=new Scene();scene.enableStats(false);scene.clear=false;scene.setRenderer(renderer);
 const actor=new Node();scene.addNode(actor);
 const machine=new Gltf2Node({url:'assets/machine.gltf'});actor.addNode(machine);
-const animationScreens=Array.from({length:MAX_SCREENS},()=>{const node=new AnimationScreen();actor.addNode(node);return node;});let screensEnabled=true,currentScreens=[];
+const clipPlayers=Array.from({length:MAX_SCREENS},()=>new ClipPlayback(document.createElement('video')));
+const animationScreens=Array.from({length:MAX_SCREENS},(_,i)=>{const node=new AnimationScreen(new ClipTexture(clipPlayers[i]));actor.addNode(node);return node;});let screensEnabled=true,clipsEnabled=true,currentScreens=[],lastScreenStatus='';
 const outer=new Node();scene.addNode(outer);const enclosure=new Gltf2Node({url:'assets/enclosure-wave.gltf'});outer.addNode(enclosure);
 const drive=new Gltf2Node({url:'assets/wall-drive.gltf'});outer.addNode(drive);const driveNodes=new Map();
 const walls=newWallControls(),wallNodes=[],wallAnchor=mat4.create(),wallTracking=new WorldTracking(wallAnchor);let selected='machine',wallPlaced=true;
@@ -57,7 +60,8 @@ function animate(t,viewerPosition){
  $('phase').textContent=s.phase;
  const actorMatrix=groundedActor(anchor,pose,yaw,size,heightScale,modelBounds.get('base').min[1]),inverseActor=mat4.invert(mat4.create(),actorMatrix);
  const localViewer=viewerPosition&&inverseActor?Array.from(vec3.transformMat4(vec3.create(),viewerPosition,inverseActor)):null;
- currentScreens=viewSafeScreens(screenPlans(s),s,localViewer);for(let i=0;i<animationScreens.length;i++)animationScreens[i].update(currentScreens[i],screensEnabled);
+ currentScreens=viewSafeScreens(screenPlans(s),s,localViewer);for(let i=0;i<animationScreens.length;i++){const p=currentScreens[i],active=!!p&&p.opacity>.01&&screensEnabled&&clipsEnabled&&(mode==='preview'||(mode==='xr'?tracking.visible:placed));clipPlayers[i].update(clipIndex(formTime,i),formTime,p?.slot||0,active,!song.paused&&!held&&!document.hidden);animationScreens[i].update(p,screensEnabled);}
+ const media=clipPlayers.filter(p=>p.active),errors=media.map(p=>p.error).filter(Boolean);const mediaMessage=!screensEnabled?'Screens hidden':!clipsEnabled?'Procedural screen loops':errors.length?'Procedural fallback: '+errors[0]:media.length?'Recovered clips: '+media.filter(p=>p.ready).length+'/'+media.length+' ready':'Recovered clips ready when screens appear';if(mediaMessage!==lastScreenStatus){$('screen-media-status').textContent=mediaMessage;lastScreenStatus=mediaMessage;}
  const wm=wallFrame(walls,formTime,energyAt(formTime),wallScore,beatFeatures);for(let i=0;i<wallNodes.length;i++){wallNodes[i].matrix=wm[i];const heat=wallScoreAt(wallScore,beatFeatures,formTime,i).heat;for(const [p,original] of sectionLights[i])p.uniforms.emissiveFactor.value=wallGlow(original,heat);}outer.matrix=wallActor(wallAnchor,walls);outer.visible=walls.enabled&&(mode==='xr'?wallTracking.visible:mode==='preview'||wallPlaced);
  for(const [name,matrix] of wallMechanisms(walls,formTime,energyAt(formTime),wallScore,beatFeatures).frame)driveNodes.get(name).matrix=matrix;
  actor.matrix=actorMatrix;actor.visible=mode==='xr'?tracking.visible:mode==='preview'||placed;
@@ -120,6 +124,7 @@ $('preview').onclick=async()=>{const generation=++epoch;startup(false);stop();if
 $('exit').onclick=()=>$('preview').click();
 $('reposition').onclick=()=>{stop();if(mode==='xr'){selectedTracking().reposition();pendingPlacement=false;if(selected==='machine')placed=false;else wallPlaced=false;placing=true;hitMatrix=null;placementUI(true,'Point at the floor. Find its circle and tap the clear centre to place the base.');}else if(mode==='camera'){placing=true;if(selected==='machine')placed=false;else wallPlaced=false;placementUI(true,'UNTRACKED overlay: choose a visible ground point and align the base.');}else resetPose();};
 $('reset').onclick=resetPose;
+$('clips-enabled').onchange=e=>{clipsEnabled=e.target.checked;if(!clipsEnabled)clipPlayers.forEach(p=>p.stop());};
 $('screens-enabled').onchange=e=>{screensEnabled=e.target.checked;for(let i=0;i<animationScreens.length;i++)animationScreens[i].update(currentScreens[i],screensEnabled);};
 function syncWallUI(){for(const key of ['diameter','height']){$('wall-'+key).value=walls[key];$('wall-'+key+'-value').textContent=walls[key].toFixed(1)+' m';}$('wall-visible').checked=walls.enabled;}
 for(const key of ['diameter','height'])$('wall-'+key).oninput=e=>{walls[key]=Number(e.target.value);syncWallUI();};
@@ -143,7 +148,7 @@ $('seek').oninput=e=>{song.currentTime=Math.min(DURATION,Math.max(0,Number(e.tar
 $('hold').onclick=()=>{held=!held;heldTime=song.currentTime;$('hold').setAttribute('aria-pressed',String(held));$('hold').textContent=held?'Resume form':'Hold form';status(held?'The form is held while the song continues. Resume form to catch up with the music.':'The machine follows the song again.');};
 song.addEventListener('ended',()=>{song.pause();stop();updateTransport();status('The song has ended. Restart to experience the machine again.');});
 song.addEventListener('error',()=>status('The original song could not load. Check that WIELDED-DERANGEMENT.wav is beside index.html.'));
-song.addEventListener('pause',updateTransport);song.addEventListener('play',updateTransport);
+song.addEventListener('pause',()=>{clipPlayers.forEach(p=>p.stop());updateTransport();});song.addEventListener('play',()=>{clipPlayers.forEach(p=>p.retry());updateTransport();});
 let drag=null;
 gl.canvas.addEventListener('pointerdown',e=>{if(mode==='camera'&&placing){e.preventDefault();aimManualGround(e.clientX,e.clientY);status('Ground point manually aligned. Confirm Place on ground, or tap another ground point.');return;}if(mode!=='preview')return;drag={id:e.pointerId,x:e.clientX,y:e.clientY};gl.canvas.setPointerCapture(e.pointerId);});
 gl.canvas.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;orbit-=(e.clientX-drag.x)*.009;tilt=Math.max(-.25,Math.min(1.1,tilt+(e.clientY-drag.y)*.004));drag.x=e.clientX;drag.y=e.clientY;});
@@ -175,7 +180,7 @@ async function xrStart(){
  finally{if(generation===epoch)startup(false);}
 }
 function xrEnded(ended){if(session!==ended)return;stop();song.pause();hit?.cancel();hit=null;session=null;ref=null;hitMatrix=null;tracking.end();wallTracking.end();wallPlaced=true;pendingPlacement=false;reticle.visible=false;setMode('preview');placed=true;placing=false;resetPose();placementUI(false,'');last=0;status('Tracked AR ended. A new AR session requires new ground placement.');}
-function pauseTracking(){stop();song.pause();pendingPlacement=false;hitMatrix=null;reticle.visible=false;actor.visible=false;outer.visible=false;last=0;}
+function pauseTracking(){stop();clipPlayers.forEach(p=>p.stop());song.pause();pendingPlacement=false;hitMatrix=null;reticle.visible=false;actor.visible=false;outer.visible=false;last=0;}
 function xrFrame(t,frame){
  if(!session||frame.session!==session)return;session.requestAnimationFrame(xrFrame);const viewer=frame.getViewerPose(ref);reticle.visible=false;hitMatrix=null;
  let usable=tracking.observe(viewer,document.hidden?'hidden':session.visibilityState||'visible',session).usable;
@@ -193,9 +198,9 @@ function xrFrame(t,frame){
 }
 window.addEventListener('resize',resize);window.addEventListener('blur',stop);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(session){tracking.suspend('visibility-suspended');wallTracking.suspend('visibility-suspended');pauseTracking();}stop();song.pause();held=false;$('hold').setAttribute('aria-pressed','false');$('hold').textContent='Hold form';}});
-window.addEventListener('pagehide',()=>{++epoch;stop();song.pause();stopCamera();session?.end().catch(()=>{});});
+window.addEventListener('pagehide',()=>{clipPlayers.forEach(p=>p.stop());++epoch;stop();song.pause();stopCamera();session?.end().catch(()=>{});});
 // Read-only diagnostics for verification. No synthetic camera or tracking is claimed.
-Object.defineProperty(window,'WieldedExperience',{value:{get state(){return {build:'screen-tracking-010',screensEnabled,screenPanels:currentScreens.map(p=>({slot:p.slot,kind:p.kind,opacity:p.opacity})),wallBuild:WALL_BUILD,trackingBuild:TRACKING_BUILD,selected,walls:{...walls,pose:[...walls.pose],placed:wallPlaced,tracking:wallTracking.state},groundBuild:GROUND_BUILD,tracking:tracking.state,ready,mode,placed,placing,playing:!song.paused,time:song.currentTime,formTime,held,beat:reactiveState(formTime,energyAt(formTime),beatFeatures).beat,size,heightScale,groundPoint:[anchor[12],anchor[13],anchor[14]],baseBottom:modelBounds?.get('base').min[1],pose:[...pose],yaw,parts:parts.size,faces:facePrimitives.size,cameraTracks:stream?.getVideoTracks().filter(t=>t.readyState==='live').length||0,xr:!!session,glError:gl.getError()};}}});
+Object.defineProperty(window,'WieldedExperience',{value:{get state(){return {build:'recovered-clips-011',screensEnabled,clipsEnabled,clipPlayback:clipPlayers.map(p=>p.state),screenPanels:currentScreens.map(p=>({slot:p.slot,kind:p.kind,opacity:p.opacity})),wallBuild:WALL_BUILD,trackingBuild:TRACKING_BUILD,selected,walls:{...walls,pose:[...walls.pose],placed:wallPlaced,tracking:wallTracking.state},groundBuild:GROUND_BUILD,tracking:tracking.state,ready,mode,placed,placing,playing:!song.paused,time:song.currentTime,formTime,held,beat:reactiveState(formTime,energyAt(formTime),beatFeatures).beat,size,heightScale,groundPoint:[anchor[12],anchor[13],anchor[14]],baseBottom:modelBounds?.get('base').min[1],pose:[...pose],yaw,parts:parts.size,faces:facePrimitives.size,cameraTracks:stream?.getVideoTracks().filter(t=>t.readyState==='live').length||0,xr:!!session,glError:gl.getError()};}}});
 try{
  const response=await fetch('assets/energy.json');if(!response.ok)throw Error('Audio energy data missing');energy=await response.json();
  const beats=await fetch('assets/beats.json');if(!beats.ok)throw Error('Beat response data missing');beatFeatures=await beats.json();
