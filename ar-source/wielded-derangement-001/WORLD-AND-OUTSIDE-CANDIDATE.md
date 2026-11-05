@@ -1,6 +1,6 @@
 # Local candidate: tracking and separate outer machine
 
-Not published. Portrait integration and actual phone verification remain pending.
+Not published. Portrait integration is complete in candidate 005; actual phone verification remains pending. See PORTRAIT-AND-BEATS.md for the current checks and portrait/audio changes.
 
 ## User report and diagnosis
 
@@ -26,7 +26,7 @@ been performed. No browser automation was used to bypass the earlier restriction
 
 ## Separate outer structure
 
-The original machine asset, mechanisms and timeline are unchanged. New outer
+The original mechanical structure and timeline are preserved; only the face children are replaced in candidate 005. New outer
 walls are a separate open mechanical lattice with 20 modules, 3,600 triangles
 and 60 material draws. The shared binary is 12,960 bytes. Phone frame rate has
 not been measured. Walls breathe subtly with the song without changing footprint.
@@ -58,31 +58,12 @@ checks, not browser interaction or physical AR validation.
 An offline ModernGL contact sheet shows the actual saved geometry from outside,
 inside and after wall expansion. It is not a screenshot of the browser or AR.
 
-## Face asset transfer blocker
+## Face transfer resolved
 
-Resolved asset: `frontal-head.png`, Library ID
-`libfile_82238e4d310481919f923e8a4ccce95c`, file ID
-`file_00000000b5a081f6ad1fc0d619e8951c`, 2,759,665 bytes,
-1086 x 1448. It is an edited photo-derived frontal head texture, not a measured
-3D reconstruction. Library metadata has been read; its image pixels have not
-been materialized or inspected here.
-
-The required Library transfer helper previously failed on this Windows runtime
-at `os.setxattr`; the runtime still has no such function. The Library skill
-requires identity metadata and says to stop when the helper is unavailable.
-Its documented materialization route provides no Windows alternative. The
-helper was not patched; no raw URL transfer was attempted and no partial file
-was used. No repeat transfer has been attempted for the new texture.
-
-If downloaded manually by the user, the expected local destination is:
-
-`C:\Users\minko\Documents\Codex\2026-11-05\task-5\suite-integration\public\ar-experiments\mayhem-ar\wielded-derangement-001\assets\frontal-head.png`
-
-After a supported transfer, use sRGB glTF base-color texture on a shallow curved
-relief with TEXCOORD_0, transparent material, twelve independent fade materials,
-and preserved existing face transforms. Do not wrap the frontal image around a
-sphere or call it reconstructed 3D. The present anonymous face asset has not been
-altered and is not claimed to be the final likeness.
+The initial Library Windows materialization limitation was resolved through the
+user's explicitly authorized self-email transfer. Exact attachment identity,
+integration method and current verification are recorded in
+`PORTRAIT-AND-BEATS.md`. No Library helper was modified or raw Library URL used.
 
 ## Publication
 

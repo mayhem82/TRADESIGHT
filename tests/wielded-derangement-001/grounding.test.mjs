@@ -3,13 +3,13 @@ import {mat4} from '../../public/ar-experiments/mayhem-ar/wielded-derangement-00
 import {DURATION,stateAt} from '../../public/ar-experiments/mayhem-ar/wielded-derangement-001/timeline.mjs';
 import {floorHit,freshFloorHit,manualGroundAt,floorStep,boundsFromGltf,groundedFrame,groundedActor} from '../../public/ar-experiments/mayhem-ar/wielded-derangement-001/grounding.mjs';
 const folder=new URL('../../public/ar-experiments/mayhem-ar/wielded-derangement-001/assets/',import.meta.url);
-const data=JSON.parse(fs.readFileSync(new URL('machine.gltf',folder),'utf8')),binary=fs.readFileSync(new URL('geometry.bin',folder)),bounds=boundsFromGltf(data),bottom=bounds.get('base').min[1];
+const data=JSON.parse(fs.readFileSync(new URL('machine.gltf',folder),'utf8')),buffers=data.buffers.map(b=>fs.readFileSync(new URL(b.uri,folder))),bounds=boundsFromGltf(data),bottom=bounds.get('base').min[1];
 const point=(m,p)=>[m[12]+m[0]*p[0]+m[4]*p[1]+m[8]*p[2],m[13]+m[1]*p[0]+m[5]*p[1]+m[9]*p[2],m[14]+m[2]*p[0]+m[6]*p[1]+m[10]*p[2]];
 const anchor=(tilt=0)=>{const m=mat4.create();mat4.translate(m,m,[1,-.6,-2]);mat4.rotateY(m,m,.6);mat4.rotateX(m,m,tilt);return m;};
 const signed=(p,a)=>(p[0]-a[12])*a[4]+(p[1]-a[13])*a[5]+(p[2]-a[14])*a[6];
 function vertices(index,parent=mat4.create(),out=[]){
  const n=data.nodes[index],m=mat4.multiply(mat4.create(),parent,n.matrix||mat4.create());
- if(n.mesh!==undefined)for(const primitive of data.meshes[n.mesh].primitives){const a=data.accessors[primitive.attributes.POSITION],v=data.bufferViews[a.bufferView],stride=v.byteStride||12,offset=(v.byteOffset||0)+(a.byteOffset||0);assert.equal(a.componentType,5126);for(let i=0;i<a.count;i++)out.push(point(m,[binary.readFloatLE(offset+i*stride),binary.readFloatLE(offset+i*stride+4),binary.readFloatLE(offset+i*stride+8)]));}
+ if(n.mesh!==undefined)for(const primitive of data.meshes[n.mesh].primitives){const a=data.accessors[primitive.attributes.POSITION],v=data.bufferViews[a.bufferView],binary=buffers[v.buffer],stride=v.byteStride||12,offset=(v.byteOffset||0)+(a.byteOffset||0);assert.equal(a.componentType,5126);for(let i=0;i<a.count;i++)out.push(point(m,[binary.readFloatLE(offset+i*stride),binary.readFloatLE(offset+i*stride+4),binary.readFloatLE(offset+i*stride+8)]));}
  for(const child of n.children||[])vertices(child,m,out);return out;
 }
 const actualVertices=new Map(data.nodes.flatMap((n,i)=>n.name?[[n.name,vertices(i)]]:[]));

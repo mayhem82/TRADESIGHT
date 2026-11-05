@@ -1,23 +1,26 @@
 import {Scene} from './vendor/js/render/scenes/scene.js';
-import {Renderer,RenderView,createWebGLContext} from './vendor/js/render/core/renderer.js';
+import {RenderView,createWebGLContext} from './vendor/js/render/core/renderer.js';
 import {Node} from './vendor/js/render/core/node.js';
 import {Gltf2Node} from './vendor/js/render/nodes/gltf2.js';
 import {mat4} from './vendor/js/render/math/gl-matrix.js';
 import {Joystick,horizontalStep,elevationYawStep} from './vendor/joystick.js';
-import {stateAt,DURATION} from './timeline.mjs';
+import {DURATION} from './timeline.mjs';
 import {GROUND_BUILD,clamp,floorHit,freshFloorHit,manualGroundAt,floorStep,boundsFromGltf,groundedFrame,groundedActor} from './grounding.mjs';
 import {TRACKING_BUILD,WorldTracking,acquireTrackedSession} from './world-tracking.mjs';
 import {WALL_BUILD,newWallControls,wallMotion,wallActor,wallFrame} from './enclosure.mjs';
+import {PortraitRenderer} from './portrait.mjs';
+import {reactiveState,beatEmission} from './beat-response.mjs';
 const $=id=>document.getElementById(id),song=$('song'),cameraVideo=$('camera');
 const status=text=>{$('status').textContent=text;};
 let ready=false,mode='preview',stream=null,session=null,ref=null,hit=null,hitMatrix=null,hitTime=-Infinity,placing=false,placed=true,starting=false,epoch=0,held=false,heldTime=0,last=0;
 let formTime=0,size=.7,exposure=.5,pose=[0,0,0],yaw=0,orbit=.55,tilt=.3,energy={secondsPerSample:.05,rms:[]};
 let heightScale=1,modelBounds=null,xrSupported=false,viewerY=NaN;
 let pendingPlacement=false,lastTrackingReason='inactive';
+let beatFeatures=null;const mechanicalLights=[];
 const gl=createWebGLContext({xrCompatible:true,alpha:true,antialias:true});
 if(!gl)throw Error('This browser could not create a WebGL renderer.');
 gl.canvas.id='artwork';gl.canvas.setAttribute('aria-label','Interactive morphing machine sculpture');document.body.prepend(gl.canvas);
-const renderer=new Renderer(gl),scene=new Scene();scene.enableStats(false);scene.clear=false;scene.setRenderer(renderer);
+const renderer=new PortraitRenderer(gl),scene=new Scene();scene.enableStats(false);scene.clear=false;scene.setRenderer(renderer);
 const actor=new Node();scene.addNode(actor);
 const machine=new Gltf2Node({url:'assets/machine.gltf'});actor.addNode(machine);
 const outer=new Node();scene.addNode(outer);const enclosure=new Gltf2Node({url:'assets/enclosure.gltf'});outer.addNode(enclosure);
@@ -38,7 +41,8 @@ function collect(node){
 function primitives(node,result=[]){for(const p of node.renderPrimitives||[])result.push(p);for(const c of node.children||[])primitives(c,result);return result;}
 function energyAt(t){return energy.rms[Math.min(energy.rms.length-1,Math.max(0,Math.floor(t/energy.secondsPerSample)))]||0;}
 function animate(t){
- formTime=held?heldTime:t;const s=stateAt(formTime,energyAt(formTime));
+ formTime=held?heldTime:t;const s=reactiveState(formTime,energyAt(formTime),beatFeatures);
+ for(const [primitive,original] of mechanicalLights)primitive.uniforms.emissiveFactor.value=beatEmission(original,s.beat);
  for(const [name,p] of groundedFrame(s,modelBounds)){
   const node=parts.get(name);node.matrix=p.matrix;node.visible=p.opacity>.01;
   if(name.startsWith('face-'))for(const primitive of facePrimitives.get(Number(name.slice(5)))||[])if(primitive.uniforms.modelOpacity)primitive.uniforms.modelOpacity.value=p.opacity;
@@ -184,13 +188,15 @@ window.addEventListener('resize',resize);window.addEventListener('blur',stop);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(session){tracking.suspend('visibility-suspended');wallTracking.suspend('visibility-suspended');pauseTracking();}stop();song.pause();held=false;$('hold').setAttribute('aria-pressed','false');$('hold').textContent='Hold form';}});
 window.addEventListener('pagehide',()=>{++epoch;stop();song.pause();stopCamera();session?.end().catch(()=>{});});
 // Read-only diagnostics for verification. No synthetic camera or tracking is claimed.
-Object.defineProperty(window,'WieldedExperience',{value:{get state(){return {build:WALL_BUILD,trackingBuild:TRACKING_BUILD,selected,walls:{...walls,pose:[...walls.pose],placed:wallPlaced,tracking:wallTracking.state},groundBuild:GROUND_BUILD,tracking:tracking.state,ready,mode,placed,placing,playing:!song.paused,time:song.currentTime,formTime,held,size,heightScale,groundPoint:[anchor[12],anchor[13],anchor[14]],baseBottom:modelBounds?.get('base').min[1],pose:[...pose],yaw,parts:parts.size,faces:facePrimitives.size,cameraTracks:stream?.getVideoTracks().filter(t=>t.readyState==='live').length||0,xr:!!session,glError:gl.getError()};}}});
+Object.defineProperty(window,'WieldedExperience',{value:{get state(){return {build:'portrait-beats-005',wallBuild:WALL_BUILD,trackingBuild:TRACKING_BUILD,selected,walls:{...walls,pose:[...walls.pose],placed:wallPlaced,tracking:wallTracking.state},groundBuild:GROUND_BUILD,tracking:tracking.state,ready,mode,placed,placing,playing:!song.paused,time:song.currentTime,formTime,held,beat:reactiveState(formTime,energyAt(formTime),beatFeatures).beat,size,heightScale,groundPoint:[anchor[12],anchor[13],anchor[14]],baseBottom:modelBounds?.get('base').min[1],pose:[...pose],yaw,parts:parts.size,faces:facePrimitives.size,cameraTracks:stream?.getVideoTracks().filter(t=>t.readyState==='live').length||0,xr:!!session,glError:gl.getError()};}}});
 try{
  const response=await fetch('assets/energy.json');if(!response.ok)throw Error('Audio energy data missing');energy=await response.json();
+ const beats=await fetch('assets/beats.json');if(!beats.ok)throw Error('Beat response data missing');beatFeatures=await beats.json();
  const geometry=await fetch('assets/machine.gltf');if(!geometry.ok)throw Error('Machine bounds could not load');modelBounds=boundsFromGltf(await geometry.json());
  await Promise.all([machine.waitForComplete(),reticle.waitForComplete(),enclosure.waitForComplete()]);collect(machine);
  function gatherWall(n){if(n.name?.startsWith('wall-module-'))wallNodes[Number(n.name.slice(12))]=n;for(const c of n.children||[])gatherWall(c);}gatherWall(enclosure);if(wallNodes.length!==20)throw Error('Outer wall geometry missing');for(const p of primitives(enclosure))allPrimitives.push(p);
  for(let i=0;i<12;i++){const node=parts.get('face-'+i);if(!node)throw Error('Face geometry missing');facePrimitives.set(i,primitives(node));}
+ for(const [name,node] of parts)if(/^(cell-|strut-|core$)/.test(name))for(const p of primitives(node))if(p.uniforms.emissiveFactor)mechanicalLights.push([p,p.originalEmission]);
  for(const p of allPrimitives)if(p.uniforms.modelExposure)p.uniforms.modelExposure.value=2**exposure;
  try{xrSupported=!!navigator.xr&&await navigator.xr.isSessionSupported('immersive-ar');}catch{xrSupported=false;}
  ready=true;for(const id of ['manual-start','preview','play','restart','seek'])$(id).disabled=false;startup(false);
