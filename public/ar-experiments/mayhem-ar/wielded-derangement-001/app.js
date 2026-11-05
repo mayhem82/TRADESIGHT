@@ -7,10 +7,12 @@ import {Joystick,horizontalStep,elevationYawStep} from './vendor/joystick.js';
 import {DURATION} from './timeline.mjs';
 import {GROUND_BUILD,clamp,floorHit,freshFloorHit,manualGroundAt,floorStep,boundsFromGltf,groundedFrame,groundedActor} from './grounding.mjs';
 import {TRACKING_BUILD,WorldTracking,acquireTrackedSession} from './world-tracking.mjs';
-import {WALL_BUILD,newWallControls,wallMotion,wallActor,wallFrame,wallMechanisms} from './enclosure.mjs?v=music-wall-008';
+import {WALL_BUILD,newWallControls,wallMotion,wallActor,wallFrame,wallMechanisms} from './enclosure.mjs?v=animation-screens-009';
 import {PortraitRenderer} from './portrait.mjs';
 import {reactiveState,beatEmission} from './beat-response.mjs';
 import {wallScoreAt,wallGlow} from './wall-score.mjs';
+import {AnimationScreen} from './screen-node.mjs';
+import {screenPlans,MAX_SCREENS} from './screen-plan.mjs';
 const $=id=>document.getElementById(id),song=$('song'),cameraVideo=$('camera');
 const status=text=>{$('status').textContent=text;};
 let ready=false,mode='preview',stream=null,session=null,ref=null,hit=null,hitMatrix=null,hitTime=-Infinity,placing=false,placed=true,starting=false,epoch=0,held=false,heldTime=0,last=0;
@@ -25,6 +27,7 @@ gl.canvas.id='artwork';gl.canvas.setAttribute('aria-label','Interactive morphing
 const renderer=new PortraitRenderer(gl),scene=new Scene();scene.enableStats(false);scene.clear=false;scene.setRenderer(renderer);
 const actor=new Node();scene.addNode(actor);
 const machine=new Gltf2Node({url:'assets/machine.gltf'});actor.addNode(machine);
+const animationScreens=Array.from({length:MAX_SCREENS},()=>{const node=new AnimationScreen();actor.addNode(node);return node;});let screensEnabled=true,currentScreens=[];
 const outer=new Node();scene.addNode(outer);const enclosure=new Gltf2Node({url:'assets/enclosure-wave.gltf'});outer.addNode(enclosure);
 const drive=new Gltf2Node({url:'assets/wall-drive.gltf'});outer.addNode(drive);const driveNodes=new Map();
 const walls=newWallControls(),wallNodes=[],wallAnchor=mat4.create(),wallTracking=new WorldTracking(wallAnchor);let selected='machine',wallPlaced=true;
@@ -51,6 +54,7 @@ function animate(t){
   if(name.startsWith('face-'))for(const primitive of facePrimitives.get(Number(name.slice(5)))||[])if(primitive.uniforms.modelOpacity)primitive.uniforms.modelOpacity.value=p.opacity;
  }
  $('phase').textContent=s.phase;
+ currentScreens=screenPlans(s);for(let i=0;i<animationScreens.length;i++)animationScreens[i].update(currentScreens[i],screensEnabled);
  const wm=wallFrame(walls,formTime,energyAt(formTime),wallScore,beatFeatures);for(let i=0;i<wallNodes.length;i++){wallNodes[i].matrix=wm[i];const heat=wallScoreAt(wallScore,beatFeatures,formTime,i).heat;for(const [p,original] of sectionLights[i])p.uniforms.emissiveFactor.value=wallGlow(original,heat);}outer.matrix=wallActor(wallAnchor,walls);outer.visible=walls.enabled&&(mode==='xr'?wallTracking.visible:mode==='preview'||wallPlaced);
  for(const [name,matrix] of wallMechanisms(walls,formTime,energyAt(formTime),wallScore,beatFeatures).frame)driveNodes.get(name).matrix=matrix;
  actor.matrix=groundedActor(anchor,pose,yaw,size,heightScale,modelBounds.get('base').min[1]);actor.visible=mode==='xr'?tracking.visible:mode==='preview'||placed;
@@ -113,6 +117,7 @@ $('preview').onclick=async()=>{const generation=++epoch;startup(false);stop();if
 $('exit').onclick=()=>$('preview').click();
 $('reposition').onclick=()=>{stop();if(mode==='xr'){selectedTracking().reposition();pendingPlacement=false;if(selected==='machine')placed=false;else wallPlaced=false;placing=true;hitMatrix=null;placementUI(true,'Point at the floor. Find its circle and tap the clear centre to place the base.');}else if(mode==='camera'){placing=true;if(selected==='machine')placed=false;else wallPlaced=false;placementUI(true,'UNTRACKED overlay: choose a visible ground point and align the base.');}else resetPose();};
 $('reset').onclick=resetPose;
+$('screens-enabled').onchange=e=>{screensEnabled=e.target.checked;for(let i=0;i<animationScreens.length;i++)animationScreens[i].update(currentScreens[i],screensEnabled);};
 function syncWallUI(){for(const key of ['diameter','height']){$('wall-'+key).value=walls[key];$('wall-'+key+'-value').textContent=walls[key].toFixed(1)+' m';}$('wall-visible').checked=walls.enabled;}
 for(const key of ['diameter','height'])$('wall-'+key).oninput=e=>{walls[key]=Number(e.target.value);syncWallUI();};
 $('wall-visible').onchange=e=>walls.enabled=e.target.checked;
@@ -192,13 +197,13 @@ window.addEventListener('resize',resize);window.addEventListener('blur',stop);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){if(session){tracking.suspend('visibility-suspended');wallTracking.suspend('visibility-suspended');pauseTracking();}stop();song.pause();held=false;$('hold').setAttribute('aria-pressed','false');$('hold').textContent='Hold form';}});
 window.addEventListener('pagehide',()=>{++epoch;stop();song.pause();stopCamera();session?.end().catch(()=>{});});
 // Read-only diagnostics for verification. No synthetic camera or tracking is claimed.
-Object.defineProperty(window,'WieldedExperience',{value:{get state(){return {build:'music-wall-008',wallBuild:WALL_BUILD,trackingBuild:TRACKING_BUILD,selected,walls:{...walls,pose:[...walls.pose],placed:wallPlaced,tracking:wallTracking.state},groundBuild:GROUND_BUILD,tracking:tracking.state,ready,mode,placed,placing,playing:!song.paused,time:song.currentTime,formTime,held,beat:reactiveState(formTime,energyAt(formTime),beatFeatures).beat,size,heightScale,groundPoint:[anchor[12],anchor[13],anchor[14]],baseBottom:modelBounds?.get('base').min[1],pose:[...pose],yaw,parts:parts.size,faces:facePrimitives.size,cameraTracks:stream?.getVideoTracks().filter(t=>t.readyState==='live').length||0,xr:!!session,glError:gl.getError()};}}});
+Object.defineProperty(window,'WieldedExperience',{value:{get state(){return {build:'animation-screens-009',screensEnabled,screenPanels:currentScreens.map(p=>({slot:p.slot,kind:p.kind,opacity:p.opacity})),wallBuild:WALL_BUILD,trackingBuild:TRACKING_BUILD,selected,walls:{...walls,pose:[...walls.pose],placed:wallPlaced,tracking:wallTracking.state},groundBuild:GROUND_BUILD,tracking:tracking.state,ready,mode,placed,placing,playing:!song.paused,time:song.currentTime,formTime,held,beat:reactiveState(formTime,energyAt(formTime),beatFeatures).beat,size,heightScale,groundPoint:[anchor[12],anchor[13],anchor[14]],baseBottom:modelBounds?.get('base').min[1],pose:[...pose],yaw,parts:parts.size,faces:facePrimitives.size,cameraTracks:stream?.getVideoTracks().filter(t=>t.readyState==='live').length||0,xr:!!session,glError:gl.getError()};}}});
 try{
  const response=await fetch('assets/energy.json');if(!response.ok)throw Error('Audio energy data missing');energy=await response.json();
  const beats=await fetch('assets/beats.json');if(!beats.ok)throw Error('Beat response data missing');beatFeatures=await beats.json();
  const scoreResponse=await fetch('assets/wall-score.json');if(!scoreResponse.ok)throw Error('Wall music score missing');wallScore=await scoreResponse.json();if(wallScore.duration!==DURATION||wallScore.sourceSha256!==beatFeatures.sourceSha256)throw Error('Wall score does not match the original song');
  const geometry=await fetch('assets/machine.gltf');if(!geometry.ok)throw Error('Machine bounds could not load');modelBounds=boundsFromGltf(await geometry.json());
- await Promise.all([machine.waitForComplete(),reticle.waitForComplete(),enclosure.waitForComplete(),drive.waitForComplete()]);collect(machine);
+ await Promise.all([machine.waitForComplete(),reticle.waitForComplete(),enclosure.waitForComplete(),drive.waitForComplete(),...animationScreens.map(n=>n.waitForComplete())]);collect(machine);for(const node of animationScreens)allPrimitives.push(...primitives(node));
  function gatherDrive(n){if(/^wall-(gear|rod|shaft|pin)-/.test(n.name||''))driveNodes.set(n.name,n);for(const c of n.children||[])gatherDrive(c);}gatherDrive(drive);if(driveNodes.size!==80)throw Error('Outer drive mechanism missing');for(const p of primitives(drive))allPrimitives.push(p);
  function gatherWall(n){if(n.name?.startsWith('wall-module-'))wallNodes[Number(n.name.slice(12))]=n;for(const c of n.children||[])gatherWall(c);}gatherWall(enclosure);if(wallNodes.length!==20)throw Error('Outer wall geometry missing');for(const p of primitives(enclosure))allPrimitives.push(p);
  for(let i=0;i<20;i++)sectionLights[i]=primitives(wallNodes[i]).filter(p=>p.uniforms.emissiveFactor).map(p=>[p,p.originalEmission]);

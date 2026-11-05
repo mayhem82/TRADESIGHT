@@ -10,3 +10,5 @@ body.world-xr #artwork,body.world-xr #camera{visibility:hidden!important}body.wo
 
 #entity-controls{position:absolute;left:50%;top:max(18px,env(safe-area-inset-top));transform:translateX(-50%);display:flex;gap:6px;align-items:center;pointer-events:auto;background:#102426ef;padding:6px;border-radius:8px}#entity-controls button{min-height:44px;padding:8px 12px}#control-target{font-size:12px;padding:0 6px}@media(max-width:1000px){#entity-controls{top:74px}#control-target{display:none}}@media(max-height:540px){#entity-controls{top:12px;left:18px;transform:none}}body.world-xr #entity-controls{pointer-events:auto}
 @media(max-width:700px) and (min-height:541px){.panel{top:134px;max-height:calc(100dvh - 410px)}#placement{top:134px}}
+
+.screen-option{display:flex;align-items:center;gap:10px;min-height:44px}.screen-option input{width:20px;height:20px;accent-color:#ddba7b}
