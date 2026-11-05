@@ -6,22 +6,30 @@ import {mat4} from './vendor/js/render/math/gl-matrix.js';
 import {Joystick,horizontalStep,elevationYawStep} from './vendor/joystick.js';
 import {stateAt,DURATION} from './timeline.mjs';
 import {GROUND_BUILD,clamp,floorHit,freshFloorHit,manualGroundAt,floorStep,boundsFromGltf,groundedFrame,groundedActor} from './grounding.mjs';
+import {TRACKING_BUILD,WorldTracking,acquireTrackedSession} from './world-tracking.mjs';
+import {WALL_BUILD,newWallControls,wallMotion,wallActor,wallFrame} from './enclosure.mjs';
 const $=id=>document.getElementById(id),song=$('song'),cameraVideo=$('camera');
 const status=text=>{$('status').textContent=text;};
 let ready=false,mode='preview',stream=null,session=null,ref=null,hit=null,hitMatrix=null,hitTime=-Infinity,placing=false,placed=true,starting=false,epoch=0,held=false,heldTime=0,last=0;
 let formTime=0,size=.7,exposure=.5,pose=[0,0,0],yaw=0,orbit=.55,tilt=.3,energy={secondsPerSample:.05,rms:[]};
 let heightScale=1,modelBounds=null,xrSupported=false,viewerY=NaN;
+let pendingPlacement=false,lastTrackingReason='inactive';
 const gl=createWebGLContext({xrCompatible:true,alpha:true,antialias:true});
 if(!gl)throw Error('This browser could not create a WebGL renderer.');
 gl.canvas.id='artwork';gl.canvas.setAttribute('aria-label','Interactive morphing machine sculpture');document.body.prepend(gl.canvas);
 const renderer=new Renderer(gl),scene=new Scene();scene.enableStats(false);scene.clear=false;scene.setRenderer(renderer);
 const actor=new Node();scene.addNode(actor);
 const machine=new Gltf2Node({url:'assets/machine.gltf'});actor.addNode(machine);
+const outer=new Node();scene.addNode(outer);const enclosure=new Gltf2Node({url:'assets/enclosure.gltf'});outer.addNode(enclosure);
+const walls=newWallControls(),wallNodes=[],wallAnchor=mat4.create(),wallTracking=new WorldTracking(wallAnchor);let selected='machine',wallPlaced=true;
+const selectedTracking=()=>selected==='machine'?tracking:wallTracking;
 const reticle=new Gltf2Node({url:'vendor/media/reticle/reticle.gltf'});reticle.visible=false;scene.addNode(reticle);
 const move=new Joystick($('move')),turn=new Joystick($('turn'));
 const stop=()=>{move.stop();turn.stop();};
 const parts=new Map(),facePrimitives=new Map(),allPrimitives=[];
 const anchor=mat4.create();
+const tracking=new WorldTracking(anchor);
+function startup(value){starting=value;$('camera-start').disabled=value||!xrSupported;$('manual-start').disabled=value;}
 function collect(node){
  if(node.name)parts.set(node.name,node);
  for(const p of node.renderPrimitives||[])allPrimitives.push(p);
@@ -36,7 +44,8 @@ function animate(t){
   if(name.startsWith('face-'))for(const primitive of facePrimitives.get(Number(name.slice(5)))||[])if(primitive.uniforms.modelOpacity)primitive.uniforms.modelOpacity.value=p.opacity;
  }
  $('phase').textContent=s.phase;
- actor.matrix=groundedActor(anchor,pose,yaw,size,heightScale,modelBounds.get('base').min[1]);actor.visible=mode==='preview'||placed;
+ const wm=wallFrame(walls,formTime,energyAt(formTime));for(let i=0;i<wallNodes.length;i++)wallNodes[i].matrix=wm[i];outer.matrix=wallActor(wallAnchor,walls);outer.visible=walls.enabled&&(mode==='xr'?wallTracking.visible:mode==='preview'||wallPlaced);
+ actor.matrix=groundedActor(anchor,pose,yaw,size,heightScale,modelBounds.get('base').min[1]);actor.visible=mode==='xr'?tracking.visible:mode==='preview'||placed;
  return s;
 }
 function resize(){if(session)return;const ratio=Math.min(devicePixelRatio||1,1.5),w=Math.round(innerWidth*ratio),h=Math.round(innerHeight*ratio);if(gl.canvas.width!==w||gl.canvas.height!==h){gl.canvas.width=w;gl.canvas.height=h;}}
@@ -49,13 +58,14 @@ function projectionAndView(){
 }
 function motion(dt,view){
  const world=mat4.invert(mat4.create(),view);const [dx,dz]=horizontalStep(world,move.x,move.y,dt,.65);const r=elevationYawStep(turn.x,turn.y,dt);
+ if(selected==='walls'){wallMotion(walls,wallAnchor,dx,dz,r.yaw,turn.y,dt);$('wall-height').value=walls.height;$('wall-height-value').textContent=walls.height.toFixed(1)+' m';return;}
  const [fx,fz]=floorStep(anchor,dx,dz);pose[0]=clamp(pose[0]+fx,-4,4);pose[2]=clamp(pose[2]+fz,mode==='camera'?-7-anchor[14]:-4,mode==='camera'?-.6-anchor[14]:4);pose[1]=0;yaw+=r.yaw;
  if(mode==='camera'&&placing&&r.dy!==0)anchor[13]=clamp(anchor[13]+r.dy,-4,4);
  else heightScale=clamp(heightScale*Math.exp(-turn.y*Math.min(.05,dt)*.6),.5,2);
 }
 function paint(t){
  requestAnimationFrame(paint);if(session||!ready)return;resize();const {projection,view,eye}=projectionAndView(),dt=Math.max(0,Math.min(.05,(t-last)/1000));last=t;
- motion(dt,view);animate(song.currentTime);reticle.visible=mode==='camera'&&placing;if(reticle.visible)reticle.matrix=mat4.translate(mat4.create(),anchor,[pose[0],0,pose[2]]);
+ motion(dt,view);animate(song.currentTime);reticle.visible=mode==='camera'&&placing;if(reticle.visible)reticle.matrix=mat4.translate(mat4.create(),selected==='machine'?anchor:wallAnchor,selected==='machine'?[pose[0],0,pose[2]]:walls.pose);
  scene.startFrame();gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.viewport(0,0,gl.canvas.width,gl.canvas.height);
  if(mode==='camera')gl.clearColor(0,0,0,0);else gl.clearColor(.043,.073,.08,1);
  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);scene.drawViewArray([new RenderView(projection,{inverse:{matrix:view},position:{x:eye[0],y:eye[1],z:eye[2]}})]);scene.endFrame();
@@ -68,32 +78,44 @@ function updateTransport(){
 }
 function stopCamera(){stream?.getTracks().forEach(t=>t.stop());stream=null;cameraVideo.srcObject=null;document.body.classList.remove('camera');}
 function aimManualGround(x=innerWidth/2,y=clamp(Math.min(innerHeight*.68,$('transport').getBoundingClientRect().top-35),innerHeight*.54,innerHeight*.8)){
- const position=manualGroundAt(x,y,innerWidth,innerHeight,mode==='camera'&&anchor[14]<-.6?-anchor[14]-pose[2]:2.4);
- mat4.fromTranslation(anchor,position);pose=[0,0,0];
+ const target=selected==='machine'?anchor:wallAnchor,offset=selected==='machine'?pose:walls.pose;
+ const position=manualGroundAt(x,y,innerWidth,innerHeight,mode==='camera'&&target[14]<-.6?-target[14]-offset[2]:2.4);
+ if(selected==='walls'){mat4.fromTranslation(wallAnchor,position);walls.pose=[0,0,0];}else{mat4.fromTranslation(anchor,position);pose=[0,0,0];}
 }
-function resetPose(){stop();pose=[0,0,0];yaw=0;size=.7;heightScale=1;$('size').value='70';$('size-value').textContent='70%';if(mode==='preview'||(mode==='xr'&&!placed))mat4.identity(anchor);else if(mode==='camera'&&placing)aimManualGround();}
+function resetPose(){stop();if(selected==='walls'){Object.assign(walls,newWallControls());syncWallUI();if(mode==='preview'||(mode==='xr'&&!wallPlaced))mat4.identity(wallAnchor);else if(mode==='camera'&&placing)aimManualGround();return;}pose=[0,0,0];yaw=0;size=.7;heightScale=1;$('size').value='70';$('size-value').textContent='70%';if(mode==='preview'||(mode==='xr'&&!placed))mat4.identity(anchor);else if(mode==='camera'&&placing)aimManualGround();}
 function placementUI(show,message){$('placement').hidden=!show;$('placement-hint').textContent=message;$('place').hidden=mode==='xr';}
-function setMode(next){mode=next;$('state-label').textContent=next==='xr'?'Tracked ground AR':next==='camera'?'Manually aligned ground':'3D preview';$('exit').hidden=next==='preview';$('exit').textContent=next==='xr'?'Exit AR':'Exit camera';}
+function setMode(next){mode=next;document.body.classList.toggle('world-xr',next==='xr');$('state-label').textContent=next==='xr'?'AR: waiting for tracking':next==='camera'?'Camera overlay - UNTRACKED':'3D preview';$('exit').hidden=next==='preview';$('exit').textContent=next==='xr'?'Exit AR':'Exit overlay';}
 function collapse(){document.body.classList.add('menu-hidden');$('menu').textContent='Show controls';$('menu').setAttribute('aria-expanded','false');}
 async function cameraStart(){
- if(starting)return;starting=true;const generation=++epoch;stop();
+ if(starting)return;const generation=++epoch;startup(true);stop();
  try{
   if(!isSecureContext||!navigator.mediaDevices?.getUserMedia)throw Error('Camera mode needs HTTPS (or localhost) and a browser with camera access.');
-  if(session)await session.end();stopCamera();status('Requesting the rear camera…');
+  if(session)await session.end();if(generation!==epoch)return;tracking.end();wallTracking.end();stopCamera();status('Requesting the rear camera for an untracked overlay…');
   const requested=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
   if(generation!==epoch){requested.getTracks().forEach(t=>t.stop());return;}
-  stream=requested;await attachVideoElement(cameraVideo,stream);setMode('camera');document.body.classList.add('camera');placing=true;placed=false;resetPose();actor.visible=false;
-  placementUI(true,'Point at the ground. Tap the spot for the base, then confirm Place on ground.');collapse();status('Manually align the circle with visible ground. This mode does not detect or track real-world ground. After placing, the height stick grows the machine upward from its base.');
- }catch(e){stopCamera();setMode('preview');placing=false;placed=true;resetPose();placementUI(false,'');status('Camera could not start: '+e.message+' The 3D preview is available.');}
- finally{starting=false;}
+  stream=requested;await attachVideoElement(cameraVideo,stream);if(generation!==epoch){requested.getTracks().forEach(t=>t.stop());if(stream===requested)stream=null;return;}wallPlaced=false;setMode('camera');document.body.classList.add('camera');placing=true;placed=false;resetPose();actor.visible=false;
+  placementUI(true,'UNTRACKED overlay: tap the visible ground point, then align the base.');collapse();status('This camera overlay follows the screen. It is not world-tracked AR. Ground alignment is manual.');
+ }catch(e){if(generation!==epoch)return;stopCamera();setMode('preview');placing=false;placed=true;resetPose();placementUI(false,'');status('Camera overlay could not start: '+e.message+' The 3D preview is available.');}
+ finally{if(generation===epoch)startup(false);}
 }
-$('camera-start').onclick=()=>xrSupported?xrStart():cameraStart();
+$('camera-start').onclick=xrStart;
 $('manual-start').onclick=cameraStart;
-$('place').onclick=()=>{if(mode!=='camera')return;stop();placing=false;placed=true;reticle.visible=false;placementUI(false,'');status('Base aligned with your chosen ground point. Move along the ground; turn or change height from the base. Ground is manually aligned, not tracked.');};
-$('preview').onclick=async()=>{++epoch;stop();if(session)await session.end();stopCamera();setMode('preview');placed=true;placing=false;resetPose();placementUI(false,'');status('3D preview. Drag the scene to look around; the sticks move and turn the machine.');};
+$('place').onclick=()=>{if(mode!=='camera')return;stop();placing=false;if(selected==='machine')placed=true;else wallPlaced=true;reticle.visible=false;placementUI(false,'');status('Base aligned in the camera overlay. This remains screen-relative, untracked content.');};
+$('preview').onclick=async()=>{const generation=++epoch;startup(false);stop();if(session)await session.end().catch(()=>{});if(generation!==epoch)return;tracking.end();wallTracking.end();stopCamera();setMode('preview');wallPlaced=true;placed=true;placing=false;resetPose();placementUI(false,'');status('3D preview. Drag the scene to look around; the sticks move and turn the machine.');};
 $('exit').onclick=()=>$('preview').click();
-$('reposition').onclick=()=>{stop();if(mode==='xr'){placed=false;placing=true;hitMatrix=null;actor.visible=false;placementUI(true,'Point at the floor. Find its circle and tap the clear centre to place the base.');}else if(mode==='camera'){placing=true;placed=false;actor.visible=false;placementUI(true,'Tap a visible ground point, then confirm Place on ground.');}else resetPose();};
+$('reposition').onclick=()=>{stop();if(mode==='xr'){selectedTracking().reposition();pendingPlacement=false;if(selected==='machine')placed=false;else wallPlaced=false;placing=true;hitMatrix=null;placementUI(true,'Point at the floor. Find its circle and tap the clear centre to place the base.');}else if(mode==='camera'){placing=true;if(selected==='machine')placed=false;else wallPlaced=false;placementUI(true,'UNTRACKED overlay: choose a visible ground point and align the base.');}else resetPose();};
 $('reset').onclick=resetPose;
+function syncWallUI(){for(const key of ['width','depth','height']){$('wall-'+key).value=walls[key];$('wall-'+key+'-value').textContent=walls[key].toFixed(1)+' m';}$('wall-visible').checked=walls.enabled;}
+for(const key of ['width','depth','height'])$('wall-'+key).oninput=e=>{walls[key]=Number(e.target.value);syncWallUI();};
+$('wall-visible').onchange=e=>walls.enabled=e.target.checked;
+for(const choice of ['machine','walls'])$('select-'+choice).onclick=()=>{
+ stop();pendingPlacement=false;selected=choice;hitMatrix=null;
+ for(const c of ['machine','walls'])$('select-'+c).setAttribute('aria-pressed',String(c===selected));
+ $('control-target').textContent=selected==='machine'?'Central machine':'Outer walls';
+ if(mode!=='preview'){placing=!(selected==='machine'?placed:wallPlaced);placementUI(placing,mode==='xr'?'Aim at the floor and tap its circle to place '+$('control-target').textContent+'.':'UNTRACKED overlay: align the selected base manually.');}
+ status('Controls target '+$('control-target').textContent+'. The other structure keeps its position and size.');
+};
+syncWallUI();
 $('size').oninput=e=>{size=Number(e.target.value)/100;$('size-value').textContent=Math.round(size*100)+'%';};
 $('light').oninput=e=>{exposure=Number(e.target.value);for(const p of allPrimitives)if(p.uniforms.modelExposure)p.uniforms.modelExposure.value=2**exposure;$('light-value').textContent=(exposure>0?'+':'')+exposure.toFixed(1)+' EV';};
 $('menu').onclick=()=>{stop();const hidden=document.body.classList.toggle('menu-hidden');$('menu').textContent=hidden?'Show controls':'Hide controls';$('menu').setAttribute('aria-expanded',String(!hidden));};
@@ -113,45 +135,66 @@ for(const event of ['pointerup','pointercancel','lostpointercapture'])gl.canvas.
 
 // Optional tracked path retains the accepted reference renderer and local/hit-test
 // sequence. DOM overlay controls cancel selection only over actual controls.
-for(const el of [$('panel'),$('dock'),$('transport'),...document.querySelectorAll('.top-actions')])el.addEventListener('beforexrselect',e=>e.preventDefault());
+for(const el of [$('panel'),$('dock'),$('transport'),$('entity-controls'),...document.querySelectorAll('.top-actions')])el.addEventListener('beforexrselect',e=>e.preventDefault());
 async function xrStart(){
- if(starting||session)return;starting=true;++epoch;stop();stopCamera();let requested;
+ if(starting||session)return;if(!xrSupported){status('World-tracked AR is unavailable in this browser. The separate camera overlay is untracked and follows the screen.');return;}
+ const generation=++epoch;startup(true);stop();stopCamera();let requested;
  try{
-  requested=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['local','hit-test','dom-overlay'],domOverlay:{root:$('overlay')}});
-  session=requested;session.addEventListener('end',()=>xrEnded(requested),{once:true});await gl.makeXRCompatible();
-  session.updateRenderState({baseLayer:new XRWebGLLayer(session,gl)});
-  ref=await session.requestReferenceSpace('local');const viewer=await session.requestReferenceSpace('viewer');hit=await session.requestHitTestSource({space:viewer});
-  ref.addEventListener?.('reset',()=>{stop();song.pause();placed=false;placing=true;hitMatrix=null;actor.visible=false;placementUI(true,'Tracking reset. Point at the floor and place the base again.');status('Tracking origin changed; choose the ground again before continuing.');});
-  session.addEventListener('select',()=>{if(!placing||!freshFloorHit(hitMatrix,viewerY,hitTime,performance.now()))return;stop();mat4.copy(anchor,hitMatrix);pose=[0,0,0];yaw=0;placed=true;placing=false;reticle.visible=false;placementUI(false,'');status('Base placed on the selected ground surface. Walk around it, move along the ground, or change its height upward from the base.');});
-  session.addEventListener('visibilitychange',()=>{if(session.visibilityState!=='visible'){song.pause();stop();hitMatrix=null;}});
-  setMode('xr');placed=false;placing=true;resetPose();collapse();placementUI(true,'Point at the floor. Find its circle and tap the clear centre to place the base.');
-  status('Ground AR: scan the floor below you. Wall hits are excluded. Aim at actual ground, not a tabletop.');last=0;session.requestAnimationFrame(xrFrame);
- }catch(e){if(requested)await requested.end().catch(()=>{});setMode('preview');placed=true;placing=false;resetPose();placementUI(false,'');status('Ground AR could not start: '+e.message+'. Align ground manually is available.');}
- finally{starting=false;}
+  requested=await acquireTrackedSession(navigator.xr,$('overlay'),()=>generation===epoch);if(!requested)return;
+  session=requested;tracking.begin(requested);wallTracking.begin(requested);session.addEventListener('end',()=>xrEnded(requested),{once:true});
+  const current=()=>generation===epoch&&session===requested;
+  await gl.makeXRCompatible();if(!current()){await requested.end().catch(()=>{});return;}
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  requested.updateRenderState({baseLayer:new XRWebGLLayer(requested,gl)});
+  const localRef=await requested.requestReferenceSpace('local');if(!current()){await requested.end().catch(()=>{});return;}
+  const viewerSpace=await requested.requestReferenceSpace('viewer');if(!current()){await requested.end().catch(()=>{});return;}
+  const localHit=await requested.requestHitTestSource({space:viewerSpace});if(!current()){localHit.cancel();await requested.end().catch(()=>{});return;}
+  ref=localRef;hit=localHit;
+  ref.addEventListener?.('reset',()=>{if(session!==requested)return;tracking.resetOrigin();wallTracking.resetOrigin();wallPlaced=false;stop();song.pause();pendingPlacement=false;placed=false;placing=true;hitMatrix=null;actor.visible=false;placementUI(true,'Tracking reset. Point at the floor and place the base again.');status('Tracking origin changed; choose the ground again before continuing.');});
+  requested.addEventListener('select',()=>{if(session!==requested||!placing||!selectedTracking().tracked||!freshFloorHit(hitMatrix,viewerY,hitTime,performance.now()))return;pendingPlacement=true;});
+  requested.addEventListener('visibilitychange',()=>{if(session===requested&&requested.visibilityState!=='visible'){tracking.suspend('visibility-suspended');wallTracking.suspend('visibility-suspended');pauseTracking();}});
+  setMode('xr');wallPlaced=false;placed=false;placing=true;resetPose();collapse();placementUI(true,'Point at the floor. Find its circle and tap the clear centre to place the base.');
+  status('Waiting for native positional tracking. Scan actual ground below you, not a tabletop.');lastTrackingReason='waiting-for-tracking';pendingPlacement=false;last=0;requested.requestAnimationFrame(xrFrame);
+ }catch(e){if(requested)await requested.end().catch(()=>{});if(generation!==epoch)return;tracking.end();wallTracking.end();wallPlaced=true;setMode('preview');placed=true;placing=false;resetPose();placementUI(false,'');status('Tracked AR could not start: '+e.message+' No camera-overlay fallback was started.');}
+ finally{if(generation===epoch)startup(false);}
 }
-function xrEnded(ended){if(session!==ended)return;stop();song.pause();hit?.cancel();hit=null;session=null;ref=null;hitMatrix=null;reticle.visible=false;setMode('preview');placed=true;placing=false;resetPose();placementUI(false,'');last=0;status('Surface AR ended. Preview and manual camera placement remain available.');}
+function xrEnded(ended){if(session!==ended)return;stop();song.pause();hit?.cancel();hit=null;session=null;ref=null;hitMatrix=null;tracking.end();wallTracking.end();wallPlaced=true;pendingPlacement=false;reticle.visible=false;setMode('preview');placed=true;placing=false;resetPose();placementUI(false,'');last=0;status('Tracked AR ended. A new AR session requires new ground placement.');}
+function pauseTracking(){stop();song.pause();pendingPlacement=false;hitMatrix=null;reticle.visible=false;actor.visible=false;outer.visible=false;last=0;}
+function clearXRFrame(){
+ const layer=session?.renderState.baseLayer;if(!layer)return;
+ const mask=gl.getParameter(gl.COLOR_WRITEMASK),depth=gl.getParameter(gl.DEPTH_WRITEMASK),scissor=gl.isEnabled(gl.SCISSOR_TEST);
+ gl.bindFramebuffer(gl.FRAMEBUFFER,layer.framebuffer);gl.disable(gl.SCISSOR_TEST);gl.colorMask(true,true,true,true);gl.depthMask(true);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.colorMask(...mask);gl.depthMask(depth);if(scissor)gl.enable(gl.SCISSOR_TEST);
+}
 function xrFrame(t,frame){
  if(!session||frame.session!==session)return;session.requestAnimationFrame(xrFrame);const viewer=frame.getViewerPose(ref);reticle.visible=false;hitMatrix=null;
- if(viewer){
-  viewerY=viewer.transform?.position?.y??viewer.views[0].transform.position.y;
-  if(placing)for(const result of frame.getHitTestResults(hit)){const p=result.getPose(ref);if(p&&floorHit(p.transform.matrix,viewerY)){hitMatrix=new Float32Array(p.transform.matrix);hitTime=performance.now();reticle.matrix=hitMatrix;reticle.visible=true;break;}}
-  const dt=last?Math.max(0,Math.min(.05,(t-last)/1000)):0;last=t;motion(dt,viewer.views[0].transform.inverse.matrix);animate(song.currentTime);
- }else{stop();actor.visible=false;}
- scene.startFrame();scene.drawXRFrame(frame,viewer);scene.endFrame();updateTransport();
+ let usable=tracking.observe(viewer,document.hidden?'hidden':session.visibilityState||'visible',session).usable;
+ wallTracking.observe(viewer,document.hidden?'hidden':session.visibilityState||'visible',session);
+ if(usable&&placed)tracking.refreshAnchor(frame,ref);if(wallTracking.tracked&&wallPlaced)wallTracking.refreshAnchor(frame,ref);
+ if(usable){
+  viewerY=viewer.transform.matrix[13];
+  if(placing)for(const result of frame.getHitTestResults(hit)){const p=result.getPose(ref);if(p&&p.emulatedPosition===false&&floorHit(p.transform.matrix,viewerY)){hitMatrix=new Float32Array(p.transform.matrix);hitTime=performance.now();reticle.matrix=hitMatrix;reticle.visible=true;
+    if(pendingPlacement&&selectedTracking().place(hitMatrix,hitTime,performance.now())){stop();pendingPlacement=false;if(selected==='machine'){pose=[0,0,0];yaw=0;placed=true;}else{walls.pose=[0,0,0];walls.yaw=0;wallPlaced=true;}placing=false;reticle.visible=false;placementUI(false,'');selectedTracking().attachNative(result);status('Placed in world-tracked AR. Move the phone to look around the machine.');}break;}}
+  $('state-label').textContent='World-tracked AR';
+  if(lastTrackingReason!=='tracking'){status(placed?'Positional tracking restored. The world placement is retained; press Play to continue.':'Positional tracking active. Aim at the ground circle and tap to place.');lastTrackingReason='tracking';}
+  const dt=last?Math.max(0,Math.min(.05,(t-last)/1000)):0;last=t;if(selectedTracking().tracked)motion(dt,viewer.views[0].transform.inverse.matrix);else stop();animate(song.currentTime);
+ }else{pauseTracking();$('state-label').textContent='AR: tracking paused';if(lastTrackingReason!==tracking.reason){status(tracking.reason==='position-emulated'||tracking.reason==='position-unverified'?'Native positional tracking is unavailable or unverified. The machine is hidden; a camera overlay would not be true AR.':'Tracking paused. The machine is hidden until positional tracking returns.');lastTrackingReason=tracking.reason;}}
+ scene.startFrame();if(usable)scene.drawXRFrame(frame,viewer);else clearXRFrame();scene.endFrame();updateTransport();
 }
 window.addEventListener('resize',resize);window.addEventListener('blur',stop);
-document.addEventListener('visibilitychange',()=>{if(document.hidden){stop();song.pause();held=false;$('hold').setAttribute('aria-pressed','false');$('hold').textContent='Hold form';}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(session){tracking.suspend('visibility-suspended');wallTracking.suspend('visibility-suspended');pauseTracking();}stop();song.pause();held=false;$('hold').setAttribute('aria-pressed','false');$('hold').textContent='Hold form';}});
 window.addEventListener('pagehide',()=>{++epoch;stop();song.pause();stopCamera();session?.end().catch(()=>{});});
 // Read-only diagnostics for verification. No synthetic camera or tracking is claimed.
-Object.defineProperty(window,'WieldedExperience',{value:{get state(){return {build:GROUND_BUILD,ready,mode,placed,placing,playing:!song.paused,time:song.currentTime,formTime,held,size,heightScale,groundPoint:[anchor[12],anchor[13],anchor[14]],baseBottom:modelBounds?.get('base').min[1],pose:[...pose],yaw,parts:parts.size,faces:facePrimitives.size,cameraTracks:stream?.getVideoTracks().filter(t=>t.readyState==='live').length||0,xr:!!session,glError:gl.getError()};}}});
+Object.defineProperty(window,'WieldedExperience',{value:{get state(){return {build:WALL_BUILD,trackingBuild:TRACKING_BUILD,selected,walls:{...walls,pose:[...walls.pose],placed:wallPlaced,tracking:wallTracking.state},groundBuild:GROUND_BUILD,tracking:tracking.state,ready,mode,placed,placing,playing:!song.paused,time:song.currentTime,formTime,held,size,heightScale,groundPoint:[anchor[12],anchor[13],anchor[14]],baseBottom:modelBounds?.get('base').min[1],pose:[...pose],yaw,parts:parts.size,faces:facePrimitives.size,cameraTracks:stream?.getVideoTracks().filter(t=>t.readyState==='live').length||0,xr:!!session,glError:gl.getError()};}}});
 try{
  const response=await fetch('assets/energy.json');if(!response.ok)throw Error('Audio energy data missing');energy=await response.json();
  const geometry=await fetch('assets/machine.gltf');if(!geometry.ok)throw Error('Machine bounds could not load');modelBounds=boundsFromGltf(await geometry.json());
- await Promise.all([machine.waitForComplete(),reticle.waitForComplete()]);collect(machine);
+ await Promise.all([machine.waitForComplete(),reticle.waitForComplete(),enclosure.waitForComplete()]);collect(machine);
+ function gatherWall(n){if(n.name?.startsWith('wall-module-'))wallNodes[Number(n.name.slice(12))]=n;for(const c of n.children||[])gatherWall(c);}gatherWall(enclosure);if(wallNodes.length!==20)throw Error('Outer wall geometry missing');for(const p of primitives(enclosure))allPrimitives.push(p);
  for(let i=0;i<12;i++){const node=parts.get('face-'+i);if(!node)throw Error('Face geometry missing');facePrimitives.set(i,primitives(node));}
  for(const p of allPrimitives)if(p.uniforms.modelExposure)p.uniforms.modelExposure.value=2**exposure;
  try{xrSupported=!!navigator.xr&&await navigator.xr.isSessionSupported('immersive-ar');}catch{xrSupported=false;}
- ready=true;for(const id of ['camera-start','manual-start','preview','play','restart','seek'])$(id).disabled=false;
- status(xrSupported?'Ready. Place on ground scans for a floor circle. Align ground manually is also available.':'Ready. Ground tracking is unavailable here; Place on ground uses manual alignment with the visible ground.');
+ ready=true;for(const id of ['manual-start','preview','play','restart','seek'])$(id).disabled=false;startup(false);
+ $('camera-start').textContent=xrSupported?'Start world-tracked AR':'Tracked AR unavailable';
+ status(xrSupported?'Request world-tracked AR, then wait for positional tracking and a ground circle.':'This browser cannot start world-tracked AR. Camera overlay is a separate untracked option and will follow the screen.');
  requestAnimationFrame(paint);
 }catch(e){status('The machine could not load: '+e.message);$('fatal').hidden=false;$('fatal').textContent='Machine load failed. Keep all files together and serve this folder over HTTP or HTTPS.';}

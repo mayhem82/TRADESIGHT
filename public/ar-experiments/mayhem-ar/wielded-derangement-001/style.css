@@ -4,3 +4,9 @@
 
 /* Ground placement keeps the central/lower camera view available for a floor tap. */
 #placement{top:max(74px,env(safe-area-inset-top));transform:translateX(-50%);width:min(340px,calc(100vw - 28px));max-width:none;padding:12px}#placement p{margin:0 0 10px;font-size:13px}#placement button{width:100%}@media(max-height:540px){#placement{top:66px;max-width:300px;padding:10px}#placement p{font-size:12px;line-height:1.3;margin-bottom:7px}#placement button{min-height:36px;padding:6px}}
+
+/* The native XR layer is the sole sculpture image during tracked AR. */
+body.world-xr #artwork,body.world-xr #camera{visibility:hidden!important}body.world-xr #overlay,#overlay:xr-overlay{background:transparent}
+
+#entity-controls{position:absolute;left:50%;top:max(18px,env(safe-area-inset-top));transform:translateX(-50%);display:flex;gap:6px;align-items:center;pointer-events:auto;background:#102426ef;padding:6px;border-radius:8px}#entity-controls button{min-height:44px;padding:8px 12px}#control-target{font-size:12px;padding:0 6px}@media(max-width:1000px){#entity-controls{top:74px}#control-target{display:none}}@media(max-height:540px){#entity-controls{top:12px;left:18px;transform:none}}body.world-xr #entity-controls{pointer-events:auto}
+@media(max-width:700px) and (min-height:541px){.panel{top:134px;max-height:calc(100dvh - 410px)}#placement{top:134px}}
