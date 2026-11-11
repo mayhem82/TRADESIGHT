@@ -2,6 +2,8 @@
 
 The camera workspace includes an experimental, local contrast scanner. It proposes light and dark linear image features, draws masks on the exact analysed frame, and lets the user freeze, select and record a cue. Local photos use the same workflow. Images are not uploaded. Imported photos are saved locally when the user chooses Save photo or attaches a cue to field notes. Camera capture is explicit; closing, hiding or leaving the page stops its tracks and clears the analysed image.
 
+The separate **AI scene** action now adds trained broad scene segmentation while preserving contrast view. Its output is still unconfirmed and includes a user-review step. See [SCENE-RECOGNITION.md](SCENE-RECOGNITION.md) for model provenance, downloads, measured behaviour, known misses and validation gaps.
+
 ## Photo GPS, map pins and exports
 
 JPEG, PNG and WebP EXIF GPS is read locally on import. No location is inferred when metadata is absent, malformed or declares an unsupported datum. The user can pinpoint a location on the map, enter latitude/longitude, restore the original embedded GPS, or explicitly assign the current phone position. The source and reported accuracy travel with saved photo records and observation exports. A manual pin retains unknown accuracy; the current phone position is not assigned automatically to an older photo.

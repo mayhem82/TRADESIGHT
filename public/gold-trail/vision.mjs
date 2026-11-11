@@ -11,6 +11,8 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   let pending = null, displayed = null, selected = null, running = false, cameraActive = false;
   let geology = null, geologyController = null;
   let photo = null, photoBusy = false;
+  let scanMode = 'contrast';
+  const cueReviews = new Map();
   const status = text => { $('scanStatus').textContent = text; $('scanPanelStatus').textContent = text; };
   const enabled = () => ['pale', 'dark'].filter(kind => $('scan-' + kind).checked);
 
@@ -25,12 +27,13 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   function controls() {
     $('scanCamera').disabled = !cameraActive;
     $('scanStart').disabled = !cameraActive;
-    $('freezeScan').disabled = !displayed && !pending;
+    $('freezeScan').disabled = (!displayed && !pending) || pending?.mode === 'scene';
     $('freezeScan').textContent = running ? 'Freeze frame' : 'Resume scan';
     $('freezeScan').hidden = displayed?.context.source === 'photo';
     $('scanReadout').hidden = !view.classList.contains('scan-active');
     $('scanSource').textContent = running ? 'CAMERA SCAN · UPDATING' :
       displayed?.context.source === 'photo' ? 'LOCAL PHOTO · STILL IMAGE' : 'CAMERA FRAME · FROZEN';
+    if (displayed?.result.model) $('scanSource').textContent = 'AI SCENE · ' + $('scanSource').textContent;
     $('scanCamera').setAttribute('aria-pressed', String(running));
     $('scanGeoButton').disabled = !canQueryContext(displayed?.context) || !!geologyController;
     $('scanGeoButton').textContent = displayed?.context.source === 'photo' ? 'Load mapped geology at photo location' : 'Load mapped geology at camera position';
@@ -48,15 +51,25 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     $('photoSave').textContent = photo?.saved && !photo.dirty ? 'Photo saved locally' : 'Save photo + location locally';
     $('returnToPhoto').hidden = !photo || !view.hidden;
     $('scanObservation').disabled = !selected || photoBusy;
+    $('analyseScene').disabled = (!displayed && !cameraActive) || photoBusy || pending?.mode === 'scene';
+    $('cancelScene').hidden = pending?.mode !== 'scene';
+    $('contrastView').hidden = !displayed?.result.model;
+    $('sceneReview').hidden = !selected || !displayed?.result.model;
+    $('sceneReviewStatus').textContent = selected && cueReviews.has(selected.id) ? 'Your visual review: ' + cueReviews.get(selected.id).verdict + '. Geological identification remains unconfirmed.' : 'Model suggestion awaiting visual review.';
+    $('scanFilters').hidden = !!displayed?.result.model;
   }
   function reset() {
-    cancelWork(); clearGeology(); cancelPhotoPin?.(); running = false; selected = null; displayed = null; photo = null; photoBusy = false;
+    cancelWork(); clearGeology(); cancelPhotoPin?.(); running = false; selected = null; displayed = null; photo = null; photoBusy = false; scanMode = 'contrast'; cueReviews.clear();
     canvas.width = canvas.height = 1; canvas.hidden = true;
     view.classList.remove('scan-active'); $('scanResults').replaceChildren();
     $('scanExplanation').textContent = ''; $('scanObservation').textContent = '';
     status('Scan off. Open the camera or choose a photo to inspect visible contrasts.'); controls();
   }
   function fail(message) {
+    if (scanMode === 'scene' && displayed) {
+      cancelWork(); running = false; scanMode = displayed.result.model ? 'scene' : 'contrast'; controls();
+      status('AI scene analysis unavailable: ' + message + '. The photo, saved location and contrast view are still available.'); return;
+    }
     // Never retain a result whose source frame could no longer be refreshed.
     reset(); if (!cameraActive) view.hidden = true;
     status('Scan unavailable: ' + message + '. You can still use the camera and written notes.');
@@ -65,29 +78,31 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   function ensureWorker() {
     if (worker) return worker;
     const local = epoch;
-    worker = new Worker(new URL('./vision-worker.mjs', import.meta.url), { type: 'module' });
+    worker = scanMode === 'scene' ? new Worker(new URL('./scene-worker.js', import.meta.url))
+      : new Worker(new URL('./vision-worker.mjs', import.meta.url), { type: 'module' });
     worker.onerror = () => { if (local === epoch) fail('the local image worker could not start'); };
     worker.onmessage = ({ data }) => {
       if (local !== epoch || !pending || data.id !== pending.id) return;
+      if (data.progress) { status(data.progress + ' Cancel is available.'); return; }
       clearTimeout(watchdog);
       if (data.error) { fail(data.error); return; }
-      clearGeology(); displayed = { ...pending, result: data.result }; pending = null; selected = null;
+      clearGeology(); displayed = { ...pending, result: data.result }; pending = null; selected = null; cueReviews.clear();
       render(); controls();
-      status(data.result.cues.length
+      status(data.result.model ? `${data.result.cues.length} AI region suggestions · ${(data.result.elapsedMs / 1000).toFixed(1)} s model time. Tap a region to inspect it; uncoloured areas remain unresolved.` : data.result.cues.length
         ? `${data.result.cues.length} unconfirmed contrast cues. Select a numbered cue to inspect it.`
         : 'No matching linear contrasts in this frame. This says nothing about minerals or gold.');
-      if (running) timer = setTimeout(capture, 500);
+      if (running) timer = setTimeout(capture, scanMode === 'scene' ? 1500 : 500);
     };
     return worker;
   }
   function submit(frame, context) {
     if (pending) return;
     const pixels = frame.getContext('2d').getImageData(0, 0, frame.width, frame.height);
-    pending = { frame, context, id: ++sequence };
+    pending = { frame, context, id: ++sequence, mode: scanMode };
     try {
       ensureWorker().postMessage({ id: pending.id, enabled: enabled(),
         frame: { data: pixels.data, width: frame.width, height: frame.height } }, [pixels.data.buffer]);
-      watchdog = setTimeout(() => fail('processing timed out'), 8000);
+      watchdog = setTimeout(() => fail('processing timed out'), scanMode === 'scene' ? 90000 : 8000);
     } catch (error) { fail(error.message); }
     controls();
   }
@@ -104,7 +119,13 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     if (!running || !cameraActive || pending || document.hidden) return;
     try {
       const frame = makeFrame(video, video.videoWidth, video.videoHeight);
-      submit(frame, { source: 'camera', capturedAt: new Date().toISOString(), ...captureContext() });
+      const context = { source: 'camera', capturedAt: new Date().toISOString(), ...captureContext() };
+      if (scanMode === 'scene' && !displayed) {
+        displayed = { frame, context, result: { version: 'image-preview', width: frame.width, height: frame.height,
+          cues: [], mask: new Uint8ClampedArray(frame.width * frame.height * 4) } };
+        render();
+      }
+      submit(frame, context);
     } catch (error) { fail(error.message); }
   }
   function render() {
@@ -130,14 +151,20 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     $('scanResults').replaceChildren(...result.cues.map(cue => {
       const button = document.createElement('button'); button.type = 'button';
       button.className = 'scan-cue ' + cue.kind;
+      button.style.borderColor = 'rgb(' + CUE_TYPES[cue.kind].color.join(',') + ')';
       button.setAttribute('aria-pressed', String(selected?.id === cue.id));
       button.textContent = `${String(cue.id).padStart(2, '0')} · ${cue.label}`;
       button.onclick = () => choose(cue.id); return button;
     }));
     $('scanExplanation').textContent = selected ? CUE_TYPES[selected.kind].explanation :
-      'Tinted pixels show local contrast; boxes group those pixels. Select a cue to freeze and inspect. Appearance only; mineral and gold content remain unknown.';
+      displayed.result.model ? 'Coloured masks show broad scene-model suggestions. Tap a region to review it. Uncoloured areas are other classes or unresolved; rock type and gold content remain unknown.' :
+        'Tinted pixels show local contrast; boxes group those pixels. Select a cue to freeze and inspect. Appearance only; mineral and gold content remain unknown.';
     $('scanObservation').disabled = !selected;
     $('scanObservation').textContent = selected ? 'Use selected cue in field notes' : 'Select a cue to write a note';
+    $('sceneModelDetails').hidden = !displayed.result.model;
+    $('sceneModelSummary').textContent = displayed.result.model
+      ? 'Experimental broad scene recognition. Rock type, mineral identity, placement and gold remain unconfirmed. Other labels can be errors. Raw class areas below describe model output, not confidence.' : '';
+    $('sceneRawClasses').textContent = displayed.result.model ? JSON.stringify({ model: displayed.result.model, pixelsByRawLabel: displayed.result.rawClassCounts }, null, 2) : '';
   }
   function choose(id) {
     if (!displayed) return;
@@ -160,7 +187,8 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   };
   function observation() {
     if (!selected || !displayed) return null;
-    return { detector: DETECTOR_VERSION, ...displayed.context, kind: selected.kind,
+    return { detector: displayed.result.version || DETECTOR_VERSION, model: displayed.result.model || null,
+      visualReview: cueReviews.get(selected.id) || null, ...displayed.context, kind: selected.kind,
       label: selected.label, box: { ...selected.box }, frameWidth: displayed.frame.width,
       frameHeight: displayed.frame.height, geologicalIdentification: 'unconfirmed',
       geologyContext: geology, geometryReference: 'analysed image; no world anchoring',
@@ -217,6 +245,29 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     status('Scanning visible contrasts on this device…'); controls(); capture();
   };
   $('scanStart').onclick = () => $('scanCamera').click();
+  $('analyseScene').onclick = () => {
+    if (!displayed && !cameraActive) return;
+    const previous = displayed;
+    cancelWork(); clearGeology(); running = false; selected = null; scanMode = 'scene';
+    if (previous) { status('Preparing AI scene analysis locally…'); submit(previous.frame, previous.context); }
+    else {
+      running = true; view.classList.add('scan-active'); capture(); running = false;
+    }
+    controls();
+  };
+  $('cancelScene').onclick = () => {
+    cancelWork(); running = false; scanMode = displayed?.result.model ? 'scene' : 'contrast';
+    if (!displayed) view.classList.remove('scan-active');
+    status('AI scene analysis cancelled. Your camera/photo and location are unchanged.'); controls();
+  };
+  $('contrastView').onclick = () => {
+    if (!displayed) return;
+    const { frame, context } = displayed; cancelWork(); clearGeology(); scanMode = 'contrast'; running = false; submit(frame, context);
+  };
+  for (const [id, verdict] of [['sceneAccept', 'matches visible feature'], ['sceneReject', 'wrong or uncertain']]) $(id).onclick = () => {
+    if (!selected || !displayed?.result.model) return;
+    cueReviews.set(selected.id, { verdict, source: 'user visual review', reviewedAt: new Date().toISOString(), geologicalConfirmation: false }); controls();
+  };
   $('freezeScan').onclick = () => {
     if (running) {
       running = false; cancelWork(); controls();

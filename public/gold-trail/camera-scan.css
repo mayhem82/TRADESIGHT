@@ -51,5 +51,9 @@ button:disabled{opacity:.5;cursor:default}
 .photo-pin-coordinates label{flex:1 1 160px;min-width:0}
 .photo-map-actions{position:sticky;bottom:-16px;padding:12px 0;background:#152c22;border-top:1px solid #52796b}
 .photo-map-dialog .scan-actions{margin-top:10px}
+.scene-review,#sceneModelDetails{padding:12px;border:1px solid #4b6659;border-radius:8px;margin:12px 0;background:#172f25}
+#sceneModelDetails summary{cursor:pointer;color:#edda9f;min-height:44px}
+#sceneRawClasses{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.5 ui-monospace,monospace;max-height:240px;overflow:auto}
+@media(max-width:760px){.camera-page main{display:flex;flex-direction:column}.camera-page #panel{order:0;width:100%}.camera-page #workspace{order:1}}
 @media(max-width:500px){.scan-readout{max-height:47dvh}.scan-heading .scan-actions{width:100%}.scan-results{flex-wrap:nowrap;overflow-x:auto;padding:2px}.scan-cue{white-space:nowrap}.camera-toolbar b{width:100%}}
 @media(orientation:landscape) and (max-height:550px){#cameraView.scan-active{grid-template-columns:minmax(0,1fr) minmax(240px,34%);grid-template-rows:auto minmax(0,1fr)}#cameraView.scan-active .camera-toolbar{grid-column:1 / -1}.scan-readout{grid-column:2;grid-row:2;max-height:none;border-top:0;border-left:1px solid #52796b;padding:10px}.scan-heading .scan-actions{width:100%}.scan-readout button{font-size:14px}.scan-readout p{font-size:14px}.scan-results{display:grid}.scan-heading strong{font-size:11px}.scan-filters{gap:8px}.scan-filters label{font-size:14px}}
