@@ -1,7 +1,8 @@
 import {Node} from '../ar-colour-vision-001/vendor/js/render/core/node.js';
 import {mat4} from '../ar-colour-vision-001/vendor/js/render/math/gl-matrix.js';
 export class PointRoute {
-  constructor(scene,reticle,ground,walking,walls){
+  constructor(scene,reticle,ground,walking,walls,{canMove=()=>true}={}){
+    this.canMove=canMove;
     this.scene=scene;this.reticle=reticle;this.ground=ground;this.walking=walking;this.walls=walls;this.points=[];this.markers=[];this.scanMarkers=[];this.active=false;this.scanning=false;this.marking=false;this.cursor=0;this.visits=0;this.finished=false;this.segmentStart=null;this.lastScan=-Infinity;this.lastUI=-Infinity;this.loop=false;this.actor=null;
     this.info=document.querySelector('#route-status');this.scanButton=document.querySelector('#ground-scan');this.addButton=document.querySelector('#route-add');this.playButton=document.querySelector('#route-play');
     this.scanButton?.addEventListener('click',()=>{this.scanning=!this.scanning;if(this.scanning){this.pause();this.marking=false;this.walls.cancelBuild();}this.sync();});
@@ -37,14 +38,14 @@ export class PointRoute {
   sync(){
     if(this.scanButton)this.scanButton.textContent=this.scanning?'Finish scan':'Scan ground';
     if(this.addButton)this.addButton.textContent=this.marking?'Finish stops':'Add stop';
-    if(this.playButton){this.playButton.disabled=!this.actor||!this.points.length;this.playButton.textContent=this.active?'Pause route':(!this.finished&&this.cursor>0?'Resume route':'Move route');}
+    if(this.playButton){this.playButton.disabled=!this.canMove()||!this.actor||!this.points.length;this.playButton.textContent=this.active?'Pause route':(!this.finished&&this.cursor>0?'Resume route':'Walk route');}
     const show=document.querySelector('#route-markers')?.checked!==false;
     for(const marker of this.markers)marker.visible=show||this.marking;
     for(const marker of this.scanMarkers)marker.visible=this.scanning;
     if(this.info)this.info.textContent=`Ground: ${this.ground.scanMap.size} samples · Stops: ${this.points.length}`+(this.active?` · Moving to ${this.cursor+1}`:this.finished?' · Route complete':this.marking?' · Tap circles to add stops':this.scanning?' · Move phone over the ground':'');
   }
   play(){
-    if(!this.actor||!this.points.length)return;
+    if(!this.canMove()||!this.actor||!this.points.length)return;
     this.walking.joystick.stop();this.scanning=false;this.marking=false;this.walls.cancelBuild();
     if(this.finished||this.cursor>=this.points.length)this.cursor=0;
     this.finished=false;this.active=true;this.segmentStart=this.position();this.sync();
@@ -55,6 +56,7 @@ export class PointRoute {
     this.active=false;this.ground.routeHint=null;this.sync();
   }
   input(pose){
+    if(!this.canMove()){this.pause();return;}
     if(!this.active||!this.actor)return;
     if(!pose){this.pause();return;}
     const position=this.position();let target=this.points[this.cursor],distance=Math.hypot(target.x-position.x,target.z-position.z);

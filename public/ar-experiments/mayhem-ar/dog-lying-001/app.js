@@ -7,8 +7,10 @@ import {DogAppearance} from './appearance.js';
 import {ModelExposure} from './exposure.js';
 import {GroundFollower,groundSample} from './ground.js';
 import {InvisibleWalls} from './walls.js';
-import {PointRoute} from './routes.js';
+import {PointRoute} from './routes.js?v=controls3';
 import {Node} from '../ar-colour-vision-001/vendor/js/render/core/node.js';
+// Enable walking only when the animated walking model is bound to these controls.
+const walkingReady=false;
 const $=s=>document.querySelector(s),placement=new TablePlacement();let gl,scene,renderer,dog,dogRoot,reticle,session=null,ref=null,source=null,ready=false,supported=false,starting=false,epoch=0,previewYaw=.24;
 const status=s=>$('#status').textContent=s;let lift=0,handYaw=0;let turn=0,turnPointer=null,move={x:0,y:0},movePointer=null,lastFrame=null;let selectionPending=false,handPreview=null,appearance,exposure,ground,walls,navigation,routeWalking;
 function stopSpin(){turn=0;lift=0;turnPointer=null;$('#turn-knob').style.transform='';$('#turn-stick').setAttribute('aria-valuenow','0');}
@@ -21,13 +23,13 @@ function controls(){
  const hand=handMode(),placing=!placement.point||placement.repositioning,placed=!!session&&!!placement.point;
  $('#start').disabled=!ready||!supported||starting||!!session;$('#exit').disabled=!session;$('#walk-stop').disabled=!session;
  for(const id of ['reposition','left','right'])$('#'+id).disabled=!placed||placement.repositioning;
- for(const id of ['turn-stick','move-stick'])$('#'+id).setAttribute('aria-disabled',String(!placed||placement.repositioning));
+ $('#move-stick').setAttribute('aria-disabled',String(!walkingReady||!placed||placement.repositioning));
  $('#turn-stick').setAttribute('aria-disabled',String(!session||(!placed&&!hand)||(placement.repositioning&&!hand)));
  $('#cancel').hidden=!placement.repositioning;$('#place-hand').hidden=!hand||!session||!placing;$('#place-hand').disabled=!handPreview;
  $('#hand-distance-wrap').hidden=!hand;$('#hand-distance').disabled=hand&&!placing;$('#hand-height').disabled=!session;$('#lower-dog').disabled=!session;$('#raise-dog').disabled=!session;$('#ground-mode-hint').hidden=!hand;
  for(const id of ['ground-scan','route-add','wall-add'])$('#'+id).disabled=!session||hand;
  for(const input of document.querySelectorAll('[data-follow-slopes]'))input.disabled=hand;
- $('#move-label').textContent=hand?'1 · Move':'1 · Move on surface';
+ $('#move-label').textContent=walkingReady?(hand?'1 · Walk':'1 · Walk on surface'):'1 · Walk · model pending';
 }
 function reset(){stopTurn();cancelSelection();lastFrame=null;handPreview=null;handYaw=0;navigation?.end();walls?.end();ground?.end();placement.reset();setHeight(0);if(session&&ref&&!handMode())ground?.start(session,ref);if(reticle)reticle.visible=false;if(dogRoot)dogRoot.visible=false;controls();}
 function ended(s){if(s!==session)return;++epoch;source?.cancel();source=null;session=null;ref=null;reset();document.body.classList.remove('xr');status('AR ended. Start again for a fresh surface placement.');}
@@ -52,7 +54,7 @@ function frame(time,f){
  if(selectionPending){selectionPending=false;if(hit&&walls.building&&!hand)walls.select(hit);else if(hit&&navigation.marking&&!hand)navigation.addStop(hit);else if(hit&&navigation.scanning&&!placing&&!hand){ground.recordScan(hit);navigation.sync();}else placement.request();}
  if(placement.resolve(hit,pose.transform.position)){if(hand){placement.yaw+=handYaw;placement.update();handYaw=0;}reticle.visible=false;dogRoot.matrix=placement.matrix;navigation.attach(dogRoot);if(!hand)ground.place(dogRoot,hit);}
  if(placement.point&&!placement.repositioning){
-  navigation.input(pose);const route=navigation.active,input=route?{x:routeWalking.joystick.x,y:-routeWalking.joystick.y}:move;
+  if(walkingReady)navigation.input(pose);const route=walkingReady&&navigation.active,input=walkingReady?(route?{x:routeWalking.joystick.x,y:-routeWalking.joystick.y}:move):{x:0,y:0};
   if(turn&&!route)placement.rotate(-turn*Math.PI/5*dt);
   if(input.x||input.y){const v=pose.views[0]?.transform?.inverse?.matrix,n=v?Math.hypot(v[0],v[8]):0;if(n>.001){
    const rx=v[0]/n,rz=v[8]/n,speed=route?routeWalking.speed:.25*(globalThis.ARTravelSpeed?.multiplier??1),dx=(rx*input.x-rz*input.y)*speed*dt,dz=(rz*input.x+rx*input.y)*speed*dt,oldY=placement.point[1];
@@ -64,7 +66,7 @@ function frame(time,f){
  if(handPreview){const m=new Float32Array(handPreview);m[13]+=placement.heightOffset;dogRoot.matrix=m;}else if(placement.matrix)dogRoot.matrix=placement.matrix;
  if(walls.building)status($('#wall-status').textContent);else if(navigation.scanning||navigation.marking||navigation.active)status($('#route-status').textContent);
  else if(stillPlacing)status(hand?'Hand preview · align with your palm using Distance / right joystick, then Place here.':hit?'Surface found · tap the circle to place.':'Scan a level floor or table for the green circle.');
- else status(hand?'Position fixed at your palm · hold your hand still.':'Dog placed · use Move, Spin or the menu controls.');
+ else status(hand?'Position fixed at your palm · hold your hand still.':'Dog placed · right joystick turns / adjusts height. Walking model pending.');
  controls();scene.startFrame();scene.drawXRFrame(f,pose);scene.endFrame();
 }
 function setLength(mm){mm=Math.max(15,Math.min(1500,Number(mm)||150));$('#length').value=mm;$('#length-value').textContent=mm+' mm';if(appearance)appearance.setSize(mm/150);else if(dog)dog.scale=[mm/150,mm/150,mm/150];}
@@ -81,9 +83,9 @@ async function init(){
  const movePad=$('#move-stick'),setMove=e=>{const r=movePad.getBoundingClientRect();let x=(e.clientX-r.x-r.width/2)/(r.width*.32),y=(e.clientY-r.y-r.height/2)/(r.height*.32),n=Math.max(1,Math.hypot(x,y));move={x:x/n,y:y/n};if(Math.hypot(move.x,move.y)<.08)move={x:0,y:0};$('#move-knob').style.transform=`translate(${move.x*35}px,${move.y*19}px)`;};movePad.onpointerdown=e=>{if(movePad.getAttribute('aria-disabled')==='true'||movePointer!==null)return;e.preventDefault();navigation?.pause();movePointer=e.pointerId;movePad.setPointerCapture(e.pointerId);setMove(e);};movePad.onpointermove=e=>{if(e.pointerId===movePointer)setMove(e);};for(const type of ['pointerup','pointercancel','lostpointercapture'])movePad.addEventListener(type,e=>{if(e.pointerId===movePointer)stopMove();});
  $('#menu-toggle').onclick=()=>{stopTurn();cancelSelection();$('#panel').hidden=!$('#panel').hidden;$('#menu-toggle').textContent=$('#panel').hidden?'Show controls':'Hide controls';$('#menu-toggle').setAttribute('aria-expanded',String(!$('#panel').hidden));};// Native DOM overlay fills the display. Block controls only, never its transparent background.
  $('#overlay').addEventListener('beforexrselect',e=>{if(e.target.closest?.('#panel, #menu-toggle, #joystick-dock'))e.preventDefault();});window.addEventListener('blur',()=>{stopTurn();cancelSelection();});window.addEventListener('pagehide',()=>{stopTurn();cancelSelection();session?.end().catch(()=>{});});
- gl=createWebGLContext({xrCompatible:true,alpha:true});if(!gl||!gl.createVertexArray)throw Error('WebGL2 unavailable');gl.canvas.width=900;gl.canvas.height=480;gl.canvas.setAttribute('aria-label','Your black dog lying down, interactive 3D preview');$('#preview').append(gl.canvas);renderer=new Renderer(gl);scene=new Scene();scene.enableStats(false);scene.clear=false;scene.setRenderer(renderer);dogRoot=new Node();scene.addNode(dogRoot);dog=new Gltf2Node({url:'assets/dog-lying.glb'});dogRoot.addNode(dog);setLength(150);reticle=new Gltf2Node({url:'../ar-colour-vision-001/media/gltf/reticle/reticle.gltf'});reticle.visible=false;scene.addNode(reticle);ground=new GroundFollower();walls=new InvisibleWalls(scene);routeWalking={joystick:{x:0,y:0,stop(){this.x=0;this.y=0;stopMove();}},forward:[0,-1],speed:.25,moving:false,motionRatio:0};navigation=new PointRoute(scene,reticle,ground,routeWalking,walls);$('#route-play').addEventListener('click',stopSpin);
+ gl=createWebGLContext({xrCompatible:true,alpha:true});if(!gl||!gl.createVertexArray)throw Error('WebGL2 unavailable');gl.canvas.width=900;gl.canvas.height=480;gl.canvas.setAttribute('aria-label','Your black dog lying down, interactive 3D preview');$('#preview').append(gl.canvas);renderer=new Renderer(gl);scene=new Scene();scene.enableStats(false);scene.clear=false;scene.setRenderer(renderer);dogRoot=new Node();scene.addNode(dogRoot);dog=new Gltf2Node({url:'assets/dog-lying.glb'});dogRoot.addNode(dog);setLength(150);reticle=new Gltf2Node({url:'../ar-colour-vision-001/media/gltf/reticle/reticle.gltf'});reticle.visible=false;scene.addNode(reticle);ground=new GroundFollower();walls=new InvisibleWalls(scene);routeWalking={joystick:{x:0,y:0,stop(){this.x=0;this.y=0;stopMove();}},forward:[0,-1],speed:.25,moving:false,motionRatio:0};navigation=new PointRoute(scene,reticle,ground,routeWalking,walls,{canMove:()=>walkingReady});$('#route-play').addEventListener('click',stopSpin);
  await Promise.all([dog.waitForComplete(),reticle.waitForComplete()]);appearance=new DogAppearance();appearance.onSize=size=>{$('#length').value=Math.round(size*150);$('#length-value').textContent=Math.round(size*150)+' mm';};appearance.bind(renderer,dog);appearance.onSize(appearance.size);exposure=new ModelExposure('tradesight-dog-exposure',0);exposure.bind(dog);
  gl.canvas.addEventListener('pointermove',e=>{if(e.buttons)previewYaw=(e.offsetX/gl.canvas.clientWidth-.5)*Math.PI;});gl.canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();ready=false;controls();session?.end().catch(()=>{});status('Graphics context lost. Reload to restore the preview.');});ready=true;try{supported=!!navigator.xr&&await navigator.xr.isSessionSupported('immersive-ar');}catch{}$('#support').textContent=supported?'Ready for AR. Choose Floor / table or Still hand.':'AR unavailable here. For AR use a compatible WebXR phone/browser, such as supported Android Chrome. This is a virtual preview.';status(supported?'Ready · choose placement, then Start dog AR.':'Virtual preview · real-world AR unavailable in this browser.');controls();requestAnimationFrame(preview);
- if(new URL(location.href).searchParams.has('test'))window.__DOG={placement,gl,dog,dogRoot,appearance,exposure,ground,walls,navigation, get state(){return {ready,active:!!session,starting,turn,lift,move:{...move},mode:handMode()?'hand':'surface',heightOffset:placement.heightOffset,candidate:handPreview?Array.from(handPreview):null,lengthMm:Number($('#length').value),matrix:placement.matrix?Array.from(placement.matrix):null};}};
+ if(new URL(location.href).searchParams.has('test'))window.__DOG={placement,gl,dog,dogRoot,appearance,exposure,ground,walls,navigation, get state(){return {ready,walkingReady,active:!!session,starting,turn,lift,move:{...move},mode:handMode()?'hand':'surface',heightOffset:placement.heightOffset,candidate:handPreview?Array.from(handPreview):null,lengthMm:Number($('#length').value),matrix:placement.matrix?Array.from(placement.matrix):null};}};
 }
 init().catch(e=>{status('Preview failed to load: '+e.message+'. Reload to retry.');});
