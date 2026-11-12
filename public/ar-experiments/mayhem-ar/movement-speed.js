@@ -19,7 +19,7 @@ export function installMovementSpeed(){
   const root=document.createElement('div');root.className='travel-speed';
   root.innerHTML='<label for="travel-speed">Move speed</label><output id="travel-speed-value" for="travel-speed"></output><input id="travel-speed" type="range" min="-3" max="5" step="0.125" value="0" aria-label="Movement speed"><button type="button" aria-label="Reset movement speed to normal">1×</button>';
   const input=root.querySelector('input'),output=root.querySelector('output');
-  const normal=()=>colour||wall?0.45:tv?(Number(tv.dataset.travelBase)||0.25):walking?Number(document.querySelector('#walk-speed').value):Number(document.querySelector('#speed').value);
+  const normal=()=>colour||wall?0.45:tv?0.25:walking?Number(document.querySelector('#walk-speed').value):Number(document.querySelector('#speed').value);
   const format=n=>Number(n.toPrecision(3)).toString();
   const sync=()=>{const factor=multiplier(),speed=normal()*factor;output.textContent=format(factor)+'×';const metric=document.createElement('span');metric.textContent=format(speed)+' m/s';metric.title='Ground travel at full stick';output.append(metric);input.setAttribute('aria-valuetext',format(factor)+' times normal; ground travel '+format(speed)+' metres per second at full stick');};
   input.addEventListener('input',()=>{exponent=Number(input.value);sync();});
@@ -30,7 +30,6 @@ export function installMovementSpeed(){
   if(colour||wall||tv){parent.insertBefore(root,parent.children[1]);parent.classList.add('has-travel-speed');}
   else if(walking){root.querySelector('label').textContent='Manual speed';root.title='Manual joystick movement; automatic routes keep their existing speed.';walking.append(root);walking.classList.add('has-travel-speed');document.querySelector('#walk-speed').addEventListener('change',sync);}
   else{root.classList.add('room-travel-speed');parent.append(root);document.querySelector('#speed').addEventListener('input',sync);}
-  if(tv)tv.addEventListener('travelbasechange',sync);
   sync();installed=true;return true;
  }
  if(!attach()&&/\/ar-colour-vision-001\//.test(location.pathname)){

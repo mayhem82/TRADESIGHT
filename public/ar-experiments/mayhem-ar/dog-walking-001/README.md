@@ -8,4 +8,4 @@ Head yaw and pitch operate independently of walking and body placement. Reset he
 
 Build scripts and measured reports are in outputs/dog-ar-build/ and outputs/dog-walking-build/ outside the deployment. Browser checks use real GPU rendering and touch input with emulated XR poses; physical phone tracking remains a separate check.
 
-Preview walking plays the real gait without AR. The shared speed adapter accepts an optional per-page base speed; existing page defaults remain the same. Fur uses the reference texture with a matte, nonmetallic material.
+Preview walking plays the real gait without AR. Dog-local copies of the collection and speed adapters accept the dog's base speed. The shared control files remain byte-for-byte unchanged. Fur uses the reference texture with a matte, nonmetallic material.
