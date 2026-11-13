@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSceneResult } from './scene-core.mjs';
+import { buildSceneResult, sceneCueAt } from './scene-core.mjs';
 const labels = ['background', 'rock', 'plant', 'grass', 'earth', 'sand', 'water', 'person'];
 function frame(width = 20, height = 20) { return { width, height, targetWidth: width, targetHeight: height,
   predictions: new Uint8Array(width * height), labels, model: { name: 'test fixture', calibratedForGeology: false }, elapsedMs: 5 }; }
@@ -36,4 +36,31 @@ test('invalid dimensions and class identifiers fail explicitly', () => {
   assert.throws(() => buildSceneResult({ ...frame(), targetWidth: 0 }), RangeError);
   assert.throws(() => buildSceneResult({ ...frame(), predictions: [] }), RangeError);
   const f = frame(); f.predictions[0] = 255; assert.throws(() => buildSceneResult(f), RangeError);
+});
+
+
+test('each represented class has a region even when larger regions fill the limit', () => {
+  const f = frame(100, 100);
+  for (let i = 0; i < 13; i++) paint(f, (i % 7) * 14, Math.floor(i / 7) * 16, 9, 9, 2);
+  paint(f, 92, 70, 5, 5, 1);
+  paint(f, 0, 95, 2, 2, 1);
+  const r = buildSceneResult(f);
+  assert.equal(r.cues.length, 12);
+  assert.ok(r.cues.some(c => c.kind === 'scene-rock'));
+  assert.equal(r.suppressed.overLimit, 2);
+  assert.equal(r.suppressed.belowThreshold, 1);
+  assert.equal(r.suppressed.belowThresholdPixels, 4);
+});
+
+test('scene hit testing follows the actual mask, including holes and image edges', () => {
+  const f = frame(30, 30);
+  paint(f, 2, 2, 24, 24, 1); paint(f, 8, 8, 12, 12, 2); paint(f, 12, 12, 4, 4, 0);
+  const r = buildSceneResult(f);
+  assert.equal(sceneCueAt(r, 3/30, 3/30).kind, 'scene-rock');
+  assert.equal(sceneCueAt(r, 9/30, 9/30).kind, 'scene-vegetation');
+  assert.equal(sceneCueAt(r, 13/30, 13/30), null);
+  assert.equal(sceneCueAt(r, 0, 0), null);
+  assert.equal(sceneCueAt(r, 1, .5), null);
+  assert.equal(sceneCueAt(r, -.01, .5), null);
+  assert.equal(sceneCueAt({ ...r, regionMap: null }, .1, .1), null);
 });

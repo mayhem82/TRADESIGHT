@@ -1,4 +1,5 @@
 import { CUE_TYPES, DETECTOR_VERSION, fitInside } from './vision-core.mjs';
+import { sceneCueAt } from './scene-core.mjs';
 import { canQueryContext, loadMappedContext, GEOLOGY_GUIDE, MINERAL_GUIDE } from './camera-geology.mjs';
 import { readPhotoLocation, embedPhotoLocation, validPhotoLocation, locationLabel } from './photo-metadata.mjs';
 import { photoStore } from './photo-store.mjs';
@@ -88,7 +89,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
       if (data.error) { fail(data.error); return; }
       clearGeology(); displayed = { ...pending, result: data.result }; pending = null; selected = null; cueReviews.clear();
       render(); controls();
-      status(data.result.model ? `${data.result.cues.length} AI region suggestions · ${(data.result.elapsedMs / 1000).toFixed(1)} s model time. Tap a region to inspect it; uncoloured areas remain unresolved.` : data.result.cues.length
+      status(data.result.model ? `${data.result.cues.length} AI region suggestions · ${(data.result.elapsedMs / 1000).toFixed(1)} s model time. Tap coloured pixels to inspect them; uncoloured areas remain unresolved.` : data.result.cues.length
         ? `${data.result.cues.length} unconfirmed contrast cues. Select a numbered cue to inspect it.`
         : 'No matching linear contrasts in this frame. This says nothing about minerals or gold.');
       if (running) timer = setTimeout(capture, scanMode === 'scene' ? 1500 : 500);
@@ -157,14 +158,14 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
       button.onclick = () => choose(cue.id); return button;
     }));
     $('scanExplanation').textContent = selected ? CUE_TYPES[selected.kind].explanation :
-      displayed.result.model ? 'Coloured masks show broad scene-model suggestions. Tap a region to review it. Uncoloured areas are other classes or unresolved; rock type and gold content remain unknown.' :
+      displayed.result.model ? 'Coloured masks show broad scene-model suggestions. Tap coloured pixels or a numbered button to review them. Small or excess regions may be omitted. Uncoloured areas do not rule out rock; rock type and gold content remain unknown.' :
         'Tinted pixels show local contrast; boxes group those pixels. Select a cue to freeze and inspect. Appearance only; mineral and gold content remain unknown.';
     $('scanObservation').disabled = !selected;
     $('scanObservation').textContent = selected ? 'Use selected cue in field notes' : 'Select a cue to write a note';
     $('sceneModelDetails').hidden = !displayed.result.model;
     $('sceneModelSummary').textContent = displayed.result.model
       ? 'Experimental broad scene recognition. Rock type, mineral identity, placement and gold remain unconfirmed. Other labels can be errors. Raw class areas below describe model output, not confidence.' : '';
-    $('sceneRawClasses').textContent = displayed.result.model ? JSON.stringify({ model: displayed.result.model, pixelsByRawLabel: displayed.result.rawClassCounts }, null, 2) : '';
+    $('sceneRawClasses').textContent = displayed.result.model ? JSON.stringify({ model: displayed.result.model, pixelsByRawLabel: displayed.result.rawClassCounts, omittedRegions: displayed.result.suppressed }, null, 2) : '';
   }
   function choose(id) {
     if (!displayed) return;
@@ -180,9 +181,10 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     if (!fit) return;
     const x = (event.clientX - rect.left - fit.x) / fit.width;
     const y = (event.clientY - rect.top - fit.y) / fit.height;
-    const hit = displayed.result.cues.filter(({ box: b }) =>
-      x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height)
-      .sort((a, b) => a.box.width * a.box.height - b.box.width * b.box.height)[0];
+    const hit = displayed.result.model ? sceneCueAt(displayed.result, x, y) :
+      displayed.result.cues.filter(({ box: b }) =>
+        x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height)
+        .sort((a, b) => a.box.width * a.box.height - b.box.width * b.box.height)[0];
     if (hit) choose(hit.id);
   };
   function observation() {

@@ -28,6 +28,7 @@ export function buildSceneResult({ predictions, width, height, labels, targetWid
     const group = groups[label]; groupIds[y * targetWidth + x] = group ? names.indexOf(group) + 1 : 0;
   }
   const visited = new Uint8Array(size), queue = new Int32Array(size), components = [];
+  let belowThreshold = 0, belowThresholdPixels = 0;
   for (let start = 0; start < size; start++) {
     const group = groupIds[start]; if (!group || visited[start]) continue;
     let head = 0, tail = 1, minX = targetWidth, minY = targetHeight, maxX = 0, maxY = 0;
@@ -41,17 +42,34 @@ export function buildSceneResult({ predictions, width, height, labels, targetWid
         if (!visited[next] && groupIds[next] === group) { visited[next] = 1; queue[tail++] = next; }
       }
     }
-    if (tail < Math.max(12, size * .002)) continue;
+    if (tail < Math.max(12, size * .002)) { belowThreshold++; belowThresholdPixels += tail; continue; }
     components.push({ kind: names[group - 1], pixelCount: tail, pixels: queue.slice(0, tail),
       box: { x: minX / targetWidth, y: minY / targetHeight, width: (maxX - minX + 1) / targetWidth, height: (maxY - minY + 1) / targetHeight } });
   }
-  const mask = new Uint8ClampedArray(size * 4);
-  const cues = components.sort((a, b) => b.pixelCount - a.pixelCount).slice(0, 12).map((component, index) => {
+  // Give each detected class one place before filling the remaining slots by area.
+  // This changes presentation only; the underlying predictions are unchanged.
+  components.sort((a, b) => b.pixelCount - a.pixelCount);
+  const selected = [], seen = new Set();
+  for (const component of components) if (!seen.has(component.kind)) { selected.push(component); seen.add(component.kind); }
+  for (const component of components) if (selected.length < 12 && !selected.includes(component)) selected.push(component);
+  selected.sort((a, b) => b.pixelCount - a.pixelCount);
+  const mask = new Uint8ClampedArray(size * 4), regionMap = new Uint8Array(size);
+  const cues = selected.map((component, index) => {
     const definition = SCENE_CUES[component.kind];
-    for (const p of component.pixels) mask.set([...definition.color, 95], p * 4);
+    for (const p of component.pixels) { mask.set([...definition.color, 95], p * 4); regionMap[p] = index + 1; }
     return { id: index + 1, kind: component.kind, label: definition.label, box: component.box,
       pixelCount: component.pixelCount, status: 'unconfirmed model suggestion', confidence: null };
   });
   return { version: 'scene-deeplab-ade20k-wasm-v1', mode: 'scene', width: targetWidth, height: targetHeight,
-    cues, mask, model, elapsedMs, rawClassCounts: rawCounts, geologicalIdentification: 'unconfirmed' };
+    cues, mask, regionMap, model, elapsedMs, rawClassCounts: rawCounts,
+    suppressed: { belowThreshold, belowThresholdPixels, overLimit: components.length - selected.length },
+    geologicalIdentification: 'unconfirmed' };
+}
+
+// Coordinates are normalized to the actual image, not the surrounding letterbox.
+export function sceneCueAt(result, x, y) {
+  if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x >= 1 || y >= 1 ||
+      result.regionMap?.length !== result.width * result.height) return null;
+  const id = result.regionMap[Math.floor(y * result.height) * result.width + Math.floor(x * result.width)];
+  return result.cues.find(cue => cue.id === id) || null;
 }

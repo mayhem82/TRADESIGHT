@@ -51,7 +51,7 @@ self.onmessage = async ({ data }) => {
       targetWidth: frame.width, targetHeight: frame.height, elapsedMs: Math.round(performance.now() - started),
       model: { name: 'DeepLab v3 MobileNet-v2 ADE20K', version: 'tfhub-ade20k-1-quantized-2', backend: 'wasm',
         source: 'https://www.kaggle.com/models/tensorflow/deeplab', calibratedForGeology: false } });
-    self.postMessage({ id: data.id, result }, [result.mask.buffer]);
+    self.postMessage({ id: data.id, result }, [result.mask.buffer, result.regionMap.buffer]);
   } catch (error) { self.postMessage({ id: data.id, error: error.message }); }
   finally { input?.dispose(); prediction?.dispose(); busy = false; }
 };
