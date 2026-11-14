@@ -1,0 +1,42 @@
+{
+  "doorHeightMeters": 1.8288,
+  "doorWidthEstimatedMeters": 0.8,
+  "shedDepthEstimatedMeters": 2.1,
+  "tankHeightEstimatedMeters": 2,
+  "tankPositionEstimatedMeters": [
+    1.75,
+    -0.3,
+    1.2
+  ],
+  "frontTexture": "Original user photograph projected onto measured facade. Existing foreground occlusions remain in that photograph.",
+  "estimates": "Shed width, roof surfaces, depth, hidden sides and tank position. Manual alignment each AR session.",
+  "parts": [
+    "wall_left_0",
+    "wall_left_1",
+    "wall_left_2",
+    "wall_left_3",
+    "wall_right_0",
+    "wall_right_1",
+    "wall_right_2",
+    "wall_right_3",
+    "wall_right_4",
+    "wall_right_5",
+    "wall_right_6",
+    "wall_right_7",
+    "gable_header",
+    "door",
+    "backing",
+    "portal",
+    "roof_left",
+    "roof_backing_left",
+    "roof_right",
+    "roof_backing_right",
+    "side_left",
+    "side_right",
+    "back"
+  ],
+  "files": {
+    "shed-photo.glb": 227752,
+    "tank-mobile.glb": 2406128
+  }
+}
