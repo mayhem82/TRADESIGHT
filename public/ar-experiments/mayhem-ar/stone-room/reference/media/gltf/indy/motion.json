@@ -1,0 +1,1 @@
+{"fps":30,"jointCount":24,"primitives":[{"count":26422,"positions":0,"normals":317064,"joints":634128,"weights":739816},{"count":5144,"positions":1162568,"normals":1224296,"joints":1286024,"weights":1306600}],"clips":{"Idle":{"offset":1388904,"frames":130,"duration":4.333333333333333},"Walk":{"offset":1588584,"frames":32,"duration":1.0666666666666667}}}
