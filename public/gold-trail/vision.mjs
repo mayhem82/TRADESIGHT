@@ -1,6 +1,7 @@
 import { CUE_TYPES, DETECTOR_VERSION, fitInside } from './vision-core.mjs';
 import { sceneCueAt } from './scene-core.mjs';
 import { photoFocusAt } from './photo-focus.mjs';
+import { assessGoldChecks } from './gold-field-check.mjs';
 import { canQueryContext, loadMappedContext, GEOLOGY_GUIDE, MINERAL_GUIDE } from './camera-geology.mjs';
 import { readPhotoLocation, embedPhotoLocation, validPhotoLocation, locationLabel } from './photo-metadata.mjs';
 import { photoStore } from './photo-store.mjs';
@@ -66,9 +67,11 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     $('sceneReview').hidden = !selected || !displayed?.result.model;
     $('sceneReviewStatus').textContent = selected && cueReviews.has(selected.id) ? 'Your visual review: ' + cueReviews.get(selected.id).verdict + '. Geological identification remains unconfirmed.' : 'Model suggestion awaiting visual review.';
     $('scanFilters').hidden = !!displayed?.result.model;
+    updateGoldChecks();
   }
   function reset() {
     focusGeneration++; cancelWork(); clearGeology(); cancelPhotoPin?.(); running = false; selected = null; displayed = null; photo = null; photoBusy = false; focusMode = false; scanMode = 'contrast'; cueReviews.clear();
+    $('goldStreak').value = 'untested'; $('goldResponse').value = 'untested';
     canvas.width = canvas.height = 1; canvas.hidden = true;
     view.classList.remove('scan-active'); $('scanResults').replaceChildren();
     $('scanExplanation').textContent = ''; $('scanObservation').textContent = '';
@@ -225,6 +228,40 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     } catch (error) { if (local === epoch && photo === current) status('Could not prepare the photo: ' + error.message + '. The previous view remains available.'); }
     finally { bitmap?.close(); if (focusToken === focusGeneration && photo === current) { photoBusy = false; controls(); } }
   }
+  function goldCheckResult() {
+    return assessGoldChecks({ streak: $('goldStreak').value, response: $('goldResponse').value });
+  }
+  function updateGoldChecks() {
+    const result = goldCheckResult(), container = $('goldCheckResults');
+    container.replaceChildren();
+    const values = result.observations.length ? [...result.observations, ...result.possibilities, ...result.cautions, ...result.next]
+      : ['No physical tests recorded. Gold, pyrite, chalcopyrite, mica and other materials remain possible.', ...result.next];
+    for (const text of values) { const paragraph = document.createElement('p'); paragraph.textContent = text; container.append(paragraph); }
+    $('goldCheckSave').disabled = !displayed || photoBusy || result.observations.length === 0;
+  }
+  $('goldStreak').onchange = updateGoldChecks;
+  $('goldResponse').onchange = updateGoldChecks;
+  $('goldCheckSave').onclick = async () => {
+    const frame = displayed, current = photo, result = goldCheckResult();
+    if (!frame || photoBusy || !result.observations.length) return;
+    running = false; cancelWork();
+    const record = { detector: result.version, model: null, ...frame.context,
+      kind: 'field-property-check', label: 'Gold and lookalike field checks',
+      fieldChecks: result, geologicalIdentification: 'unconfirmed',
+      geometryReference: 'user-reported specimen properties; attached photo or frame location when available',
+      status: result.status };
+    if (current && (!current.saved || current.dirty)) {
+      photoBusy = true; controls(); $('photoSaveStatus').textContent = 'Saving this photo with its location for the field note…';
+      try { const saved = await savePhotoRecord(current); record.fileName = saved.name; }
+      catch (error) { if (photo === current) $('photoSaveStatus').textContent = 'Photo was not saved: ' + error.message + '. Download a copy before closing.'; return; }
+      finally { if (photo === current) { photoBusy = false; controls(); } }
+      if (photo !== current || displayed !== frame) return;
+    }
+    if (current) record.photoSavedLocally = true;
+    const explanation = [...result.observations, ...result.possibilities, ...result.cautions, ...result.next].join(' ');
+    selectCue(record, explanation);
+    toast('Field checks copied to notes. Add observations, then save locally.');
+  };
   function observation() {
     if (!selected || !displayed) return null;
     return { detector: displayed.result.version || DETECTOR_VERSION, model: displayed.result.model || null,
