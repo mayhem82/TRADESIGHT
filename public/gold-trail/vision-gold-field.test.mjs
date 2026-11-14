@@ -46,6 +46,7 @@ test('field checks attach user observations and camera location without claiming
     assert.equal(get('goldCheckSave').disabled, true);
     get('goldStreak').value = 'yellow'; get('goldResponse').value = 'dents';
     get('goldStreak').onchange();
+    assert.equal(get('freezeScan').textContent, 'Resume scan');
     assert.equal(get('goldCheckSave').disabled, false);
     await get('goldCheckSave').onclick();
     assert.equal(saved.record.kind, 'field-property-check');
@@ -53,6 +54,11 @@ test('field checks attach user observations and camera location without claiming
     assert.equal(saved.record.fieldChecks.inputs.streak, 'yellow');
     assert.equal(saved.record.geologicalIdentification, 'unconfirmed');
     assert.match(saved.text, /Neither result proves gold/);
+    get('freezeScan').onclick();
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(get('goldStreak').value, 'untested');
+    assert.equal(get('goldResponse').value, 'untested');
+    assert.equal(get('goldCheckSave').disabled, true);
   } finally {
     vision.reset();
     for (const [key, value] of Object.entries(previous)) {

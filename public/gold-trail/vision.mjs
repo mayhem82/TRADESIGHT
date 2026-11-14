@@ -14,7 +14,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   let pending = null, displayed = null, selected = null, running = false, cameraActive = false;
   let geology = null, geologyController = null;
   let photo = null, photoBusy = false, focusMode = false, focusGeneration = 0;
-  let scanMode = 'contrast';
+  let scanMode = 'contrast', goldCheckFrame = null;
   const cueReviews = new Map();
   const status = text => { $('scanStatus').textContent = text; $('scanPanelStatus').textContent = text; };
   const enabled = () => ['pale', 'dark'].filter(kind => $('scan-' + kind).checked);
@@ -71,7 +71,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   }
   function reset() {
     focusGeneration++; cancelWork(); clearGeology(); cancelPhotoPin?.(); running = false; selected = null; displayed = null; photo = null; photoBusy = false; focusMode = false; scanMode = 'contrast'; cueReviews.clear();
-    $('goldStreak').value = 'untested'; $('goldResponse').value = 'untested';
+    clearGoldChecks();
     canvas.width = canvas.height = 1; canvas.hidden = true;
     view.classList.remove('scan-active'); $('scanResults').replaceChildren();
     $('scanExplanation').textContent = ''; $('scanObservation').textContent = '';
@@ -98,6 +98,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
       if (data.progress) { status(data.progress + ' Cancel is available.'); return; }
       clearTimeout(watchdog);
       if (data.error) { fail(data.error); return; }
+      if (goldCheckFrame && pending.frame !== goldCheckFrame) clearGoldChecks();
       clearGeology(); displayed = { ...pending, result: data.result }; pending = null; selected = null; cueReviews.clear();
       render(); controls();
       status(data.result.model ? `${data.result.cues.length} AI region suggestions · ${(data.result.elapsedMs / 1000).toFixed(1)} s model time. Tap coloured pixels to inspect them; uncoloured areas remain unresolved.` : data.result.cues.length
@@ -212,7 +213,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   async function redrawPhoto(crop) {
     const current = photo, previous = displayed; if (!current || !previous || previous.context.source !== 'photo') return;
     scanMode = previous.result.model ? 'scene' : 'contrast';
-    cancelWork(); clearGeology(); running = false; selected = null; cueReviews.clear();
+    clearGoldChecks(); cancelWork(); clearGeology(); running = false; selected = null; cueReviews.clear();
     const local = epoch, focusToken = ++focusGeneration; photoBusy = true; controls(); status(crop ? 'Preparing a close-up from the original photo…' : 'Restoring the full photo…');
     let bitmap;
     try {
@@ -228,6 +229,9 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     } catch (error) { if (local === epoch && photo === current) status('Could not prepare the photo: ' + error.message + '. The previous view remains available.'); }
     finally { bitmap?.close(); if (focusToken === focusGeneration && photo === current) { photoBusy = false; controls(); } }
   }
+  function clearGoldChecks() {
+    goldCheckFrame = null; $('goldStreak').value = 'untested'; $('goldResponse').value = 'untested';
+  }
   function goldCheckResult() {
     return assessGoldChecks({ streak: $('goldStreak').value, response: $('goldResponse').value });
   }
@@ -237,13 +241,21 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     const values = result.observations.length ? [...result.observations, ...result.possibilities, ...result.cautions, ...result.next]
       : ['No physical tests recorded. Gold, pyrite, chalcopyrite, mica and other materials remain possible.', ...result.next];
     for (const text of values) { const paragraph = document.createElement('p'); paragraph.textContent = text; container.append(paragraph); }
-    $('goldCheckSave').disabled = !displayed || photoBusy || result.observations.length === 0;
+    $('goldStreak').disabled = !displayed || photoBusy; $('goldResponse').disabled = !displayed || photoBusy;
+    $('goldCheckSave').disabled = !displayed || photoBusy || result.observations.length === 0 || displayed.frame !== goldCheckFrame;
   }
-  $('goldStreak').onchange = updateGoldChecks;
-  $('goldResponse').onchange = updateGoldChecks;
+  function onGoldCheckChange() {
+    const result = goldCheckResult();
+    if (!displayed || !result.observations.length) { goldCheckFrame = null; updateGoldChecks(); return; }
+    if (running || pending) { running = false; cancelWork(); }
+    focusMode = false; goldCheckFrame = displayed.frame; controls();
+    status('Frame frozen for your physical checks. The results describe your observations, not a camera identification.');
+  }
+  $('goldStreak').onchange = onGoldCheckChange;
+  $('goldResponse').onchange = onGoldCheckChange;
   $('goldCheckSave').onclick = async () => {
     const frame = displayed, current = photo, result = goldCheckResult();
-    if (!frame || photoBusy || !result.observations.length) return;
+    if (!frame || frame.frame !== goldCheckFrame || photoBusy || !result.observations.length) return;
     running = false; cancelWork();
     const record = { detector: result.version, model: null, ...frame.context,
       kind: 'field-property-check', label: 'Gold and lookalike field checks',
@@ -350,7 +362,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
       running = false; cancelWork(); controls();
       status('Frame frozen. Camera remains on; Close switches it off.');
     } else if (cameraActive) {
-      clearGeology(); selected = null; running = true; controls(); capture();
+      clearGoldChecks(); clearGeology(); selected = null; running = true; controls(); capture();
     }
   };
   $('returnCamera').onclick = () => { reset(); if (!cameraActive) openCamera(); };
