@@ -1,6 +1,5 @@
 import { CUE_TYPES, DETECTOR_VERSION, fitInside } from './vision-core.mjs';
 import { sceneCueAt } from './scene-core.mjs';
-import { setupOnlineAnalysis } from './online-analysis.mjs';
 import { photoFocusAt } from './photo-focus.mjs';
 import { canQueryContext, loadMappedContext, GEOLOGY_GUIDE, MINERAL_GUIDE } from './camera-geology.mjs';
 import { readPhotoLocation, embedPhotoLocation, validPhotoLocation, locationLabel } from './photo-metadata.mjs';
@@ -16,7 +15,6 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   let photo = null, photoBusy = false, focusMode = false, focusGeneration = 0;
   let scanMode = 'contrast';
   const cueReviews = new Map();
-  const online = setupOnlineAnalysis({ getSource: () => ({ displayed, photo }), freeze: () => { running = false; cancelWork(); controls(); } });
   const status = text => { $('scanStatus').textContent = text; $('scanPanelStatus').textContent = text; };
   const enabled = () => ['pale', 'dark'].filter(kind => $('scan-' + kind).checked);
 
@@ -68,10 +66,9 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     $('sceneReview').hidden = !selected || !displayed?.result.model;
     $('sceneReviewStatus').textContent = selected && cueReviews.has(selected.id) ? 'Your visual review: ' + cueReviews.get(selected.id).verdict + '. Geological identification remains unconfirmed.' : 'Model suggestion awaiting visual review.';
     $('scanFilters').hidden = !!displayed?.result.model;
-    online.sync(displayed, photo, photoBusy);
   }
   function reset() {
-    focusGeneration++; online.clear(); cancelWork(); clearGeology(); cancelPhotoPin?.(); running = false; selected = null; displayed = null; photo = null; photoBusy = false; focusMode = false; scanMode = 'contrast'; cueReviews.clear();
+    focusGeneration++; cancelWork(); clearGeology(); cancelPhotoPin?.(); running = false; selected = null; displayed = null; photo = null; photoBusy = false; focusMode = false; scanMode = 'contrast'; cueReviews.clear();
     canvas.width = canvas.height = 1; canvas.hidden = true;
     view.classList.remove('scan-active'); $('scanResults').replaceChildren();
     $('scanExplanation').textContent = ''; $('scanObservation').textContent = '';
@@ -212,7 +209,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   async function redrawPhoto(crop) {
     const current = photo, previous = displayed; if (!current || !previous || previous.context.source !== 'photo') return;
     scanMode = previous.result.model ? 'scene' : 'contrast';
-    online.clear(); cancelWork(); clearGeology(); running = false; selected = null; cueReviews.clear();
+    cancelWork(); clearGeology(); running = false; selected = null; cueReviews.clear();
     const local = epoch, focusToken = ++focusGeneration; photoBusy = true; controls(); status(crop ? 'Preparing a close-up from the original photo…' : 'Restoring the full photo…');
     let bitmap;
     try {
