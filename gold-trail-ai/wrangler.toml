@@ -1,0 +1,16 @@
+name = "gold-trail-photo-analysis"
+main = "worker.mjs"
+compatibility_date = "2026-11-01"
+
+[vars]
+ALLOWED_ORIGIN = "https://mayhem82.github.io"
+OPENAI_MODEL = "gpt-6-astra"
+DAILY_LIMIT = "10"
+
+[[durable_objects.bindings]]
+name = "PHOTO_QUOTA"
+class_name = "PhotoQuota"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["PhotoQuota"]

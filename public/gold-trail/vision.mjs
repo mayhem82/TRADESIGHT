@@ -1,5 +1,6 @@
 import { CUE_TYPES, DETECTOR_VERSION, fitInside } from './vision-core.mjs';
 import { sceneCueAt } from './scene-core.mjs';
+import { setupOnlineAnalysis } from './online-analysis.mjs';
 import { canQueryContext, loadMappedContext, GEOLOGY_GUIDE, MINERAL_GUIDE } from './camera-geology.mjs';
 import { readPhotoLocation, embedPhotoLocation, validPhotoLocation, locationLabel } from './photo-metadata.mjs';
 import { photoStore } from './photo-store.mjs';
@@ -14,6 +15,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   let photo = null, photoBusy = false;
   let scanMode = 'contrast';
   const cueReviews = new Map();
+  const online = setupOnlineAnalysis({ getSource: () => ({ displayed, photo }), freeze: () => { running = false; cancelWork(); controls(); } });
   const status = text => { $('scanStatus').textContent = text; $('scanPanelStatus').textContent = text; };
   const enabled = () => ['pale', 'dark'].filter(kind => $('scan-' + kind).checked);
 
@@ -58,9 +60,10 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     $('sceneReview').hidden = !selected || !displayed?.result.model;
     $('sceneReviewStatus').textContent = selected && cueReviews.has(selected.id) ? 'Your visual review: ' + cueReviews.get(selected.id).verdict + '. Geological identification remains unconfirmed.' : 'Model suggestion awaiting visual review.';
     $('scanFilters').hidden = !!displayed?.result.model;
+    online.sync(displayed, photo);
   }
   function reset() {
-    cancelWork(); clearGeology(); cancelPhotoPin?.(); running = false; selected = null; displayed = null; photo = null; photoBusy = false; scanMode = 'contrast'; cueReviews.clear();
+    online.clear(); cancelWork(); clearGeology(); cancelPhotoPin?.(); running = false; selected = null; displayed = null; photo = null; photoBusy = false; scanMode = 'contrast'; cueReviews.clear();
     canvas.width = canvas.height = 1; canvas.hidden = true;
     view.classList.remove('scan-active'); $('scanResults').replaceChildren();
     $('scanExplanation').textContent = ''; $('scanObservation').textContent = '';
