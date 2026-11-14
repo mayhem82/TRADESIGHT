@@ -1,6 +1,7 @@
 import { CUE_TYPES, DETECTOR_VERSION, fitInside } from './vision-core.mjs';
 import { sceneCueAt } from './scene-core.mjs';
 import { setupOnlineAnalysis } from './online-analysis.mjs';
+import { photoFocusAt } from './photo-focus.mjs';
 import { canQueryContext, loadMappedContext, GEOLOGY_GUIDE, MINERAL_GUIDE } from './camera-geology.mjs';
 import { readPhotoLocation, embedPhotoLocation, validPhotoLocation, locationLabel } from './photo-metadata.mjs';
 import { photoStore } from './photo-store.mjs';
@@ -12,7 +13,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   let worker = null, epoch = 0, sequence = 0, timer, watchdog;
   let pending = null, displayed = null, selected = null, running = false, cameraActive = false;
   let geology = null, geologyController = null;
-  let photo = null, photoBusy = false;
+  let photo = null, photoBusy = false, focusMode = false, focusGeneration = 0;
   let scanMode = 'contrast';
   const cueReviews = new Map();
   const online = setupOnlineAnalysis({ getSource: () => ({ displayed, photo }), freeze: () => { running = false; cancelWork(); controls(); } });
@@ -35,7 +36,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     $('freezeScan').hidden = displayed?.context.source === 'photo';
     $('scanReadout').hidden = !view.classList.contains('scan-active');
     $('scanSource').textContent = running ? 'CAMERA SCAN · UPDATING' :
-      displayed?.context.source === 'photo' ? 'LOCAL PHOTO · STILL IMAGE' : 'CAMERA FRAME · FROZEN';
+      displayed?.context.source === 'photo' ? (displayed.context.photoCrop ? 'LOCAL PHOTO · CLOSE-UP' : 'LOCAL PHOTO · STILL IMAGE') : 'CAMERA FRAME · FROZEN';
     if (displayed?.result.model) $('scanSource').textContent = 'AI SCENE · ' + $('scanSource').textContent;
     $('scanCamera').setAttribute('aria-pressed', String(running));
     $('scanGeoButton').disabled = !canQueryContext(displayed?.context) || !!geologyController;
@@ -45,6 +46,12 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
       : displayed?.context.source === 'photo'
         ? validPhotoLocation(displayed.context.location) ? 'Photo location is outside supported mainland NSW geology coverage.' : 'Photo location is not set. Read embedded GPS, pinpoint on the map, or explicitly assign your current position.'
         : 'Enable GPS before scanning to attach a camera position. A map search centre is never used as the camera position.';
+    $('photoFocus').hidden = !photo;
+    $('photoFocus').disabled = !photo || photoBusy || !!pending || !displayed || displayed.context.source !== 'photo';
+    $('photoFocus').textContent = focusMode ? 'Cancel focus' : 'Focus an area';
+    $('photoFocus').setAttribute('aria-pressed', String(focusMode));
+    $('photoFull').hidden = !photo || !displayed?.context.photoCrop;
+    $('photoFull').disabled = photoBusy || !!pending;
     $('photoLocationPanel').hidden = !photo;
     $('photoLocationName').textContent = photo?.name || '';
     $('photoLocationStatus').textContent = photo ? locationLabel(photo.location) : '';
@@ -57,13 +64,14 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     $('analyseScene').disabled = (!displayed && !cameraActive) || photoBusy || pending?.mode === 'scene';
     $('cancelScene').hidden = pending?.mode !== 'scene';
     $('contrastView').hidden = !displayed?.result.model;
+    $('contrastView').disabled = photoBusy || !!pending;
     $('sceneReview').hidden = !selected || !displayed?.result.model;
     $('sceneReviewStatus').textContent = selected && cueReviews.has(selected.id) ? 'Your visual review: ' + cueReviews.get(selected.id).verdict + '. Geological identification remains unconfirmed.' : 'Model suggestion awaiting visual review.';
     $('scanFilters').hidden = !!displayed?.result.model;
-    online.sync(displayed, photo);
+    online.sync(displayed, photo, photoBusy);
   }
   function reset() {
-    online.clear(); cancelWork(); clearGeology(); cancelPhotoPin?.(); running = false; selected = null; displayed = null; photo = null; photoBusy = false; scanMode = 'contrast'; cueReviews.clear();
+    focusGeneration++; online.clear(); cancelWork(); clearGeology(); cancelPhotoPin?.(); running = false; selected = null; displayed = null; photo = null; photoBusy = false; focusMode = false; scanMode = 'contrast'; cueReviews.clear();
     canvas.width = canvas.height = 1; canvas.hidden = true;
     view.classList.remove('scan-active'); $('scanResults').replaceChildren();
     $('scanExplanation').textContent = ''; $('scanObservation').textContent = '';
@@ -171,8 +179,8 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     $('sceneRawClasses').textContent = displayed.result.model ? JSON.stringify({ model: displayed.result.model, pixelsByRawLabel: displayed.result.rawClassCounts, omittedRegions: displayed.result.suppressed }, null, 2) : '';
   }
   function choose(id) {
-    if (!displayed) return;
-    running = false; cancelWork();
+    if (!displayed || photoBusy) return;
+    running = false; focusMode = false; cancelWork();
     selected = displayed.result.cues.find(cue => cue.id === id) || null;
     render(); controls(); status('Frame frozen for inspection. ' + (cameraActive ? 'Camera remains on; Close switches it off.' : 'Photo stays on this device.'));
     $('scanExplanation').focus({ preventScroll: true });
@@ -184,12 +192,42 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     if (!fit) return;
     const x = (event.clientX - rect.left - fit.x) / fit.width;
     const y = (event.clientY - rect.top - fit.y) / fit.height;
+    if (focusMode && photo && displayed.context.source === 'photo') {
+      const crop = photoFocusAt(displayed.context.photoCrop, x, y);
+      if (!crop) { status('Tap inside the photo, or return to the full photo to choose another area.'); return; }
+      focusMode = false; redrawPhoto(crop); return;
+    }
     const hit = displayed.result.model ? sceneCueAt(displayed.result, x, y) :
       displayed.result.cues.filter(({ box: b }) =>
         x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height)
         .sort((a, b) => a.box.width * a.box.height - b.box.width * b.box.height)[0];
     if (hit) choose(hit.id);
   };
+  $('photoFocus').onclick = () => {
+    if (!photo || !displayed || pending || photoBusy) return;
+    focusMode = !focusMode; controls();
+    status(focusMode ? 'Tap the photo to focus on that area. The original photo and GPS stay unchanged.' : 'Focus cancelled.');
+  };
+  $('photoFull').onclick = () => { if (photo && displayed && !pending && !photoBusy) { focusMode = false; redrawPhoto(null); } };
+  async function redrawPhoto(crop) {
+    const current = photo, previous = displayed; if (!current || !previous || previous.context.source !== 'photo') return;
+    scanMode = previous.result.model ? 'scene' : 'contrast';
+    online.clear(); cancelWork(); clearGeology(); running = false; selected = null; cueReviews.clear();
+    const local = epoch, focusToken = ++focusGeneration; photoBusy = true; controls(); status(crop ? 'Preparing a close-up from the original photo…' : 'Restoring the full photo…');
+    let bitmap;
+    try {
+      bitmap = await createImageBitmap(current.blob);
+      if (local !== epoch || photo !== current || displayed !== previous || document.hidden) return;
+      const b = crop || {x:0,y:0,width:1,height:1};
+      const sourceWidth = bitmap.width * b.width, sourceHeight = bitmap.height * b.height;
+      const scale = Math.min(1, 480 / Math.max(sourceWidth, sourceHeight));
+      const frame = document.createElement('canvas'); frame.width = Math.max(1, Math.round(sourceWidth * scale)); frame.height = Math.max(1, Math.round(sourceHeight * scale));
+      frame.getContext('2d').drawImage(bitmap, bitmap.width*b.x, bitmap.height*b.y, sourceWidth, sourceHeight, 0, 0, frame.width, frame.height);
+      photoBusy = false; submit(frame, { ...previous.context, photoCrop: crop });
+      status(crop ? 'Scanning close-up locally. Image coordinates refer to the close-up; its bounds are retained with field notes.' : 'Scanning the full photo locally.');
+    } catch (error) { if (local === epoch && photo === current) status('Could not prepare the photo: ' + error.message + '. The previous view remains available.'); }
+    finally { bitmap?.close(); if (focusToken === focusGeneration && photo === current) { photoBusy = false; controls(); } }
+  }
   function observation() {
     if (!selected || !displayed) return null;
     return { detector: displayed.result.version || DETECTOR_VERSION, model: displayed.result.model || null,
@@ -253,7 +291,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   $('analyseScene').onclick = () => {
     if (!displayed && !cameraActive) return;
     const previous = displayed;
-    cancelWork(); clearGeology(); running = false; selected = null; scanMode = 'scene';
+    focusMode = false; cancelWork(); clearGeology(); running = false; selected = null; scanMode = 'scene';
     if (previous) { status('Preparing AI scene analysis locally…'); submit(previous.frame, previous.context); }
     else {
       running = true; view.classList.add('scan-active'); capture(); running = false;
@@ -267,7 +305,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   };
   $('contrastView').onclick = () => {
     if (!displayed) return;
-    const { frame, context } = displayed; cancelWork(); clearGeology(); scanMode = 'contrast'; running = false; submit(frame, context);
+    const { frame, context } = displayed; focusMode = false; cancelWork(); clearGeology(); scanMode = 'contrast'; running = false; submit(frame, context);
   };
   for (const [id, verdict] of [['sceneAccept', 'matches visible feature'], ['sceneReject', 'wrong or uncertain']]) $(id).onclick = () => {
     if (!selected || !displayed?.result.model) return;

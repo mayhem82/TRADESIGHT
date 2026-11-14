@@ -1,0 +1,3 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {photoFocusAt} from './photo-focus.mjs';
+test('focus is centered and clamps to original photo edges',()=>{assert.deepEqual(photoFocusAt(null,.5,.5),{x:.25,y:.25,width:.5,height:.5});assert.deepEqual(photoFocusAt(null,.01,.99),{x:0,y:.5,width:.5,height:.5});assert.equal(photoFocusAt(null,1,.5),null);assert.equal(photoFocusAt(null,-.1,.5),null)});
+test('repeated focus composes in original-photo coordinates and stops at limit',()=>{let p=photoFocusAt(null,.5,.5);p=photoFocusAt(p,.5,.5);assert.deepEqual(p,{x:.375,y:.375,width:.25,height:.25});p=photoFocusAt(p,.5,.5);p=photoFocusAt(p,.5,.5);assert.equal(p.width,1/16);assert.equal(photoFocusAt(p,.5,.5),null)});

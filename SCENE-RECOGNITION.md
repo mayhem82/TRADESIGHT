@@ -29,3 +29,7 @@ The public outcrop run took approximately 6.6 seconds of model time in the teste
 - Internal functional fixture: [SPHSP bedrock outcrop 01, Drdpw](https://commons.wikimedia.org/wiki/File:SPHSP_bedrock_outcrop_01.jpg), CC BY-SA 4.0.
 
 The public fixture photographs are not bundled in the app. Personal conversation attachments are excluded from development fixtures and the published source/assets.
+
+## Photo close-ups
+
+Focus an area lets the user tap an imported image and locally reanalyse a half-width, half-height crop drawn from the original photo. Further focus steps are bounded; Full photo restores the whole view. The crop is displayed as the analysed frame, and its normalized bounds are recorded with saved cues. The original photo and GPS are unchanged. A close-up can preserve detail lost in a full-frame 480-pixel preview, but its scene labels are not verified geology or evidence of gold. If optional online analysis is configured, it sends the displayed crop, re-encoded without metadata.
