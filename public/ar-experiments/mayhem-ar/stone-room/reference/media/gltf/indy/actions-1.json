@@ -1,0 +1,45 @@
+{
+  "fps": 30,
+  "jointCount": 24,
+  "clips": {
+    "HeadTurn": {
+      "offset": 0,
+      "frames": 66,
+      "duration": 2.1666666666666665,
+      "loop": false,
+      "source": "Forward head turn tracked from the Raiders on-set featurette.",
+      "sourceUrl": "https://amblin.com/movie/raiders-of-the-lost-ark/?video=9b7yMKcJm6Q"
+    },
+    "Run": {
+      "offset": 101376,
+      "frames": 20,
+      "duration": 0.6666666666666666,
+      "loop": true,
+      "source": "Meshy rigging run animation."
+    },
+    "HatTip": {
+      "offset": 132096,
+      "frames": 50,
+      "duration": 1.6333333333333333,
+      "loop": false,
+      "source": "Shoulders, elbows and wrists tracked in Raiders of the Lost Ark at 20.56\u201322.19 seconds in Movieclips c6XHLe94SJA. Brim contact fitted to the model.",
+      "sourceUrl": "https://www.youtube.com/watch?v=c6XHLe94SJA&t=20s"
+    },
+    "Reach": {
+      "offset": 208896,
+      "frames": 89,
+      "duration": 2.933333333333333,
+      "loop": false,
+      "source": "Shoulders, elbows and wrists tracked during the Raiders idol exchange at 15.64\u201318.56 seconds in Movieclips c6XHLe94SJA.",
+      "sourceUrl": "https://www.youtube.com/watch?v=c6XHLe94SJA&t=15s"
+    },
+    "Satchel": {
+      "offset": 345600,
+      "frames": 68,
+      "duration": 2.2333333333333334,
+      "loop": false,
+      "source": "Ford looking down at his bag and raising his head, tracked from the Amblin Raiders on-set featurette at 6:14.8\u20136:17.0. Monocular depth is estimated and brief gaps in the arm detections are interpolated.",
+      "sourceUrl": "https://amblin.com/movie/raiders-of-the-lost-ark/?video=9b7yMKcJm6Q"
+    }
+  }
+}

@@ -70,6 +70,11 @@
     connect({renderer, modelNode, motionPlayer, template, actors, appearance, exposure, currentVisual, currentMotion, setActive}) {
       let active = {visual:currentVisual, motion:currentMotion, appearance:appearance.records};
       cache.set(initial, Promise.resolve(active));
+      const activateMotion = (key, item) => {
+        const player = window.stoneWallActions.bind(key, item.motion, () => actors().length > 0);
+        setActive(item.visual, player);
+      };
+      activateMotion(initial, active);
       stage = {
         async load(model) {
           const visual = new modelNode({url:model.scene});
@@ -105,7 +110,7 @@
             actor.addNode(next.visual.clone());
             appearance.attach(actor);
           }
-          setActive(next.visual, next.motion);
+          activateMotion(model === models.indy ? 'indy' : 'companion', next);
           active = next;
         }
       };
