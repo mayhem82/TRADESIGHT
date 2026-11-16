@@ -4,7 +4,8 @@ import {GrowingPlant} from './flowers.js';
 import {GrowthClock,clamp,intersectHeight,sampleGrowth} from './growth.js';
 const $=id=>document.getElementById(id),clock=new GrowthClock(32);
 const state={ready:false,supported:false,starting:false,session:null,reference:null,hitSource:null,table:null,candidate:null,placed:false,tracking:false,anchor:null,anchorPending:false,anchorBusy:false,epoch:0,editing:false};
-let renderer,scene,camera,bottle,plant,floor,reticle,lastTime=null,previewYaw=.26,drag=null,lastCamera=null,height=.309;
+let renderer,scene,camera,bottle,plant,overlay,floor,reticle,lastTime=null,previewYaw=.26,drag=null,lastCamera=null,height=.309,bottleWidth=1,bottleYaw=0;
+const glassMaterials=[];
 let position=new T.Vector3(),savedSize=new T.Vector2(),lastSyncKey='';
 const note=text=>{if($('status').textContent!==text)$('status').textContent=text;};
 const track=text=>{if($('tracking').textContent!==text)$('tracking').textContent=text;};
@@ -23,15 +24,22 @@ function sync(){
  $('place').textContent=state.placed?'Re-align bottle mouth':state.table===null?'Set tabletop':'Place at bottle opening';
  $('height').disabled=state.placed;$('nudges').hidden=!state.editing;
  $('adjust').textContent=state.editing?'Finish alignment':'Fine alignment';
- if(plant)plant.guide.visible=active&&state.placed&&state.editing&&state.tracking;
+ if(plant)plant.guide.visible=active&&state.tracking&&((state.placed&&state.editing)||(!state.placed&&state.table!==null&&!!state.candidate));
 }
 function discardAnchor(){try{state.anchor?.delete();}catch{}state.anchor=null;state.anchorPending=false;}
+function fitBottle(){
+ const scale=height/.309;
+ bottle.position.set(0,-height,0);bottle.scale.set(scale*bottleWidth,scale,scale*bottleWidth);
+ overlay.rotation.y=bottleYaw;
+}
+function useARGlass(active){
+ for(const {mesh,preview,ar}of glassMaterials)mesh.material=active?ar:preview;
+}
 function buildPlant(){
- if(plant){scene.remove(plant.root);plant.dispose();}
- plant=new GrowingPlant({height,index:3,above:.34});scene.add(plant.root);
- plant.root.position.copy(state.placed?position:new T.Vector3(0,height,0));
- plant.root.visible=!state.session||state.placed;plant.update(clock.progress,0);
- if(bottle)bottle.scale.setScalar(height/.309);
+ if(plant){overlay.remove(plant.root);plant.dispose();}
+ plant=new GrowingPlant({height,index:3,above:.34});overlay.add(plant.root);
+ plant.root.position.set(0,0,0);overlay.position.copy(state.placed?position:new T.Vector3(0,height,0));
+ overlay.visible=!state.session||state.placed;plant.root.visible=true;plant.update(clock.progress,0);fitBottle();lastSyncKey='';
 }
 function playback(){
  const v=sampleGrowth(clock.progress);$('stage').textContent=v.stage;
@@ -40,7 +48,7 @@ function playback(){
 }
 function resetTable(){
  discardAnchor();state.epoch++;state.table=null;state.candidate=null;state.placed=false;state.editing=false;clock.playing=false;clock.seek(0);
- plant.root.visible=false;track('Move the phone slowly and aim at the tabletop beside the bottle.');note('1 · Scan the table, then tap Set tabletop.');sync();playback();
+ overlay.visible=false;plant.root.visible=false;track('Move the phone slowly and aim at the tabletop beside the bottle.');note('1 · Scan the table, then tap Set tabletop.');sync();playback();
 }
 async function startAR(){
  if(state.starting||state.session||!state.ready)return;
@@ -61,7 +69,7 @@ async function startAR(){
   if(state.session!==s){state.hitSource?.cancel();return;}
   state.table=null;state.placed=false;state.candidate=null;state.tracking=false;state.editing=false;
   clock.playing=false;clock.seek(0);lastTime=null;
-  bottle.visible=false;floor.visible=false;plant.root.visible=false;scene.background=null;renderer.setClearColor(0,0);
+  useARGlass(true);bottle.visible=true;floor.visible=false;overlay.visible=false;plant.root.visible=false;scene.background=null;renderer.setClearColor(0,0);
   document.documentElement.classList.add('xr');$('panel').hidden=false;$('toggle-panel').textContent='Hide controls';$('toggle-panel').setAttribute('aria-expanded','true');$('mode').textContent='LIVE BOTTLE AR';
   track('Scan the tabletop beside your bottle.');note('1 · Aim at the table and tap Set tabletop.');
  }catch(e){
@@ -75,19 +83,19 @@ function finishAR(s){
  Object.assign(state,{session:null,reference:null,hitSource:null,table:null,candidate:null,placed:false,tracking:false,editing:false,anchorBusy:false});
  clock.playing=false;lastTime=null;reticle.visible=false;
  document.documentElement.classList.remove('xr');$('panel').hidden=false;$('mode').textContent='3D PREVIEW';
- bottle.visible=true;floor.visible=true;plant.root.visible=true;plant.root.position.set(0,height,0);plant.guide.visible=false;
+ useARGlass(false);bottle.visible=true;floor.visible=true;overlay.visible=true;plant.root.visible=true;overlay.position.set(0,height,0);plant.root.position.set(0,0,0);plant.guide.visible=false;
  scene.background=new T.Color(0x132820);renderer.setClearColor(0x132820,1);camera.fov=39;queueMicrotask(resize);track('Drag to look around · stages and speed are adjustable.');note('AR ended. Alignment resets each time you start.');sync();
 }
 function loseTracking(){
- state.tracking=false;state.candidate=null;clock.playing=false;plant.root.visible=false;reticle.visible=false;
+ state.tracking=false;state.candidate=null;clock.playing=false;overlay.visible=false;plant.root.visible=false;reticle.visible=false;
  track('Tracking paused. Move slowly to recover.');note('Growth is paused. Check alignment when tracking returns, then Resume.');sync();
 }
 function place(){
- if(state.placed){discardAnchor();state.epoch++;state.placed=false;state.editing=false;clock.playing=false;plant.root.visible=false;note('Aim at the bottle opening again, then place.');sync();return;}
+ if(state.placed){discardAnchor();state.epoch++;state.placed=false;state.editing=false;clock.playing=false;overlay.visible=false;plant.root.visible=false;note('Aim at the bottle opening again, then place.');sync();return;}
  if(!state.candidate||!state.tracking)return;
- if(state.table===null){state.table=state.candidate[1];state.candidate=null;note('2 · Aim the centre dot at the open bottle mouth, then Place.');track('Aim slightly down at the bottle opening. Adjust bottle height if needed.');}
+ if(state.table===null){state.table=state.candidate[1];state.candidate=null;note('2 · Align the transparent bottle over the real one, then Place.');track('Aim at the opening. The glass bottle and plant will align together.');}
  else{
-  position.fromArray(state.candidate);plant.root.position.copy(position);plant.root.visible=true;state.placed=true;state.anchorPending=true;state.candidate=null;
+  position.fromArray(state.candidate);overlay.position.copy(position);overlay.visible=true;plant.root.visible=true;state.placed=true;state.anchorPending=true;state.candidate=null;
   reticle.visible=false;clock.seek(0);clock.playing=false;playback();note('Aligned · tap Grow plant. The first shoot starts inside the bottle.');track('Bottle aligned for this session. Keep it still.');
  }
  sync();
@@ -107,15 +115,16 @@ function processXR(frame){
    }}catch{}
   }else state.candidate=intersectHeight([m[12],m[13],m[14]],[-m[8],-m[9],-m[10]],state.table+height);
   reticle.visible=!!state.candidate;if(state.candidate)reticle.position.fromArray(state.candidate);
-  plant.root.visible=false;
+  overlay.visible=state.table!==null&&!!state.candidate;plant.root.visible=overlay.visible;
+  if(overlay.visible)overlay.position.fromArray(state.candidate);
   if(state.table!==null&&!state.candidate)track('Aim slightly downward at the opening, from within arm’s reach.');
  }else{
-  plant.root.visible=true;
+  overlay.visible=true;plant.root.visible=true;
   if(state.anchor){
    const ap=frame.getPose(state.anchor.anchorSpace,state.reference);
-   if(ap){plant.root.position.set(ap.transform.position?.x??ap.transform.matrix[12],ap.transform.position?.y??ap.transform.matrix[13],ap.transform.position?.z??ap.transform.matrix[14]);}
-   else{plant.root.visible=false;clock.playing=false;track('Anchor tracking paused. Move slowly, or re-align the mouth.');}
-  }else plant.root.position.copy(position);
+   if(ap){overlay.position.set(ap.transform.position?.x??ap.transform.matrix[12],ap.transform.position?.y??ap.transform.matrix[13],ap.transform.position?.z??ap.transform.matrix[14]);}
+   else{overlay.visible=false;plant.root.visible=false;clock.playing=false;track('Anchor tracking paused. Move slowly, or re-align the mouth.');}
+  }else overlay.position.copy(position);
   if(returning)track('Tracking restored. Check the opening, then Resume growth.');
  }
  if(state.anchorPending&&!state.anchorBusy&&typeof frame.createAnchor==='function'){
@@ -124,14 +133,15 @@ function processXR(frame){
    if(state.session===s&&token===state.epoch&&state.placed&&!state.editing)state.anchor=a;else a.delete();
   }).catch(()=>{if(state.session===s)note('Aligned with world tracking for this session. Re-align if it drifts.');}).finally(()=>{if(state.session===s)state.anchorBusy=false;});
  }
- sync();return plant.root.visible||!state.placed;
+ sync();return overlay.visible||!state.placed;
 }
 function nudge(id){
  if(!state.placed||!lastCamera)return;discardAnchor();state.epoch++;
  const m=lastCamera,flat=new T.Vector3(m[8],0,m[10]).normalize(),right=new T.Vector3(m[0],0,m[2]).normalize(),d=.005;
  if(id==='left')position.addScaledVector(right,-d);if(id==='right')position.addScaledVector(right,d);
  if(id==='near')position.addScaledVector(flat,d);if(id==='far')position.addScaledVector(flat,-d);
- if(id==='up')position.y+=d;if(id==='down')position.y-=d;plant.root.position.copy(position);
+ if(id==='up')position.y+=d;if(id==='down')position.y-=d;overlay.position.copy(position);
+ if(id==='turn-left')bottleYaw+=Math.PI/36;if(id==='turn-right')bottleYaw-=Math.PI/36;fitBottle();
 }
 function resize(){
  if(!renderer||state.session)return;
@@ -166,7 +176,14 @@ async function init(){
  const backdrop=new T.Mesh(new T.PlaneGeometry(.84,1.05),new T.MeshBasicMaterial({color:0x6e8b6c}));backdrop.position.set(0,.40,-.27);floor.add(backdrop);scene.add(floor);
  reticle=new T.Mesh(new T.RingGeometry(.012,.015,48),new T.MeshBasicMaterial({color:0xe1edb3,side:T.DoubleSide,depthTest:false}));reticle.rotation.x=-Math.PI/2;reticle.visible=false;reticle.renderOrder=100;scene.add(reticle);
  const model=await new GLTFLoader().loadAsync('assets/green-bottle.glb');
- bottle=model.scene;const root=bottle.children[0];root.position.set(0,0,0);bottle.traverse(o=>{if(o.material?.transmission){o.material.color.setRGB(.57,.86,.58);o.material.roughness=.065;o.material.envMapIntensity=.65;o.material.side=T.FrontSide;}});scene.add(bottle);buildPlant();
+ overlay=new T.Group();overlay.name='Bottle and plant overlay';scene.add(overlay);
+ bottle=model.scene;const root=bottle.children[0];root.position.set(0,0,0);bottle.traverse(o=>{if(o.material?.transmission){
+  o.material.color.setRGB(.57,.86,.58);o.material.roughness=.065;o.material.envMapIntensity=.65;o.material.side=T.FrontSide;
+  // A transparent tint remains visible over the live camera, which is not part of
+  // Three.js's transmission buffer. Both meshes keep the plant visible inside.
+  const ar=new T.MeshPhysicalMaterial({color:0x65b977,transparent:true,opacity:.18,roughness:.065,metalness:0,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:.75,depthWrite:false,side:T.FrontSide});
+  glassMaterials.push({mesh:o,preview:o.material,ar});
+ }});overlay.add(bottle);buildPlant();
  const canvas=renderer.domElement;canvas.addEventListener('pointerdown',e=>{if(state.session)return;drag={id:e.pointerId,x:e.clientX};canvas.setPointerCapture(e.pointerId);});canvas.addEventListener('pointermove',e=>{if(drag?.id!==e.pointerId||state.session)return;previewYaw-=(e.clientX-drag.x)*.008;drag.x=e.clientX;});for(const name of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(name,()=>drag=null);
  $('grow').onclick=()=>{if(clock.progress>=1)clock.seek(0);clock.playing=true;note('Growing from inside the glass · leaves, then buds, then flowers.');sync();};
  $('pause').onclick=()=>{clock.playing=!clock.playing;if(clock.playing&&clock.progress>=1)clock.seek(0);sync();};
@@ -176,7 +193,8 @@ async function init(){
  for(const b of document.querySelectorAll('[data-stage]'))b.onclick=()=>{clock.playing=false;clock.seek(Number(b.dataset.stage)/100);playback();sync();};
  $('height').onchange=e=>{height=clamp(Number(e.target.value)||30.9,15,50)/100;e.target.value=(height*100).toFixed(1);buildPlant();};
  $('start').onclick=startAR;$('place').onclick=place;$('exit').onclick=()=>state.session?.end();$('retable').onclick=resetTable;
- $('adjust').onclick=()=>{state.editing=!state.editing;clock.playing=false;if(state.editing){position.copy(plant.root.position);discardAnchor();state.epoch++;}else state.anchorPending=true;sync();};
+ $('adjust').onclick=()=>{state.editing=!state.editing;clock.playing=false;if(state.editing){position.copy(overlay.position);discardAnchor();state.epoch++;}else state.anchorPending=true;sync();};
+ $('bottle-width').oninput=e=>{bottleWidth=Number(e.target.value)/100;$('bottle-width-value').textContent=e.target.value+'%';fitBottle();};
  for(const b of document.querySelectorAll('[data-nudge]'))b.onclick=()=>nudge(b.dataset.nudge);
  $('toggle-panel').onclick=()=>{$('panel').hidden=!$('panel').hidden;$('toggle-panel').textContent=$('panel').hidden?'Show controls':'Hide controls';$('toggle-panel').setAttribute('aria-expanded',String(!$('panel').hidden));};
  $('overlay').addEventListener('beforexrselect',e=>{if(e.target.closest?.('#panel,#toggle-panel'))e.preventDefault();});
@@ -185,6 +203,6 @@ async function init(){
  try{state.supported=!!navigator.xr&&await navigator.xr.isSessionSupported('immersive-ar');}catch{}
  state.ready=true;$('support').textContent=state.supported?'AR ready · use the green bottle, upright on a table.':'Preview works here. Live AR needs a compatible phone with WebXR, such as supported Android Chrome.';
  track('Drag to look around · stages and speed are adjustable.');note('Ready · grow your plant, or start AR over the real bottle.');sync();resize();renderer.setAnimationLoop(render);
- if(new URL(location.href).searchParams.has('test'))window.__BLOOM={state,clock,renderer,scene,camera,get plant(){return plant;},get bottle(){return bottle;},processXR,resetTable,finishAR,place,intersectHeight,sampleGrowth};
+ if(new URL(location.href).searchParams.has('test'))window.__BLOOM={state,clock,renderer,scene,camera,get plant(){return plant;},get bottle(){return bottle;},get overlay(){return overlay;},processXR,resetTable,finishAR,place,intersectHeight,sampleGrowth};
 }
 init().catch(e=>{note('Could not load Bottle Bloom: '+e.message);$('support').textContent='Reload to try again.';console.error(e);});
