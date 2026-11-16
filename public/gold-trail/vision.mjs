@@ -11,7 +11,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   const $ = id => document.getElementById(id);
   const canvas = $('scanCanvas'), ctx = canvas.getContext('2d');
   let worker = null, epoch = 0, sequence = 0, timer, watchdog;
-  let pending = null, displayed = null, selected = null, running = false, cameraActive = false;
+  let pending = null, displayed = null, selected = null, running = false, cameraActive = false, capturePending = false;
   let geology = null, geologyController = null;
   let photo = null, photoBusy = false, focusMode = false, focusGeneration = 0;
   let scanMode = 'contrast', goldCheckFrame = null;
@@ -29,7 +29,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   }
   function controls() {
     $('scanCamera').disabled = !cameraActive;
-    $('scanStart').disabled = !cameraActive;
+    $('scanStart').disabled = !cameraActive || capturePending;
     $('freezeScan').disabled = (!displayed && !pending) || pending?.mode === 'scene';
     $('freezeScan').textContent = running ? 'Freeze frame' : 'Resume scan';
     $('freezeScan').hidden = displayed?.context.source === 'photo';
@@ -52,15 +52,16 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     $('photoFull').hidden = !photo || !displayed?.context.photoCrop;
     $('photoFull').disabled = photoBusy || !!pending;
     $('photoLocationPanel').hidden = !photo;
+    $('photoLocationSummary').textContent = photo ? 'Photo · ' + (validPhotoLocation(photo.location) ? 'location set' : 'no location') + ' · ' + (photo.saved && !photo.dirty ? 'saved' : 'not saved') : 'Photo location and saving';
     $('photoLocationName').textContent = photo?.name || '';
     $('photoLocationStatus').textContent = photo ? locationLabel(photo.location) : '';
     $('photoRestoreGps').hidden = !photo?.originalLocation;
     $('photoShowMap').disabled = !validPhotoLocation(photo?.location);
-    for (const id of ['photoUseGps', 'photoPinMap', 'photoSave', 'photoDownload', 'photoRestoreGps']) $(id).disabled = !photo || photoBusy;
+    for (const id of ['photoUseGps', 'photoPinMap', 'photoSave', 'photoDownload', 'photoOriginal', 'photoRestoreGps']) $(id).disabled = !photo || photoBusy;
     $('photoSave').textContent = photo?.saved && !photo.dirty ? 'Photo saved locally' : 'Save photo + location locally';
     $('returnToPhoto').hidden = !photo || !view.hidden;
     $('scanObservation').disabled = !selected || photoBusy;
-    $('analyseScene').disabled = (!displayed && !cameraActive) || photoBusy || pending?.mode === 'scene';
+    $('analyseScene').disabled = (!displayed && !cameraActive) || photoBusy || capturePending || pending?.mode === 'scene';
     $('cancelScene').hidden = pending?.mode !== 'scene';
     $('contrastView').hidden = !displayed?.result.model;
     $('contrastView').disabled = photoBusy || !!pending;
@@ -70,8 +71,8 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     updateGoldChecks();
   }
   function reset() {
-    focusGeneration++; cancelWork(); clearGeology(); cancelPhotoPin?.(); running = false; selected = null; displayed = null; photo = null; photoBusy = false; focusMode = false; scanMode = 'contrast'; cueReviews.clear();
-    clearGoldChecks();
+    focusGeneration++; capturePending = false; cancelWork(); clearGeology(); cancelPhotoPin?.(); running = false; selected = null; displayed = null; photo = null; photoBusy = false; focusMode = false; scanMode = 'contrast'; cueReviews.clear();
+    clearGoldChecks(); $('photoCaptureStatus').hidden = true; $('photoCaptureStatus').textContent = '';
     canvas.width = canvas.height = 1; canvas.hidden = true;
     view.classList.remove('scan-active'); $('scanResults').replaceChildren();
     $('scanExplanation').textContent = ''; $('scanObservation').textContent = '';
@@ -82,7 +83,16 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
       cancelWork(); running = false; scanMode = displayed.result.model ? 'scene' : 'contrast'; controls();
       status('AI scene analysis unavailable: ' + message + '. The photo, saved location and contrast view are still available.'); return;
     }
-    // Never retain a result whose source frame could no longer be refreshed.
+    // Keep an imported or captured photo available even if its optional scan fails.
+    if (photo && (pending?.context.source === 'photo' || displayed?.context.source === 'photo')) {
+      const previous = pending?.context.source === 'photo' ? pending : displayed;
+      cancelWork(); clearGeology(); running = false; selected = null; scanMode = 'contrast';
+      const frame = previous.frame;
+      displayed = { frame, context: previous.context, result: { version: 'image-preview', width: frame.width, height: frame.height,
+        cues: [], mask: new Uint8ClampedArray(frame.width * frame.height * 4) } };
+      render(); controls(); status('Scan unavailable: ' + message + '. The photo remains available to save or download.'); return;
+    }
+    // Never retain a camera result whose source frame could no longer be refreshed.
     reset(); if (!cameraActive) view.hidden = true;
     status('Scan unavailable: ' + message + '. You can still use the camera and written notes.');
     toast('Scan unavailable: ' + message);
@@ -110,13 +120,17 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   }
   function submit(frame, context) {
     if (pending) return;
-    const pixels = frame.getContext('2d').getImageData(0, 0, frame.width, frame.height);
-    pending = { frame, context, id: ++sequence, mode: scanMode };
     try {
+      const pixels = frame.getContext('2d').getImageData(0, 0, frame.width, frame.height);
+      pending = { frame, context, id: ++sequence, mode: scanMode };
       ensureWorker().postMessage({ id: pending.id, enabled: enabled(),
         frame: { data: pixels.data, width: frame.width, height: frame.height } }, [pixels.data.buffer]);
       watchdog = setTimeout(() => fail('processing timed out'), scanMode === 'scene' ? 90000 : 8000);
-    } catch (error) { fail(error.message); }
+    } catch (error) {
+      // Retain the photo frame even if reading pixels fails before the worker starts.
+      if (!pending && context.source === 'photo') pending = { frame, context, id: ++sequence, mode: scanMode };
+      fail(error.message);
+    }
     controls();
   }
   function makeFrame(source, width, height) {
@@ -371,29 +385,61 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     const { frame, context } = displayed; cancelWork(); selected = null;
     submit(frame, context);
   };
-  async function loadPhoto(file, saved = null) {
+  async function loadPhoto(file, saved = null, captured = null) {
     releaseCamera(); reset(); const local = epoch;
     if (!/^image\//.test(file.type) || file.size > 25 * 1024 * 1024) {
-      status('Choose an image file under 25 MB.'); return;
+      captured?.bitmap?.close?.(); status('Choose an image file under 25 MB.'); return;
     }
     status('Opening photo locally…');
-    let bitmap;
+    let bitmap = captured?.bitmap || null;
+    const capturedLocation = validPhotoLocation(captured?.location) ? captured.location : null;
+    const current = saved ? { ...saved, dirty: false, saved: true } : {
+      id: crypto.randomUUID(), name: file.name || 'field-photo', blob: file,
+      location: capturedLocation, originalLocation: null,
+      metadataMessage: 'Photo metadata has not been read.',
+      capturedAt: captured?.capturedAt || null, captureMethod: captured?.method || null,
+      captureWidth: captured?.width || null, captureHeight: captured?.height || null,
+      inspectedAt: new Date().toISOString(), saved: false, dirty: true
+    };
+    photo = current;
+    view.hidden = false; view.classList.add('scan-active'); controls();
     try {
       const buffer = await file.arrayBuffer(), metadata = readPhotoLocation(buffer);
-      bitmap = await createImageBitmap(file);
-      if (local !== epoch || document.hidden) return;
+      if (local !== epoch || photo !== current || document.hidden) return;
+      if (!saved) {
+        current.location = capturedLocation || metadata.location;
+        current.originalLocation = metadata.location;
+        current.metadataMessage = capturedLocation ? 'Camera GPS attached at capture. Save or download the photo to embed its location.' : metadata.message;
+      }
+      bitmap ||= await createImageBitmap(file);
+      if (local !== epoch || photo !== current || document.hidden) return;
       if (bitmap.width * bitmap.height > 48000000) throw new Error('Photo exceeds 48 megapixels; choose a smaller copy');
+      $('photoSaveStatus').textContent = saved ? 'Saved photo reopened from this browser.' : current.metadataMessage;
+      if (captured) {
+        photoBusy = true; controls();
+        $('photoCaptureStatus').hidden = false; $('photoCaptureStatus').textContent = 'Saving the captured photo on this device…';
+        try {
+          await savePhotoRecord(current);
+          if (photo === current) $('photoCaptureStatus').textContent = validPhotoLocation(current.location)
+            ? 'Photo saved on this device with its location.' : 'Photo saved on this device. No location was attached.';
+        } catch (error) {
+          if (photo === current) { $('photoCaptureStatus').textContent = 'Photo was not saved. Open Photo location and saving to download it.'; $('photoLocationPanel').open = true; }
+        } finally { if (photo === current) { photoBusy = false; controls(); } }
+      }
+      if (local !== epoch || photo !== current || document.hidden) return;
       const frame = makeFrame(bitmap, bitmap.width, bitmap.height);
-      photo = saved ? { ...saved, dirty: false, saved: true } : {
-        id: crypto.randomUUID(), name: file.name || 'field-photo', blob: file,
-        location: metadata.location, originalLocation: metadata.location,
-        metadataMessage: metadata.message, inspectedAt: new Date().toISOString(), saved: false, dirty: true
-      };
-      view.hidden = false; view.classList.add('scan-active');
-      $('photoSaveStatus').textContent = saved ? 'Saved photo reopened from this browser.' : metadata.message;
       submit(frame, { source: 'photo', photoId: photo.id, fileName: photo.name,
-        capturedAt: null, inspectedAt: photo.inspectedAt, location: photo.location, leadId: null });
-    } catch (error) { if (local === epoch) fail('photo could not be decoded. ' + error.message); }
+        capturedAt: photo.capturedAt || null, captureMethod: photo.captureMethod || null, inspectedAt: photo.inspectedAt, location: photo.location, leadId: null });
+    } catch (error) {
+      if (local === epoch && photo === current) {
+        $('photoLocationPanel').open = true;
+        if (captured) {
+          $('photoCaptureStatus').hidden = false;
+          $('photoCaptureStatus').textContent = current.saved ? 'Photo saved on this device; preview unavailable.' : 'Photo was not saved. Download the current photo file.';
+        }
+        controls(); status('Photo preview unavailable: ' + error.message + '. The photo remains available to save or download.');
+      }
+    }
     finally { bitmap?.close(); }
   }
   $('scanPhoto').onchange = event => {
@@ -404,6 +450,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     clearGeology(); photo.location = location; photo.dirty = true;
     displayed.context = { ...displayed.context, location };
     if (pending) pending.context = { ...pending.context, location };
+    if (!$('photoCaptureStatus').hidden) $('photoCaptureStatus').textContent = 'Location changed. Save the photo or download a copy to keep it.';
     $('photoSaveStatus').textContent = 'Location changed. Save the photo or download a copy to keep this change.'; controls();
   }
   $('photoPinMap').onclick = async () => {
@@ -474,6 +521,8 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     if (photo === current) {
       Object.assign(photo, record); if (displayed) displayed.context.fileName = record.name;
       $('photoSaveStatus').textContent = 'Photo saved locally' + (photo.location ? ' with embedded location metadata.' : '. Location is not set.') + ' You can reopen it below or from its map marker.';
+      if (!$('photoCaptureStatus').hidden) $('photoCaptureStatus').textContent = validPhotoLocation(photo.location)
+        ? 'Photo saved on this device with its location.' : 'Photo saved on this device. No location was attached.';
     }
     await refreshPhotoLibrary(); return record;
   }
@@ -485,6 +534,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     } catch (error) { if (photo === current) $('photoSaveStatus').textContent = 'Photo was not saved: ' + error.message + '. Try Download photo instead.'; }
     finally { if (photo === current) { photoBusy = false; controls(); } }
   };
+  $('photoOriginal').onclick = () => { if (photo && !photoBusy) download(photo.blob, photo.name); };
   $('photoDownload').onclick = async () => {
     const current = photo; if (!current) return;
     photoBusy = true; controls();
@@ -495,7 +545,8 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   document.addEventListener('gold-trail-photos-changed', refreshPhotoLibrary);
   refreshPhotoLibrary();
   reset();
-  return { reset, observation, openSavedPhoto,
-    setCameraActive(active) { cameraActive = active; controls(); }
+  return { reset, observation, openSavedPhoto, openCapturedPhoto: (file, context) => loadPhoto(file, null, context),
+    setCameraActive(active) { cameraActive = active; controls(); },
+    setCapturePending(active) { capturePending = active; controls(); }
   };
 }

@@ -35,3 +35,9 @@ node --test public/gold-trail/vision-core.test.mjs public/gold-trail/camera-geol
 ```
 
 Before adding automatic geological labels, obtain independently reviewed field imagery with feature masks, verified class definitions and source/location provenance. Freeze evaluation sites separately from development data, include foam, shadows, wet rock, vegetation and manufactured surfaces as hard negatives, and measure per-class precision/recall, localization errors and calibrated abstention on unseen sites. Define acceptable errors for the intended use before enabling a class. Keep unvalidated classes unavailable as geological identifications while preserving the visual inspection tool.
+
+## Camera capture and device controls
+
+The shutter uses the existing live camera track. It tries the browser's still-photo API, validates the result, and falls back to a JPEG from the full video frame if a native still is unavailable or unsuitable. It does not open a second camera. A fresh GPS fix, when already enabled, is recorded at the shutter press with its accuracy and measurement time; the map centre is never substituted. The capture is saved in local browser storage and, when a location is present, that location is embedded in the saved photo. A visible message and download controls remain available if saving or scanning fails; the current photo file may lack a newly assigned location.
+
+Torch and zoom appear only when the browser reports those capabilities. Control changes preserve existing camera constraints, and unsupported or failed controls do not stop the stream. Actual device settings are shown only when reported by the browser. Tests use generated images, fake tracks and a mock local photo store; they do not establish real Samsung camera, torch, zoom, performance or geological-recognition accuracy. Camera scene suggestions remain broad visual hints, not mineral or gold identification.
