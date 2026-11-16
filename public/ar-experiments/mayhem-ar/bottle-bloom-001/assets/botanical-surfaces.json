@@ -1,0 +1,21 @@
+{
+  "asset": "botanical-surfaces.png",
+  "method": "Built-in OpenAI image generation, using two botanical reference frames. Opaque two-part atlas: petal on the left, leaf on the right. Surface detail is also sampled for bump shading.",
+  "references": [
+    {
+      "author": "David Marvin",
+      "title": "Lima Bean Time Lapse",
+      "url": "https://commons.wikimedia.org/wiki/File:Lima_Bean_Time_Lapse.webm",
+      "license": "CC BY 3.0",
+      "license_url": "https://creativecommons.org/licenses/by/3.0/"
+    },
+    {
+      "author": "yellowcloud",
+      "title": "Lithops flower bud growth and first bloom",
+      "url": "https://commons.wikimedia.org/wiki/File:Lithops_flower_bud_growth_and_first_bloom_-_Time_lapse_HD_video.ogv",
+      "license": "CC BY 2.0",
+      "license_url": "https://creativecommons.org/licenses/by/2.0/"
+    }
+  ],
+  "changes": "Generated continuous petal and leaf surface patches from reference frames. Source video frames are not distributed. This is a generated texture, not a photographic scan."
+}

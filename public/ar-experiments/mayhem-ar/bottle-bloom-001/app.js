@@ -1,18 +1,21 @@
 import * as T from 'three';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
-import {GrowingPlant} from './flowers.js';
+import {GrowingPlant,loadBotanicalTextures} from './flowers.js?v=flower-control-3';
 import {GrowthClock,clamp,intersectHeight,sampleGrowth} from './growth.js';
 const $=id=>document.getElementById(id),clock=new GrowthClock(32);
 const state={ready:false,supported:false,starting:false,session:null,reference:null,hitSource:null,table:null,candidate:null,placed:false,tracking:false,anchor:null,anchorPending:false,anchorBusy:false,epoch:0,editing:false};
-let renderer,scene,camera,bottle,plant,overlay,floor,reticle,lastTime=null,previewYaw=.26,drag=null,lastCamera=null,height=.309,bottleWidth=1,bottleYaw=0;
+let renderer,scene,camera,bottle,plant,overlay,floor,reticle,coverageRing,lastTime=null,previewYaw=.26,drag=null,lastCamera=null,height=.309,bottleWidth=1,bottleYaw=0,startHeight=.012,coveredHeight=0;
 const glassMaterials=[];
 let position=new T.Vector3(),savedSize=new T.Vector2(),lastSyncKey='';
+let stickMove=[0,0],stickTurn=[0,0],stickTarget='flower',flowerYaw=0,groupMoved=false;
+const flowerOffset=new T.Vector3(),stickPads=[],UP=new T.Vector3(0,1,0);
+const coveragePlane=new T.Plane(new T.Vector3(0,1,0),0);
 const note=text=>{if($('status').textContent!==text)$('status').textContent=text;};
 const track=text=>{if($('tracking').textContent!==text)$('tracking').textContent=text;};
 const pretty=v=>Number(v.toFixed(2))+'×';
 function sync(){
  const active=!!state.session,canGrow=state.ready&&(!active||(state.placed&&state.tracking));
- const key=[active,canGrow,state.ready,state.supported,state.starting,state.placed,state.tracking,!!state.candidate,state.table===null,state.editing,clock.playing,clock.progress>=1].join('|');
+ const key=[active,canGrow,state.ready,state.supported,state.starting,state.placed,state.tracking,!!state.candidate,state.table===null,state.editing,clock.playing,clock.progress>=1,$('panel').hidden,stickTarget].join('|');
  if(key===lastSyncKey)return;lastSyncKey=key;
  $('start').disabled=!state.ready||!state.supported||active||state.starting;
  for(const id of ['grow','pause','restart','progress'])$(id).disabled=!canGrow;
@@ -24,6 +27,11 @@ function sync(){
  $('place').textContent=state.placed?'Re-align bottle mouth':state.table===null?'Set tabletop':'Place at bottle opening';
  $('height').disabled=state.placed;$('nudges').hidden=!state.editing;
  $('adjust').textContent=state.editing?'Finish alignment':'Fine alignment';
+ const sticksVisible=active&&state.placed&&state.tracking&&$('panel').hidden;
+ $('joystick-controls').hidden=!sticksVisible;
+ for(const pad of stickPads)pad.element.setAttribute('aria-disabled',String(!sticksVisible));
+ $('target-flower').setAttribute('aria-pressed',String(stickTarget==='flower'));$('target-all').setAttribute('aria-pressed',String(stickTarget==='all'));
+ $('move-label').textContent=stickTarget==='flower'?'Move flower':'Move both';$('turn-label').textContent='Height / turn';
  if(plant)plant.guide.visible=active&&state.tracking&&((state.placed&&state.editing)||(!state.placed&&state.table!==null&&!!state.candidate));
 }
 function discardAnchor(){try{state.anchor?.delete();}catch{}state.anchor=null;state.anchorPending=false;}
@@ -35,11 +43,58 @@ function fitBottle(){
 function useARGlass(active){
  for(const {mesh,preview,ar}of glassMaterials)mesh.material=active?ar:preview;
 }
+function applyFlowerAlignment(){if(plant){plant.root.position.copy(flowerOffset);plant.root.rotation.y=flowerYaw;}}
+function centreFlower(){flowerOffset.set(0,0,0);flowerYaw=0;applyFlowerAlignment();}
+function levelsUI(){
+ startHeight=clamp(startHeight,0,height-.03);coveredHeight=clamp(coveredHeight,0,height-.01);
+ for(const [id,value,max]of [['start-height',startHeight,height-.03],['covered-height',coveredHeight,height-.01]]){
+  $(id).max=(max*100).toFixed(1);$(id).value=(value*100).toFixed(1);$(id+'-value').textContent=Number((value*100).toFixed(1))+' cm';
+ }
+}
+function applyCoverage(){
+ if(!overlay)return;
+ coveragePlane.constant=-(overlay.position.y-height+coveredHeight);
+ if(coverageRing){coverageRing.position.y=-height+coveredHeight;coverageRing.scale.setScalar(height/.309*bottleWidth);coverageRing.visible=coveredHeight>0&&(!state.session||state.editing);}
+}
+function zeroSticks(){
+ stickMove=[0,0];stickTurn=[0,0];
+ for(const pad of stickPads){pad.pointer=null;pad.knob.style.transform='';pad.element.setAttribute('aria-valuetext','Centred');}
+ if(groupMoved&&state.session&&state.placed&&!state.editing)state.anchorPending=true;
+ groupMoved=false;
+}
+function beginStick(){
+ clock.playing=false;
+ if(stickTarget==='all'&&!groupMoved){position.copy(overlay.position);discardAnchor();state.epoch++;groupMoved=true;}
+ sync();
+}
+function moveWithSticks(dt){
+ if(!state.session||!state.placed||!state.tracking||!$('panel').hidden||!lastCamera)return;
+ if(!stickMove.some(Boolean)&&!stickTurn.some(Boolean))return;
+ const right=new T.Vector3(lastCamera[0],0,lastCamera[2]).normalize(),near=new T.Vector3(lastCamera[8],0,lastCamera[10]).normalize();
+ if(near.lengthSq()<.001)near.set(0,0,1);
+ const delta=right.multiplyScalar(stickMove[0]).addScaledVector(near,stickMove[1]).multiplyScalar(.025*dt);
+ if(stickTarget==='flower'){
+  delta.applyAxisAngle(UP,-bottleYaw);flowerOffset.add(delta);flowerOffset.y-=stickTurn[1]*.025*dt;
+  flowerOffset.x=clamp(flowerOffset.x,-.15,.15);flowerOffset.z=clamp(flowerOffset.z,-.15,.15);flowerOffset.y=clamp(flowerOffset.y,-.25,.25);
+  flowerYaw-=stickTurn[0]*.45*dt;applyFlowerAlignment();
+ }else{
+  position.add(delta);position.y-=stickTurn[1]*.025*dt;bottleYaw-=stickTurn[0]*.45*dt;overlay.position.copy(position);fitBottle();
+ }
+}
+function bindStick(id,assign){
+ const element=$(id+'-stick'),knob=$(id+'-knob'),pad={element,knob,pointer:null};stickPads.push(pad);
+ const input=e=>{const b=element.getBoundingClientRect();let x=(e.clientX-b.x-b.width/2)/(b.width*.34),y=(e.clientY-b.y-b.height/2)/(b.height*.34),n=Math.max(1,Math.hypot(x,y));x/=n;y/=n;if(Math.hypot(x,y)<.12)x=y=0;assign([x,y]);knob.style.transform=`translate(${x*28}px,${y*28}px)`;element.setAttribute('aria-valuetext',`${Math.round(x*100)}, ${Math.round(y*100)}`);};
+ element.onpointerdown=e=>{if(element.getAttribute('aria-disabled')==='true'||pad.pointer!==null)return;e.preventDefault();beginStick();pad.pointer=e.pointerId;element.setPointerCapture(e.pointerId);input(e);};
+ element.onpointermove=e=>{if(e.pointerId===pad.pointer){e.preventDefault();input(e);}};
+ for(const name of ['pointerup','pointercancel','lostpointercapture'])element.addEventListener(name,e=>{if(e.pointerId===pad.pointer){pad.pointer=null;assign([0,0]);knob.style.transform='';element.setAttribute('aria-valuetext','Centred');if(stickPads.every(p=>p.pointer===null))zeroSticks();}});
+ element.onkeydown=e=>{if(element.getAttribute('aria-disabled')==='true'||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key))return;e.preventDefault();beginStick();const v=[e.key==='ArrowLeft'?-1:e.key==='ArrowRight'?1:0,e.key==='ArrowUp'?-1:e.key==='ArrowDown'?1:0];assign(v);moveWithSticks(.08);zeroSticks();};
+}
 function buildPlant(){
  if(plant){overlay.remove(plant.root);plant.dispose();}
- plant=new GrowingPlant({height,index:3,above:.34});overlay.add(plant.root);
- plant.root.position.set(0,0,0);overlay.position.copy(state.placed?position:new T.Vector3(0,height,0));
- overlay.visible=!state.session||state.placed;plant.root.visible=true;plant.update(clock.progress,0);fitBottle();lastSyncKey='';
+ plant=new GrowingPlant({height,index:3,above:.34,startHeight});overlay.add(plant.root);
+ plant.root.traverse(o=>{for(const material of o.material?(Array.isArray(o.material)?o.material:[o.material]):[]){material.clippingPlanes=[coveragePlane];material.needsUpdate=true;}});
+ applyFlowerAlignment();overlay.position.copy(state.placed?position:new T.Vector3(0,height,0));
+ overlay.visible=!state.session||state.placed;plant.root.visible=true;plant.update(clock.progress,0);fitBottle();applyCoverage();lastSyncKey='';
 }
 function playback(){
  const v=sampleGrowth(clock.progress);$('stage').textContent=v.stage;
@@ -47,6 +102,7 @@ function playback(){
  $('pause').textContent=clock.playing?'Pause':'Resume';
 }
 function resetTable(){
+ zeroSticks();centreFlower();
  discardAnchor();state.epoch++;state.table=null;state.candidate=null;state.placed=false;state.editing=false;clock.playing=false;clock.seek(0);
  overlay.visible=false;plant.root.visible=false;track('Move the phone slowly and aim at the tabletop beside the bottle.');note('1 · Scan the table, then tap Set tabletop.');sync();playback();
 }
@@ -68,7 +124,7 @@ async function startAR(){
   state.hitSource=await s.requestHitTestSource({space:viewer});
   if(state.session!==s){state.hitSource?.cancel();return;}
   state.table=null;state.placed=false;state.candidate=null;state.tracking=false;state.editing=false;
-  clock.playing=false;clock.seek(0);lastTime=null;
+  zeroSticks();centreFlower();clock.playing=false;clock.seek(0);lastTime=null;
   useARGlass(true);bottle.visible=true;floor.visible=false;overlay.visible=false;plant.root.visible=false;scene.background=null;renderer.setClearColor(0,0);
   document.documentElement.classList.add('xr');$('panel').hidden=false;$('toggle-panel').textContent='Hide controls';$('toggle-panel').setAttribute('aria-expanded','true');$('mode').textContent='LIVE BOTTLE AR';
   track('Scan the tabletop beside your bottle.');note('1 · Aim at the table and tap Set tabletop.');
@@ -79,7 +135,7 @@ async function startAR(){
 }
 function finishAR(s){
  if(state.session!==s)return;
- state.epoch++;try{state.hitSource?.cancel();}catch{}discardAnchor();
+ zeroSticks();centreFlower();state.epoch++;try{state.hitSource?.cancel();}catch{}discardAnchor();
  Object.assign(state,{session:null,reference:null,hitSource:null,table:null,candidate:null,placed:false,tracking:false,editing:false,anchorBusy:false});
  clock.playing=false;lastTime=null;reticle.visible=false;
  document.documentElement.classList.remove('xr');$('panel').hidden=false;$('mode').textContent='3D PREVIEW';
@@ -87,11 +143,12 @@ function finishAR(s){
  scene.background=new T.Color(0x132820);renderer.setClearColor(0x132820,1);camera.fov=39;queueMicrotask(resize);track('Drag to look around · stages and speed are adjustable.');note('AR ended. Alignment resets each time you start.');sync();
 }
 function loseTracking(){
+ zeroSticks();
  state.tracking=false;state.candidate=null;clock.playing=false;overlay.visible=false;plant.root.visible=false;reticle.visible=false;
  track('Tracking paused. Move slowly to recover.');note('Growth is paused. Check alignment when tracking returns, then Resume.');sync();
 }
 function place(){
- if(state.placed){discardAnchor();state.epoch++;state.placed=false;state.editing=false;clock.playing=false;overlay.visible=false;plant.root.visible=false;note('Aim at the bottle opening again, then place.');sync();return;}
+ if(state.placed){zeroSticks();discardAnchor();state.epoch++;state.placed=false;state.editing=false;clock.playing=false;overlay.visible=false;plant.root.visible=false;note('Aim at the bottle opening again, then place.');sync();return;}
  if(!state.candidate||!state.tracking)return;
  if(state.table===null){state.table=state.candidate[1];state.candidate=null;note('2 · Align the transparent bottle over the real one, then Place.');track('Aim at the opening. The glass bottle and plant will align together.');}
  else{
@@ -154,8 +211,9 @@ function render(time,frame){
  else{
   camera.position.set(Math.sin(previewYaw)*1.15,.43,Math.cos(previewYaw)*1.15);camera.lookAt(0,.325,0);
  }
+ if(advance)moveWithSticks(dt);
  const wasPlaying=clock.playing;if(advance&&(!state.session||state.tracking))clock.tick(dt);if(wasPlaying!==clock.playing)sync();
- plant?.update(clock.progress,time/1000);playback();
+ plant?.update(clock.progress,time/1000);applyCoverage();playback();
  renderer.render(scene,camera);
 }
 function environment(){
@@ -166,7 +224,7 @@ function environment(){
 }
 async function init(){
  renderer=new T.WebGLRenderer({alpha:true,antialias:true});renderer.setClearColor(0x132820,1);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
- renderer.xr.enabled=true;renderer.xr.setReferenceSpaceType('local');$('viewport').append(renderer.domElement);
+ renderer.xr.enabled=true;renderer.xr.setReferenceSpaceType('local');renderer.localClippingEnabled=true;$('viewport').append(renderer.domElement);
  scene=new T.Scene();scene.background=new T.Color(0x132820);camera=new T.PerspectiveCamera(39,1,.01,15);
  scene.add(new T.HemisphereLight(0xeaf5db,0x365c3c,2.4));
  const key=new T.DirectionalLight(0xfff2d5,3.2);key.position.set(-1,2,2);scene.add(key);const rim=new T.DirectionalLight(0xc4dfb7,2.4);rim.position.set(1,1,-1);scene.add(rim);
@@ -175,13 +233,14 @@ async function init(){
  // A light backdrop and reflected studio panels make transmission visible in the preview.
  const backdrop=new T.Mesh(new T.PlaneGeometry(.84,1.05),new T.MeshBasicMaterial({color:0x6e8b6c}));backdrop.position.set(0,.40,-.27);floor.add(backdrop);scene.add(floor);
  reticle=new T.Mesh(new T.RingGeometry(.012,.015,48),new T.MeshBasicMaterial({color:0xe1edb3,side:T.DoubleSide,depthTest:false}));reticle.rotation.x=-Math.PI/2;reticle.visible=false;reticle.renderOrder=100;scene.add(reticle);
- const model=await new GLTFLoader().loadAsync('assets/green-bottle.glb');
+ const [model]=await Promise.all([new GLTFLoader().loadAsync('assets/green-bottle.glb'),loadBotanicalTextures()]);
  overlay=new T.Group();overlay.name='Bottle and plant overlay';scene.add(overlay);
+ coverageRing=new T.Mesh(new T.TorusGeometry(.044,.0005,5,72),new T.MeshBasicMaterial({color:0xd9bc87,transparent:true,opacity:.7,depthTest:false}));coverageRing.rotation.x=Math.PI/2;overlay.add(coverageRing);
  bottle=model.scene;const root=bottle.children[0];root.position.set(0,0,0);bottle.traverse(o=>{if(o.material?.transmission){
   o.material.color.setRGB(.57,.86,.58);o.material.roughness=.065;o.material.envMapIntensity=.65;o.material.side=T.FrontSide;
   // A transparent tint remains visible over the live camera, which is not part of
   // Three.js's transmission buffer. Both meshes keep the plant visible inside.
-  const ar=new T.MeshPhysicalMaterial({color:0x65b977,transparent:true,opacity:.18,roughness:.065,metalness:0,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:.75,depthWrite:false,side:T.FrontSide});
+  const ar=new T.MeshPhysicalMaterial({color:0x65b977,transparent:true,opacity:.18,roughness:.065,metalness:0,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:.75,depthWrite:false,side:T.FrontSide,clippingPlanes:[coveragePlane]});
   glassMaterials.push({mesh:o,preview:o.material,ar});
  }});overlay.add(bottle);buildPlant();
  const canvas=renderer.domElement;canvas.addEventListener('pointerdown',e=>{if(state.session)return;drag={id:e.pointerId,x:e.clientX};canvas.setPointerCapture(e.pointerId);});canvas.addEventListener('pointermove',e=>{if(drag?.id!==e.pointerId||state.session)return;previewYaw-=(e.clientX-drag.x)*.008;drag.x=e.clientX;});for(const name of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(name,()=>drag=null);
@@ -191,18 +250,26 @@ async function init(){
  $('speed').oninput=e=>{clock.setSpeed(Number(e.target.value));$('speed-value').textContent=pretty(clock.speed);};
  $('progress').oninput=e=>{clock.playing=false;clock.seek(Number(e.target.value)/100);playback();sync();};
  for(const b of document.querySelectorAll('[data-stage]'))b.onclick=()=>{clock.playing=false;clock.seek(Number(b.dataset.stage)/100);playback();sync();};
- $('height').onchange=e=>{height=clamp(Number(e.target.value)||30.9,15,50)/100;e.target.value=(height*100).toFixed(1);buildPlant();};
+ $('height').onchange=e=>{height=clamp(Number(e.target.value)||30.9,15,50)/100;e.target.value=(height*100).toFixed(1);levelsUI();buildPlant();};
+ $('start-height').oninput=e=>$('start-height-value').textContent=Number(e.target.value).toFixed(1)+' cm';
+ $('start-height').onchange=e=>{zeroSticks();startHeight=Number(e.target.value)/100;clock.seek(0);clock.playing=false;levelsUI();buildPlant();sync();note('Plant starts '+Number((startHeight*100).toFixed(1))+' cm above the bottle base. Tap Grow plant.');};
+ $('covered-height').oninput=e=>{coveredHeight=Number(e.target.value)/100;$('covered-height-value').textContent=Number(e.target.value).toFixed(1)+' cm';applyCoverage();};
  $('start').onclick=startAR;$('place').onclick=place;$('exit').onclick=()=>state.session?.end();$('retable').onclick=resetTable;
  $('adjust').onclick=()=>{state.editing=!state.editing;clock.playing=false;if(state.editing){position.copy(overlay.position);discardAnchor();state.epoch++;}else state.anchorPending=true;sync();};
  $('bottle-width').oninput=e=>{bottleWidth=Number(e.target.value)/100;$('bottle-width-value').textContent=e.target.value+'%';fitBottle();};
  for(const b of document.querySelectorAll('[data-nudge]'))b.onclick=()=>nudge(b.dataset.nudge);
- $('toggle-panel').onclick=()=>{$('panel').hidden=!$('panel').hidden;$('toggle-panel').textContent=$('panel').hidden?'Show controls':'Hide controls';$('toggle-panel').setAttribute('aria-expanded',String(!$('panel').hidden));};
- $('overlay').addEventListener('beforexrselect',e=>{if(e.target.closest?.('#panel,#toggle-panel'))e.preventDefault();});
- document.addEventListener('visibilitychange',()=>{if(document.hidden){clock.playing=false;lastTime=null;sync();}});window.addEventListener('pagehide',()=>state.session?.end().catch(()=>{}));window.addEventListener('resize',resize);
+ $('toggle-panel').onclick=()=>{zeroSticks();$('panel').hidden=!$('panel').hidden;$('toggle-panel').textContent=$('panel').hidden?'Show controls':'Hide controls';$('toggle-panel').setAttribute('aria-expanded',String(!$('panel').hidden));sync();};
+ $('joystick-align').onclick=()=>{zeroSticks();clock.playing=false;if(state.editing){state.editing=false;state.anchorPending=true;}$('panel').hidden=true;$('toggle-panel').textContent='Show controls';$('toggle-panel').setAttribute('aria-expanded','false');sync();note('Left joystick: move. Right joystick: height and turn. Release to stop.');};
+ $('sticks-done').onclick=()=>{zeroSticks();$('panel').hidden=false;$('toggle-panel').textContent='Hide controls';$('toggle-panel').setAttribute('aria-expanded','true');sync();};
+ $('centre-flower').onclick=()=>{zeroSticks();centreFlower();};
+ for(const target of ['flower','all'])$('target-'+target).onclick=()=>{zeroSticks();stickTarget=target;sync();};
+ bindStick('move',v=>stickMove=v);bindStick('turn',v=>stickTurn=v);
+ $('overlay').addEventListener('beforexrselect',e=>{if(e.target.closest?.('#panel,#toggle-panel,#joystick-controls'))e.preventDefault();});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden){zeroSticks();clock.playing=false;lastTime=null;sync();}});window.addEventListener('blur',zeroSticks);window.addEventListener('pagehide',()=>{zeroSticks();state.session?.end().catch(()=>{});});window.addEventListener('resize',resize);
  renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();state.ready=false;clock.playing=false;state.session?.end();note('Graphics paused. Reload this page to restore the plant.');sync();});
  try{state.supported=!!navigator.xr&&await navigator.xr.isSessionSupported('immersive-ar');}catch{}
- state.ready=true;$('support').textContent=state.supported?'AR ready · use the green bottle, upright on a table.':'Preview works here. Live AR needs a compatible phone with WebXR, such as supported Android Chrome.';
+ state.ready=true;levelsUI();$('support').textContent=state.supported?'AR ready · use the green bottle, upright on a table.':'Preview works here. Live AR needs a compatible phone with WebXR, such as supported Android Chrome.';
  track('Drag to look around · stages and speed are adjustable.');note('Ready · grow your plant, or start AR over the real bottle.');sync();resize();renderer.setAnimationLoop(render);
- if(new URL(location.href).searchParams.has('test'))window.__BLOOM={state,clock,renderer,scene,camera,get plant(){return plant;},get bottle(){return bottle;},get overlay(){return overlay;},processXR,resetTable,finishAR,place,intersectHeight,sampleGrowth};
+ if(new URL(location.href).searchParams.has('test'))window.__BLOOM={state,clock,renderer,scene,camera,get plant(){return plant;},get bottle(){return bottle;},get overlay(){return overlay;},get levels(){return{startHeight,coveredHeight,clipY:-coveragePlane.constant};},get sticks(){return{move:[...stickMove],turn:[...stickTurn],target:stickTarget,offset:flowerOffset.toArray(),yaw:flowerYaw};},processXR,resetTable,finishAR,place,intersectHeight,sampleGrowth};
 }
 init().catch(e=>{note('Could not load Bottle Bloom: '+e.message);$('support').textContent='Reload to try again.';console.error(e);});

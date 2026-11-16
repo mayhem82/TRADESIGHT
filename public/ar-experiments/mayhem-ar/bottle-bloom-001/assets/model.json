@@ -1,1 +1,10 @@
-{"bottles":1,"height_metres":0.309,"dimensions":"estimated","source":"green bottle from supplied photographs","AR":"visible transparent bottle overlay and plant share one mouth anchor; width and turn adjustable"}
+{
+  "bottles": 1,
+  "height_metres": 0.309,
+  "dimensions": "estimated",
+  "source": "green bottle model interpreted from supplied photographs",
+  "AR": "visible transparent bottle and plant share a bottle-mouth anchor; flower can be adjusted independently with joysticks",
+  "adjustments": ["bottle height, width and turn", "flower position, height and turn", "plant starting height above bottle base", "hide growth below soil or fabric wrap"],
+  "textures": "generated lifelike botanical surface atlas; see botanical-surfaces.json",
+  "validation": "WebGL and emulated WebXR checked; physical phone alignment remains untested"
+}

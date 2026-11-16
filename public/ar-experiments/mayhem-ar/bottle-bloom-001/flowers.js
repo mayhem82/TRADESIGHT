@@ -6,12 +6,21 @@ const leafMaterial=new T.MeshStandardMaterial({color:0x3d7e31,roughness:.78,side
 const veinMaterial=new T.MeshStandardMaterial({color:0x97be4d,roughness:.8});
 const budMaterial=new T.MeshStandardMaterial({color:0x679b38,roughness:.68});
 const palette=[0xfff2ba,0xf6a7c3,0xbca5f5,0xfbc75a,0xf7d8ee];
+let botanicalMaps=null;
+export async function loadBotanicalTextures(){
+ const atlas=await new T.TextureLoader().loadAsync('assets/botanical-surfaces.png');
+ const part=(half,colorSpace)=>{const texture=atlas.clone();texture.repeat.set(.5,1);texture.offset.set(half*.5,0);texture.colorSpace=colorSpace;texture.anisotropy=4;texture.needsUpdate=true;return texture;};
+ botanicalMaps={petal:part(0,T.SRGBColorSpace),leaf:part(1,T.SRGBColorSpace),petalBump:part(0,T.NoColorSpace),leafBump:part(1,T.NoColorSpace)};
+ leafMaterial.color.set(0xffffff);leafMaterial.map=botanicalMaps.leaf;leafMaterial.bumpMap=botanicalMaps.leafBump;leafMaterial.bumpScale=.00022;leafMaterial.roughness=.72;leafMaterial.needsUpdate=true;
+ budMaterial.color.set(0xffffff);budMaterial.map=botanicalMaps.leaf;budMaterial.bumpMap=botanicalMaps.leafBump;budMaterial.bumpScale=.00012;budMaterial.needsUpdate=true;
+ return botanicalMaps;
+}
 
-function blade(length,width,curve=.15){
- const verts=[],indices=[],uv=[],colors=[];const H=14,W=6;
+function blade(length,width,curve=.15,petal=false,phase=0){
+ const verts=[],indices=[],uv=[],colors=[];const H=24,W=10;
  for(let i=0;i<=H;i++)for(let j=0;j<=W;j++){
-  const t=i/H,s=j/W*2-1,w=Math.pow(Math.sin(Math.PI*t),.85)*width;
-  verts.push(s*w,t*length,(s*s*.10+curve*t*t)*length+Math.sin(t*Math.PI)*.002);
+  const t=i/H,s=j/W*2-1,w=Math.pow(Math.sin(Math.PI*t),petal?.48:.72)*width*(1+.022*Math.sin(t*19+phase));
+  verts.push(s*w,t*length,(s*s*.10+curve*t*t+(petal?.13:.05)*Math.sin(Math.PI*t))*length+Math.sin(t*Math.PI)*.001);
   uv.push(j/W,t);
   const shade=.72+.28*(1-Math.abs(s))+.035*Math.sin(t*14);colors.push(shade,shade,shade);
  }
@@ -23,16 +32,19 @@ function addVein(group,length){
  group.add(new T.Mesh(new T.TubeGeometry(path,10,.00030,3,false),veinMaterial));
 }
 export class GrowingPlant{
- constructor({height=.28,index=0,above=.35}={}){
-  this.height=height;this.index=index;this.root=new T.Group();this.root.name='Growing plant '+(index+1);
+ constructor({height=.28,index=0,above=.35,startHeight=.012}={}){
+  this.height=height;this.startHeight=clamp(startHeight,0,height-.03);this.index=index;this.root=new T.Group();this.root.name='Growing plant '+(index+1);
   this.visual=new T.Group();this.root.add(this.visual);this.leaves=[];this.petals=[];
-  this.seed=new T.Mesh(new T.SphereGeometry(.0044,12,8),new T.MeshStandardMaterial({color:0x7a6339,roughness:1}));this.seed.position.set(.003,-height+.013,0);this.seed.scale.set(1,.65,.55);this.visual.add(this.seed);
+  const seedY=-height+this.startHeight+.004;
+  this.seed=new T.Mesh(new T.SphereGeometry(.0044,12,8),new T.MeshStandardMaterial({color:0x7a6339,roughness:1}));this.seed.position.set(seedY<-.055?.003:0,seedY-.002,0);this.seed.scale.set(1,.65,.55);this.visual.add(this.seed);
   const side=index%2?1:-1;
   // The entire shoot begins inside the bottle. The narrow neck stays clear of branches.
+  const inside=seedY<-.055?[
+   new T.Vector3(.003,seedY,0),new T.Vector3(-.008,seedY+(-.055-seedY)*.42,.003),
+   new T.Vector3(.006,seedY+(-.055-seedY)*.73,-.003),new T.Vector3(0,-.055,0),new T.Vector3(0,-.022,0)
+  ]:[new T.Vector3(0,seedY,0),new T.Vector3(0,seedY*.45,0)];
   this.path=new T.CatmullRomCurve3([
-   new T.Vector3(.003,-height+.016,0),new T.Vector3(-.010,-height*.67,.003),
-   new T.Vector3(.008,-.105,-.004),new T.Vector3(0,-.055,0),
-   new T.Vector3(0,-.022,0),new T.Vector3(0,0,0),new T.Vector3(0,.028,0),
+   ...inside,new T.Vector3(0,0,0),new T.Vector3(0,.028,0),
    new T.Vector3(side*.012,.12,.004),new T.Vector3(-side*.022,above*.67,-.006),
    new T.Vector3(side*.024,above,.012),
   ],false,'centripetal');
@@ -40,8 +52,9 @@ export class GrowingPlant{
   this.stem=new T.Mesh(new T.TubeGeometry(this.path,this.segments,.00175,this.radial,false),stemMaterial);this.visual.add(this.stem);
   this.tip=new T.Mesh(new T.SphereGeometry(.0034,10,8),budMaterial);this.tip.scale.set(.7,1.7,.7);this.visual.add(this.tip);
   // Paired seed leaves unfold first; alternating true leaves follow above them.
-  const levels=[{y:-height*.65,size:.016,pair:true},{y:-height*.40,size:.020,pair:true},
-   {y:.055,size:.044},{y:.115,size:.060},{y:.182,size:.068},{y:.25,size:.053}];
+  const levels=[];
+  if(seedY<-.12){const span=-.085-seedY;levels.push({y:seedY+span*.32,size:.015,pair:true},{y:seedY+span*.73,size:.019,pair:true});}
+  levels.push({y:.055,size:.044},{y:.115,size:.060},{y:.182,size:.068},{y:.25,size:.053});
   for(let n=0;n<levels.length;n++){
    const v=levels[n];let best=0,d=Infinity;
    for(let k=0;k<=500;k++){const t=k/500,dy=Math.abs(this.path.getPointAt(t).y-v.y);if(dy<d){d=dy;best=t;}}
@@ -55,11 +68,11 @@ export class GrowingPlant{
   this.head=new T.Group();this.visual.add(this.head);
   this.bud=new T.Mesh(new T.SphereGeometry(1,20,16),budMaterial);this.bud.scale.set(.012,.025,.012);this.bud.position.y=.012;this.head.add(this.bud);
   this.flower=new T.Group();this.head.add(this.flower);
-  const petalMat=new T.MeshStandardMaterial({color:palette[index%5],roughness:.59,side:T.DoubleSide,vertexColors:true});
+  const petalMat=new T.MeshPhysicalMaterial({color:botanicalMaps?0xffffff:palette[index%5],map:botanicalMaps?.petal||null,bumpMap:botanicalMaps?.petalBump||null,bumpScale:.00012,roughness:.58,transmission:.065,thickness:.00035,ior:1.35,side:T.DoubleSide,vertexColors:true});
   for(let ring=0;ring<2;ring++)for(let i=0;i<13;i++){
    const spin=new T.Group(),hinge=new T.Group();spin.rotation.y=(i/13+ring*.036)*TAU;
    const len=(ring? .043:.053)*(1+.05*Math.sin(i*2.7));
-   hinge.position.set(0,.004,.006);hinge.add(new T.Mesh(blade(len,len*.24,.09),petalMat));spin.add(hinge);this.flower.add(spin);this.petals.push({hinge,ring,i});
+   hinge.position.set(0,.004,.006);hinge.rotation.z=.045*Math.sin(i*2.1);hinge.add(new T.Mesh(blade(len,len*.24,.09,true,i*1.7),petalMat));spin.add(hinge);this.flower.add(spin);this.petals.push({hinge,ring,i});
   }
   const centreMat=new T.MeshStandardMaterial({color:index===3?0x694320:0xe2a22d,roughness:.9});
   this.centre=new T.Mesh(new T.SphereGeometry(.013,24,12),centreMat);this.centre.scale.y=.34;this.centre.position.y=.006;this.flower.add(this.centre);
