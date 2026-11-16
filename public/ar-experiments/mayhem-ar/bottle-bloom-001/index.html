@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#132820"><title>Bottle Bloom · MAYHEM AR</title><link rel="stylesheet" href="style.css"><script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script></head>
+<body><main id="overlay">
+ <div id="viewport" aria-label="3D bottle and growing plant preview"></div>
+ <header><a class="brand" href="../projects/">MAYHEM <span>BOTANICAL EXPERIMENT 01</span></a><div class="title"><h1>Bottle<br><em>Bloom.</em></h1><p>A little life, from the inside out.</p></div></header>
+ <div class="scene-label"><i></i><span id="mode">3D PREVIEW</span></div>
+ <div id="aim" hidden aria-hidden="true"><span></span></div>
+ <div id="tracking" class="tracking" role="status" aria-live="polite">Loading the bottle…</div>
+ <button id="toggle-panel" class="panel-toggle" hidden aria-expanded="true" aria-controls="panel">Hide controls</button><button id="exit" class="panel-exit" hidden>Exit AR</button>
+ <section id="panel" aria-label="Growth and AR controls">
+  <div class="panel-top"><span class="eyebrow">ONE BOTTLE · ONE PLANT</span><span class="tag" id="stage">SEED</span></div>
+  <h2>Watch it come to life.</h2><p id="instruction">The shoot begins inside the glass. Leaves unfold, buds form, then the flower opens.</p>
+  <div class="playback"><button id="grow" class="primary" disabled>Grow plant <span>↗</span></button><button id="pause" class="icon-button" aria-label="Pause growth" disabled>Pause</button><button id="restart" class="icon-button" aria-label="Restart growth" disabled>↺</button></div>
+  <label class="range-label" for="speed">Growth speed <output id="speed-value" for="speed">1×</output></label><input id="speed" type="range" min="0.25" max="4" step="0.25" value="1"><div class="range-ends"><span>0.25× · slow</span><span>4× · fast</span></div>
+  <details id="stage-controls"><summary>Explore the growth stages</summary><label class="range-label" for="progress">Growth <output id="progress-value">0%</output></label><input id="progress" type="range" min="0" max="100" value="0" step="0.1"><div class="stage-ticks"><button data-stage="20">Inside</button><button data-stage="55">Leaves</button><button data-stage="81">Bud</button><button data-stage="100">Flower</button></div></details>
+  <div class="ar-section"><button id="start" class="ar-button" disabled><span>◉</span> Start AR on my bottle</button><p id="support">Checking AR support…</p></div>
+  <div id="placement" hidden>
+   <label class="height-label" for="height">Real bottle height <span><input id="height" type="number" inputmode="decimal" min="15" max="50" step="0.1" value="30.9"> cm</span></label>
+   <button id="place" class="ar-button" disabled>Set tabletop</button>
+   <div id="placed-controls" hidden><button id="adjust" class="subtle">Fine alignment</button><div id="nudges" hidden><div class="nudge-grid"><button data-nudge="left" aria-label="Move left 5 millimetres">←</button><button data-nudge="far" aria-label="Move away 5 millimetres">Away</button><button data-nudge="right" aria-label="Move right 5 millimetres">→</button><button data-nudge="down" aria-label="Lower 5 millimetres">Down</button><button data-nudge="near" aria-label="Move closer 5 millimetres">Closer</button><button data-nudge="up" aria-label="Raise 5 millimetres">Up</button></div><small>Each tap moves the plant 5 mm.</small></div><button id="retable" class="subtle">Reset table alignment</button></div>
+  </div>
+  <p id="status" class="status" role="status">Preparing your plant…</p>
+  <footer><a href="references.html" target="_blank" rel="noopener">Time-lapse motion references ↗</a><span>Keep the bottle still after alignment.</span></footer>
+ </section>
+ <noscript>This AR experience needs JavaScript.</noscript>
+</main><script type="module" src="app.js"></script></body></html>
