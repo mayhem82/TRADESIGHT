@@ -1,5 +1,9 @@
 # Gold Trail camera recognition and geological evidence
 
+## Attribution for future additions
+
+When adding a third-party model, dataset, library, image or research method, update the in-app Credits and sources section with its creator or organisation, a link to the original source and applicable licence or terms. Preserve required notices and comply with the component's licence before distributing it. Distinguish material used by the app from background research and experimental candidates; do not present a model as integrated until it is actually in use. Attribute source data at the point where it is displayed as well as in the credits.
+
 The camera workspace includes an experimental, local contrast scanner. It proposes light and dark linear image features, draws masks on the exact analysed frame, and lets the user freeze, select and record a cue. Local photos use the same workflow. Images are not uploaded. Imported photos are saved locally when the user chooses Save photo or attaches a cue to field notes. Camera capture is explicit; closing, hiding or leaving the page stops its tracks and clears the analysed image.
 
 The separate **AI scene** action now adds trained broad scene segmentation while preserving contrast view. Its output is still unconfirmed and includes a user-review step. See [SCENE-RECOGNITION.md](SCENE-RECOGNITION.md) for model provenance, downloads, measured behaviour, known misses and validation gaps.
