@@ -10,5 +10,7 @@
   "textures": "generated lifelike botanical surface atlas; see botanical-surfaces.json",
   "suite_controls": "Model exposure (-2 to +3 EV), plant size (10-1000%), plant transparency, independent Move speed (1/8-32x), Nearer/Farther, Face me, Stop, Projects/Models navigation, and both joysticks available with the menu open. Uses the established MAYHEM AR control conventions without modifying shared pages.",
   "saved_settings": "Glass calibration, growth speed, appearance and movement preferences are saved locally. World positions, anchors and running animation are not restored across sessions; a new real-glass placement is required.",
-  "validation": "WebGL and emulated WebXR checked; physical phone alignment remains untested"
+  "liquid_cutoff": "Independent cut-off height, enable switch, optional guide, Set at plant base, and reset to the tapped liquid. The offset resets on new liquid selection; flower movement does not silently change the cut-off.",
+  "viewing": "Playback remains available with the menu hidden, without top overlays. Grow full screen hides the HUD and guides, with tap-to-reveal controls. Preview uses the browser Fullscreen API; immersive AR keeps its existing fullscreen root.",
+  "validation": "WebGL and emulated WebXR checked; latest fixes await physical phone confirmation"
 }

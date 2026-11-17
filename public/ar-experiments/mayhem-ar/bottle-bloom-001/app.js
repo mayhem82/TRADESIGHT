@@ -1,8 +1,9 @@
 import * as T from 'three';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
-import {DrinkGlass,edgeGlass} from './drink-glass.js?v=suite-continuity-5';
-import {GrowingPlant,loadBotanicalTextures} from './flowers.js?v=suite-continuity-5';
-import {readSettings,writeSettings} from './settings.js?v=suite-continuity-5';
+import {DrinkGlass,edgeGlass} from './drink-glass.js?v=clear-view-6';
+import {GrowingPlant,loadBotanicalTextures} from './flowers.js?v=clear-view-6';
+import {readSettings,writeSettings} from './settings.js?v=clear-view-6';
+import {ViewControls} from './view-controls.js?v=clear-view-6';
 import {GrowthClock,clamp,intersectHeight,sampleGrowth} from './growth.js';
 const $=id=>document.getElementById(id),clock=new GrowthClock(32);
 const state={ready:false,supported:false,starting:false,session:null,reference:null,hitSource:null,table:null,candidate:null,placed:false,tracking:false,anchor:null,anchorPending:false,anchorBusy:false,epoch:0,editing:false};
@@ -16,14 +17,17 @@ let drinkMode=new URL(location.href).searchParams.get('mode')==='drink',surfaceD
 let drinkGlass,glassHeight=.14,glassWidth=.08,liquidHeight=.095;
 let showGlass=true,glassOpacity=.35;
 let plantSize=1,plantTransparency=0,exposureEV=0,travelExponent=0;
+let viewControls,cutoffOffset=0,cutoffEnabled=true,showCutoffGuide=false;
 const travelFactor=()=>2**travelExponent;
 const note=text=>{if($('status').textContent!==text)$('status').textContent=text;};
 const track=text=>{if($('tracking').textContent!==text)$('tracking').textContent=text;};
 const pretty=v=>Number(v.toFixed(2))+'×';
 function sync(){
- const active=!!state.session,canGrow=state.ready&&(!active||(state.placed&&state.tracking));
+ const active=!!state.session,canGrow=state.ready&&!state.starting&&(!active||(state.placed&&state.tracking));
+ viewControls?.sync();
+ document.documentElement.classList.toggle('tracking-lost',active&&!state.tracking);
  document.documentElement.classList.toggle('ar-placed',active&&state.placed);
- const key=[drinkMode,active,canGrow,state.ready,state.supported,state.starting,state.placed,state.tracking,!!state.candidate,state.table===null,state.editing,clock.playing,clock.progress>=1,$('panel').hidden,stickTarget].join('|');
+ const key=[drinkMode,active,canGrow,state.ready,state.supported,state.starting,state.placed,state.tracking,!!state.candidate,state.table===null,state.editing,clock.playing,clock.progress>=1,$('panel').hidden,stickTarget,viewControls?.clean].join('|');
  if(key===lastSyncKey)return;lastSyncKey=key;
  $('start').disabled=!state.ready||!state.supported||active||state.starting;
  for(const id of ['grow','pause','restart','progress'])$(id).disabled=!canGrow;
@@ -39,20 +43,23 @@ function sync(){
  for(const mode of ['bottle','drink']){$('source-'+mode).disabled=active||state.starting;$('source-'+mode).setAttribute('aria-pressed',String((mode==='drink')===drinkMode));}
  $('height').disabled=state.placed;$('nudges').hidden=!state.editing;
  $('adjust').textContent=state.editing?'Finish alignment':'Fine alignment';
- const sticksVisible=active&&state.placed&&state.tracking;
+ const sticksVisible=active&&state.placed&&state.tracking&&!viewControls?.clean;
  $('joystick-controls').hidden=!sticksVisible;
- const toolbar=$('alignment-toolbar'),home=$('panel').hidden?$('joystick-controls'):$('panel-alignment-home');
+ const toolbar=$('alignment-toolbar'),home=$('panel-alignment-home');
  if(toolbar.parentElement!==home)home.append(toolbar);
- toolbar.classList.toggle('in-panel',!$('panel').hidden);toolbar.hidden=!sticksVisible;
+ toolbar.classList.add('in-panel');toolbar.hidden=!sticksVisible;
  for(const pad of stickPads)pad.element.setAttribute('aria-disabled',String(!sticksVisible));
  $('target-flower').setAttribute('aria-pressed',String(stickTarget==='flower'));$('target-all').setAttribute('aria-pressed',String(stickTarget==='all'));
  $('move-label').textContent=stickTarget==='flower'?'Move flower':'Move both';$('turn-label').textContent='Height / turn';
  $('retable').textContent=drinkMode?'Place on another drink':'Reset table alignment';
- if(plant)plant.guide.visible=active&&state.tracking&&((state.placed&&state.editing)||(!state.placed&&(drinkMode||state.table!==null)&&!!state.candidate));
+ if(plant)plant.guide.visible=!viewControls?.clean&&active&&state.tracking&&((state.placed&&state.editing)||(!state.placed&&(drinkMode||state.table!==null)&&!!state.candidate));
 }
+function growPlant(){if(clock.progress>=1)clock.seek(0);clock.playing=true;note(drinkMode?'Growing from the liquid · leaves, then buds, then flowers.':'Growing from inside the glass · leaves, then buds, then flowers.');sync();}
+function toggleGrowth(){clock.playing=!clock.playing;if(clock.playing&&clock.progress>=1)clock.seek(0);sync();}
+function selectTarget(target){zeroSticks();stickTarget=target;sync();}
 function previewPosition(){return new T.Vector3(0,drinkMode?0:height,0);}
 function savePreferences(){
- const saved=writeSettings({version:1,mode:drinkMode?'drink':'bottle',height,bottleWidth,startHeight,coveredHeight,glassHeight,glassWidth,liquidHeight,surfaceDistance,showGlass,glassOpacity,plantSize,plantTransparency,exposureEV,travelExponent,growthSpeed:clock.speed});
+ const saved=writeSettings({version:1,mode:drinkMode?'drink':'bottle',height,bottleWidth,startHeight,coveredHeight,glassHeight,glassWidth,liquidHeight,surfaceDistance,showGlass,glassOpacity,plantSize,plantTransparency,exposureEV,travelExponent,growthSpeed:clock.speed,cutoffEnabled});
  $('settings-status').textContent=saved?'Settings saved on this device. Select your real glass again each time you start AR.':'Settings apply now, but this browser could not save them.';
 }
 function appearanceUI(){
@@ -68,7 +75,7 @@ function movementUI(){
  const factor=travelFactor(),label=Number(factor.toPrecision(3))+'×';$('travel-speed').value=travelExponent;$('travel-speed-value').textContent=label;$('travel-speed-metric').textContent=Number((.025*factor).toPrecision(3))+' m/s';$('travel-speed').setAttribute('aria-valuetext',label+'; '+Number((.025*factor).toPrecision(3))+' metres per second');
 }
 function restorePreferences(){
- const s=readSettings();({height,bottleWidth,startHeight,coveredHeight,glassHeight,glassWidth,liquidHeight,surfaceDistance,showGlass,glassOpacity,plantSize,plantTransparency,exposureEV,travelExponent}=s);
+ const s=readSettings();({height,bottleWidth,startHeight,coveredHeight,glassHeight,glassWidth,liquidHeight,surfaceDistance,showGlass,glassOpacity,plantSize,plantTransparency,exposureEV,travelExponent,cutoffEnabled}=s);
  const mode=new URL(location.href).searchParams.get('mode');drinkMode=(mode==='drink'||mode==='bottle'?mode:s.mode)==='drink';
  clock.setSpeed(s.growthSpeed);$('speed').value=clock.speed;$('speed-value').textContent=pretty(clock.speed);
  $('height').value=(height*100).toFixed(1);$('bottle-width').value=bottleWidth*100;$('bottle-width-value').textContent=Math.round(bottleWidth*100)+'%';
@@ -143,8 +150,13 @@ function levelsUI(){
 }
 function applyCoverage(){
  if(!overlay)return;
- coveragePlane.constant=-(overlay.position.y+(drinkMode?0:-height+coveredHeight));
- if(coverageRing){coverageRing.position.y=-height+coveredHeight;coverageRing.scale.setScalar(height/.309*bottleWidth);coverageRing.visible=!drinkMode&&coveredHeight>0&&(!state.session||state.editing);}
+ coveragePlane.constant=-(overlay.position.y+(drinkMode?cutoffOffset:-height+coveredHeight));
+ if(coverageRing){coverageRing.position.y=drinkMode?cutoffOffset:-height+coveredHeight;coverageRing.scale.setScalar(drinkMode?glassWidth/.088:height/.309*bottleWidth);coverageRing.visible=!viewControls?.clean&&(drinkMode?showCutoffGuide&&cutoffEnabled:coveredHeight>0&&(!state.session||state.editing));}
+}
+function cutoffUI(){
+ $('cutoff-height').value=(cutoffOffset*100).toFixed(1);$('cutoff-height-value').textContent=Number((cutoffOffset*100).toFixed(1))+' cm';$('cutoff-enabled').checked=cutoffEnabled;$('cutoff-guide').checked=showCutoffGuide;
+ plant?.visual.traverse(o=>{for(const material of o.material?(Array.isArray(o.material)?o.material:[o.material]):[]){material.clippingPlanes=drinkMode&&!cutoffEnabled?[]:[coveragePlane];material.needsUpdate=true;}});
+ applyCoverage();
 }
 function zeroSticks(){
  stickMove=[0,0];stickTurn=[0,0];
@@ -185,7 +197,7 @@ function buildPlant(){
  plant=new GrowingPlant({height,index:3,above:.34,startHeight,surface:drinkMode,size:plantSize});overlay.add(plant.root);
  plant.root.traverse(o=>{for(const material of o.material?(Array.isArray(o.material)?o.material:[o.material]):[]){material.clippingPlanes=[coveragePlane];material.needsUpdate=true;}});
  applyFlowerAlignment();overlay.position.copy(state.placed?position:previewPosition());
- overlay.visible=!state.session||state.placed;plant.root.visible=true;plant.update(clock.progress,0);fitBottle();applyCoverage();appearanceUI();lastSyncKey='';
+ overlay.visible=!state.session||state.placed;plant.root.visible=true;plant.update(clock.progress,0);fitBottle();cutoffUI();appearanceUI();lastSyncKey='';
 }
 function playback(){
  const v=sampleGrowth(clock.progress);$('stage').textContent=drinkMode&&clock.progress>=.1&&clock.progress<.4?'Growing from your drink':v.stage;
@@ -195,7 +207,7 @@ function playback(){
 function resetTable(){
  zeroSticks();centreFlower();
  discardAnchor();state.epoch++;state.table=null;state.candidate=null;state.placed=false;state.editing=false;clock.playing=false;clock.seek(0);
- surfaceRay=null;surfaceTap=null;reticle.visible=false;
+ surfaceRay=null;surfaceTap=null;reticle.visible=false;cutoffOffset=0;cutoffUI();
  overlay.visible=false;plant.root.visible=false;track(drinkMode?'Tap the liquid surface in the camera view.':'Move the phone slowly and aim at the tabletop beside the bottle.');note(drinkMode?'Set the distance to your drink, then tap the liquid. No tabletop scan needed.':'1 · Scan the table, then tap Set tabletop.');sync();playback();
 }
 async function startAR(){
@@ -216,7 +228,7 @@ async function startAR(){
   if(!drinkMode){const viewer=await s.requestReferenceSpace('viewer');state.hitSource=await s.requestHitTestSource({space:viewer});}
   if(state.session!==s){state.hitSource?.cancel();return;}
   state.table=null;state.placed=false;state.candidate=null;state.tracking=false;state.editing=false;
-  zeroSticks();centreFlower();surfaceRay=null;surfaceTap=null;lastView=lastProjection=null;clock.playing=false;clock.seek(0);lastTime=null;
+  zeroSticks();centreFlower();surfaceRay=null;surfaceTap=null;lastView=lastProjection=null;clock.playing=false;clock.seek(0);lastTime=null;cutoffOffset=0;cutoffUI();
   useARGlass(true);floor.visible=false;overlay.visible=false;plant.root.visible=false;scene.background=null;renderer.setClearColor(0,0);
   document.documentElement.classList.add('xr');$('panel').hidden=false;$('toggle-panel').textContent='Hide controls';$('toggle-panel').setAttribute('aria-expanded','true');$('mode').textContent=drinkMode?'LIVE DRINK AR':'LIVE BOTTLE AR';
   track(drinkMode?'Tap the liquid surface. Adjust Distance if needed.':'Scan the tabletop beside your bottle.');note(drinkMode?'Tap the liquid, or aim the centre marker and tap Place. Distance is adjustable.':'1 · Aim at the table and tap Set tabletop.');
@@ -229,6 +241,7 @@ function finishAR(s){
  if(state.session!==s)return;
  zeroSticks();centreFlower();state.epoch++;try{state.hitSource?.cancel();}catch{}discardAnchor();
  Object.assign(state,{session:null,reference:null,hitSource:null,table:null,candidate:null,placed:false,tracking:false,editing:false,anchorBusy:false});
+ viewControls?.reset();
  clock.playing=false;lastTime=null;reticle.visible=false;
  document.documentElement.classList.remove('xr');$('panel').hidden=false;$('mode').textContent='3D PREVIEW';
  useARGlass(false);bottle.visible=!drinkMode;floor.visible=true;overlay.visible=true;plant.root.visible=true;overlay.position.copy(previewPosition());plant.root.position.set(0,0,0);plant.guide.visible=false;surfaceRay=null;surfaceTap=null;lastView=lastProjection=null;
@@ -244,7 +257,7 @@ function place(){
  if(!state.candidate||!state.tracking)return;
  if(!drinkMode&&state.table===null){state.table=state.candidate[1];state.candidate=null;note('2 · Align the transparent bottle over the real one, then Place.');track('Aim at the opening. The glass bottle and plant will align together.');}
  else{
-  if(drinkMode&&!surfaceRay)surfaceRay=viewRay();
+  if(drinkMode){if(!surfaceRay)surfaceRay=viewRay();cutoffOffset=0;centreFlower();cutoffUI();}
   position.fromArray(state.candidate);overlay.position.copy(position);overlay.visible=true;plant.root.visible=true;state.placed=true;state.anchorPending=true;state.candidate=null;
   reticle.visible=false;clock.seek(0);clock.playing=false;playback();note(drinkMode?'Liquid selected. Tap Grow plant, or refine its position with joysticks.':'Aligned · tap Grow plant. The first shoot starts inside the bottle.');track(drinkMode?'Growth point fixed. Keep your drink still.':'Bottle aligned for this session. Keep it still.');
  }
@@ -340,9 +353,9 @@ async function init(){
   const ar=new T.MeshPhysicalMaterial({color:0x65b977,transparent:true,opacity:.18,roughness:.065,metalness:0,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:.75,depthWrite:false,side:T.FrontSide,clippingPlanes:[coveragePlane]});
   edgeGlass(ar);glassMaterials.push({mesh:o,preview:o.material,ar});
  }});overlay.add(bottle);buildPlant();
- const canvas=renderer.domElement;canvas.addEventListener('pointerdown',e=>{if(state.session){if(drinkMode&&!state.placed)surfaceTap={id:e.pointerId,x:e.clientX,y:e.clientY};return;}drag={id:e.pointerId,x:e.clientX};canvas.setPointerCapture(e.pointerId);});canvas.addEventListener('pointermove',e=>{if(drag?.id!==e.pointerId||state.session)return;previewYaw-=(e.clientX-drag.x)*.008;drag.x=e.clientX;});canvas.addEventListener('pointerup',e=>{if(surfaceTap?.id===e.pointerId&&Math.hypot(e.clientX-surfaceTap.x,e.clientY-surfaceTap.y)<12)tapDrink(e);surfaceTap=null;});for(const name of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(name,()=>{drag=null;surfaceTap=null;});
- $('grow').onclick=()=>{if(clock.progress>=1)clock.seek(0);clock.playing=true;note(drinkMode?'Growing from the liquid · leaves, then buds, then flowers.':'Growing from inside the glass · leaves, then buds, then flowers.');sync();};
- $('pause').onclick=()=>{clock.playing=!clock.playing;if(clock.playing&&clock.progress>=1)clock.seek(0);sync();};
+ const canvas=renderer.domElement;canvas.addEventListener('pointerdown',e=>{if(viewControls?.clean){viewControls.reveal();return;}if(state.session){if(drinkMode&&!state.placed)surfaceTap={id:e.pointerId,x:e.clientX,y:e.clientY};return;}drag={id:e.pointerId,x:e.clientX};canvas.setPointerCapture(e.pointerId);});canvas.addEventListener('pointermove',e=>{if(drag?.id!==e.pointerId||state.session)return;previewYaw-=(e.clientX-drag.x)*.008;drag.x=e.clientX;});canvas.addEventListener('pointerup',e=>{if(surfaceTap?.id===e.pointerId&&Math.hypot(e.clientX-surfaceTap.x,e.clientY-surfaceTap.y)<12)tapDrink(e);surfaceTap=null;});for(const name of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(name,()=>{drag=null;surfaceTap=null;});
+ $('grow').onclick=growPlant;
+ $('pause').onclick=toggleGrowth;
  $('restart').onclick=()=>{clock.restart();sync();};
  $('speed').oninput=e=>{clock.setSpeed(Number(e.target.value));$('speed-value').textContent=pretty(clock.speed);};
  $('progress').oninput=e=>{clock.playing=false;clock.seek(Number(e.target.value)/100);playback();sync();};
@@ -356,6 +369,11 @@ async function init(){
  $('surface-distance').oninput=e=>{surfaceDistance=Number(e.target.value)/100;distanceUI();if(drinkMode&&state.placed&&surfaceRay){zeroSticks();discardAnchor();state.epoch++;clock.playing=false;position.copy(rayPoint(surfaceRay));overlay.position.copy(position);applyCoverage();sync();}};
  $('surface-distance').onchange=()=>{if(drinkMode&&state.placed){state.anchorPending=true;note('Distance set. Refine with joysticks, then Grow plant.');}};
  for(const id of ['glass-height','glass-width','liquid-height'])$(id).oninput=e=>{const value=Number(e.target.value)/100;if(id==='glass-height')glassHeight=value;if(id==='glass-width')glassWidth=value;if(id==='liquid-height')liquidHeight=value;glassUI();};
+ $('cutoff-height').oninput=e=>{cutoffOffset=Number(e.target.value)/100;$('cutoff-height-value').textContent=Number(e.target.value)+' cm';applyCoverage();};
+ $('cutoff-enabled').onchange=e=>{cutoffEnabled=e.target.checked;cutoffUI();};
+ $('cutoff-guide').onchange=e=>{showCutoffGuide=e.target.checked;applyCoverage();};
+ $('cutoff-at-base').onclick=()=>{cutoffOffset=clamp(plant.root.getWorldPosition(new T.Vector3()).y-overlay.position.y,-.25,.25);cutoffEnabled=true;cutoffUI();savePreferences();note('Cut-off set at the plant base. Plant and glass stay in place.');};
+ $('cutoff-reset').onclick=()=>{cutoffOffset=0;cutoffUI();note('Cut-off restored to the tapped liquid level.');};
  $('show-glass').onchange=e=>{showGlass=e.target.checked;glassVisibility();};
  $('glass-opacity').oninput=e=>{glassOpacity=Number(e.target.value)/100;glassVisibility();};
  $('model-exposure').oninput=e=>{exposureEV=Number(e.target.value);appearanceUI();};
@@ -371,23 +389,24 @@ async function init(){
  $('adjust').onclick=()=>{state.editing=!state.editing;clock.playing=false;if(state.editing){position.copy(overlay.position);discardAnchor();state.epoch++;}else state.anchorPending=true;sync();};
  $('bottle-width').oninput=e=>{bottleWidth=Number(e.target.value)/100;$('bottle-width-value').textContent=e.target.value+'%';fitBottle();};
  for(const b of document.querySelectorAll('[data-nudge]'))b.onclick=()=>nudge(b.dataset.nudge);
- $('toggle-panel').onclick=()=>{zeroSticks();$('panel').hidden=!$('panel').hidden;$('toggle-panel').textContent=$('panel').hidden?'Show controls':'Hide controls';$('toggle-panel').setAttribute('aria-expanded',String(!$('panel').hidden));sync();};
- $('joystick-align').onclick=()=>{zeroSticks();clock.playing=false;if(state.editing){state.editing=false;state.anchorPending=true;}$('panel').hidden=true;$('toggle-panel').textContent='Show controls';$('toggle-panel').setAttribute('aria-expanded','false');sync();note('Left joystick: move. Right joystick: height and turn. Release to stop.');};
- $('sticks-done').onclick=()=>{zeroSticks();$('panel').hidden=false;$('toggle-panel').textContent='Hide controls';$('toggle-panel').setAttribute('aria-expanded','true');sync();};
+ $('toggle-panel').onclick=()=>viewControls.showPanel($('panel').hidden);
+ $('joystick-align').onclick=()=>{zeroSticks();clock.playing=false;if(state.editing){state.editing=false;state.anchorPending=true;}viewControls.showPanel(false);note('Left joystick: move. Right joystick: height and turn. Release to stop.');};
+ $('sticks-done').onclick=()=>viewControls.showPanel(true);
  $('centre-flower').onclick=()=>{zeroSticks();centreFlower();};
- for(const target of ['flower','all'])$('target-'+target).onclick=()=>{zeroSticks();stickTarget=target;sync();};
+ for(const target of ['flower','all'])$('target-'+target).onclick=()=>selectTarget(target);
  bindStick('move',v=>stickMove=v);bindStick('turn',v=>stickTurn=v);
+ viewControls=new ViewControls({isImmersive:()=>!!state.session,canGrow:()=>state.ready&&!state.starting&&(!state.session||(state.placed&&state.tracking)),isPlaying:()=>clock.playing,progress:()=>clock.progress,target:()=>stickTarget,onPlayback:toggleGrowth,onGrow:growPlant,onRestart:()=>{clock.restart();sync();},onStop:zeroSticks,onToggleTarget:()=>selectTarget(stickTarget==='flower'?'all':'flower'),onExitAR:()=>state.session?.end(),onNotice:note,onEnter:()=>{zeroSticks();if(state.editing){state.editing=false;state.anchorPending=true;}},onViewChange:()=>{lastSyncKey='';sync();applyCoverage();resize();}});
  for(const event of ['input','change'])$('panel').addEventListener(event,savePreferences);
  for(const link of document.querySelectorAll('#collection-nav a'))link.onclick=async e=>{e.preventDefault();zeroSticks();clock.playing=false;savePreferences();try{await state.session?.end();}catch{}location.href=link.href;};
  const measureMotion=()=>{const size=Math.max(...[...document.querySelectorAll('.stick-wrap,#move-speed-control')].map(e=>e.getBoundingClientRect().height));document.documentElement.style.setProperty('--bloom-motion-height',size+'px');};
  const motionObserver=new ResizeObserver(measureMotion);for(const e of document.querySelectorAll('.stick-wrap,#move-speed-control'))motionObserver.observe(e);
- $('overlay').addEventListener('beforexrselect',e=>{if(e.target.closest?.('#panel,#toggle-panel,#joystick-controls,#quick-place,#exit')||drinkMode)e.preventDefault();});
+ $('overlay').addEventListener('beforexrselect',e=>{if(e.target.closest?.('#panel,#toggle-panel,#joystick-controls,#quick-place,#exit,#view-actions')||drinkMode||viewControls?.clean)e.preventDefault();});
  document.addEventListener('visibilitychange',()=>{if(document.hidden){zeroSticks();clock.playing=false;lastTime=null;sync();}});window.addEventListener('blur',zeroSticks);window.addEventListener('pagehide',()=>{zeroSticks();state.session?.end().catch(()=>{});});window.addEventListener('resize',resize);
  renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();state.ready=false;clock.playing=false;state.session?.end();note('Graphics paused. Reload this page to restore the plant.');sync();});
  try{state.supported=!!navigator.xr&&await navigator.xr.isSessionSupported('immersive-ar');}catch{}
  state.ready=true;levelsUI();distanceUI();glassUI();modeUI();appearanceUI();movementUI();stickTarget=drinkMode?'all':'flower';$('support').textContent=state.supported?'AR ready · choose a bottle or drink above.':'Preview works here. Live AR needs a compatible phone with WebXR, such as supported Android Chrome.';
  track('Drag to look around · stages and speed are adjustable.');note(drinkMode?'Ready · Start AR, then tap the liquid surface.':'Ready · grow your plant, or start AR over the real bottle.');sync();resize();renderer.setAnimationLoop(render);
- if(new URL(location.href).searchParams.has('test'))window.__BLOOM={state,clock,renderer,scene,camera,get plant(){return plant;},get bottle(){return bottle;},get glass(){return drinkGlass;},get overlay(){return overlay;},get levels(){return{startHeight,coveredHeight,clipY:-coveragePlane.constant};},get drink(){return{active:drinkMode,distance:surfaceDistance,ray:surfaceRay?{origin:surfaceRay.origin.toArray(),direction:surfaceRay.direction.toArray()}:null};},get sticks(){return{move:[...stickMove],turn:[...stickTurn],target:stickTarget,offset:flowerOffset.toArray(),yaw:flowerYaw};},processXR,resetTable,finishAR,place,intersectHeight,sampleGrowth};
+ if(new URL(location.href).searchParams.has('test'))window.__BLOOM={state,clock,renderer,scene,camera,get plant(){return plant;},get bottle(){return bottle;},get glass(){return drinkGlass;},get overlay(){return overlay;},get levels(){return{startHeight,coveredHeight,clipY:-coveragePlane.constant,cutoffOffset,cutoffEnabled};},get view(){return{clean:viewControls.clean,revealed:viewControls.revealed,ownsFullscreen:viewControls.ownsFullscreen};},get drink(){return{active:drinkMode,distance:surfaceDistance,ray:surfaceRay?{origin:surfaceRay.origin.toArray(),direction:surfaceRay.direction.toArray()}:null};},get sticks(){return{move:[...stickMove],turn:[...stickTurn],target:stickTarget,offset:flowerOffset.toArray(),yaw:flowerYaw};},processXR,resetTable,finishAR,place,intersectHeight,sampleGrowth};
 }
 restorePreferences();
 init().catch(e=>{note('Could not load Bottle Bloom: '+e.message);$('support').textContent='Reload to try again.';console.error(e);});
