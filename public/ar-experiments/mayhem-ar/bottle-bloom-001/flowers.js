@@ -32,29 +32,32 @@ function addVein(group,length){
  group.add(new T.Mesh(new T.TubeGeometry(path,10,.00030,3,false),veinMaterial));
 }
 export class GrowingPlant{
- constructor({height=.28,index=0,above=.35,startHeight=.012}={}){
+ constructor({height=.28,index=0,above=.35,startHeight=.012,surface=false,size=1}={}){
   this.height=height;this.startHeight=clamp(startHeight,0,height-.03);this.index=index;this.root=new T.Group();this.root.name='Growing plant '+(index+1);
   this.visual=new T.Group();this.root.add(this.visual);this.leaves=[];this.petals=[];
-  const seedY=-height+this.startHeight+.004;
+  this.surface=surface;
+  this.size=size;above*=size;
+  const seedY=surface?-.012:-height+this.startHeight+.004;
   this.seed=new T.Mesh(new T.SphereGeometry(.0044,12,8),new T.MeshStandardMaterial({color:0x7a6339,roughness:1}));this.seed.position.set(seedY<-.055?.003:0,seedY-.002,0);this.seed.scale.set(1,.65,.55);this.visual.add(this.seed);
   const side=index%2?1:-1;
   // The entire shoot begins inside the bottle. The narrow neck stays clear of branches.
-  const inside=seedY<-.055?[
+  const inside=surface?[new T.Vector3(0,seedY,0)]:seedY<-.055?[
    new T.Vector3(.003,seedY,0),new T.Vector3(-.008,seedY+(-.055-seedY)*.42,.003),
    new T.Vector3(.006,seedY+(-.055-seedY)*.73,-.003),new T.Vector3(0,-.055,0),new T.Vector3(0,-.022,0)
   ]:[new T.Vector3(0,seedY,0),new T.Vector3(0,seedY*.45,0)];
   this.path=new T.CatmullRomCurve3([
-   ...inside,new T.Vector3(0,0,0),new T.Vector3(0,.028,0),
-   new T.Vector3(side*.012,.12,.004),new T.Vector3(-side*.022,above*.67,-.006),
-   new T.Vector3(side*.024,above,.012),
+   ...inside,new T.Vector3(0,0,0),new T.Vector3(0,.028*size,0),
+   new T.Vector3(side*.012*size,.12*size,.004*size),new T.Vector3(-side*.022*size,above*.67,-.006*size),
+   new T.Vector3(side*.024*size,above,.012*size),
   ],false,'centripetal');
   this.segments=160;this.radial=7;
   this.stem=new T.Mesh(new T.TubeGeometry(this.path,this.segments,.00175,this.radial,false),stemMaterial);this.visual.add(this.stem);
   this.tip=new T.Mesh(new T.SphereGeometry(.0034,10,8),budMaterial);this.tip.scale.set(.7,1.7,.7);this.visual.add(this.tip);
   // Paired seed leaves unfold first; alternating true leaves follow above them.
   const levels=[];
-  if(seedY<-.12){const span=-.085-seedY;levels.push({y:seedY+span*.32,size:.015,pair:true},{y:seedY+span*.73,size:.019,pair:true});}
+  if(!surface&&seedY<-.12){const span=-.085-seedY;levels.push({y:seedY+span*.32,size:.015,pair:true},{y:seedY+span*.73,size:.019,pair:true});}
   levels.push({y:.055,size:.044},{y:.115,size:.060},{y:.182,size:.068},{y:.25,size:.053});
+  for(const level of levels)if(level.y>0){level.y*=size;level.size*=size;}
   for(let n=0;n<levels.length;n++){
    const v=levels[n];let best=0,d=Infinity;
    for(let k=0;k<=500;k++){const t=k/500,dy=Math.abs(this.path.getPointAt(t).y-v.y);if(dy<d){d=dy;best=t;}}
@@ -83,7 +86,7 @@ export class GrowingPlant{
  }
  update(progress,time){
   const s=sampleGrowth(progress);this.state=s;
-  this.seed.visible=progress<.4;
+  this.seed.visible=!this.surface&&progress<.4;
   this.stem.geometry.setDrawRange(0,Math.floor(s.stem*this.segments)*this.radial*6);
   const top=this.path.getPointAt(s.stem);this.tip.position.copy(top);this.tip.visible=s.stem>.002&&s.bud<.9;
   for(const l of this.leaves){
@@ -93,7 +96,7 @@ export class GrowingPlant{
    l.hinge.rotation.x=-.08-unfold*(l.inside?.92:1.12);l.hinge.rotation.z=.25*(1-unfold);
   }
   this.head.position.copy(top);this.head.visible=s.bud>.002;
-  this.head.scale.setScalar(Math.max(.001,s.bud));
+  this.head.scale.setScalar(Math.max(.001,s.bud)*this.size);
   this.head.rotation.z=.14*Math.sin(this.index+1)*(1-s.bloom*.6);
   this.head.rotation.x=1.12*s.bloom;
   this.bud.visible=s.bloom<.72;this.bud.scale.set(.012*(1-s.bloom*.5),.025*(1-s.bloom*.4),.012*(1-s.bloom*.5));
