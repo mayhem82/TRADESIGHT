@@ -29,7 +29,7 @@ export class ViewControls{
   $('view-play').textContent=playing?'Pause':progress>=1?'Grow again':progress>0?'Resume':'Grow';
   $('view-play').disabled=!this.o.canGrow();$('view-stop').disabled=!this.o.canGrow();$('view-target').disabled=!this.o.canGrow();$('view-fullscreen').disabled=!this.o.canGrow();$('grow-fullscreen').disabled=!this.o.canGrow();
   $('view-stop').textContent=this.clean?'↺':'Stop';$('view-stop').setAttribute('aria-label',this.clean?'Restart growth':'Stop movement');
-  $('view-target').textContent=this.o.target()==='flower'?'Flower':'Both';$('view-target').setAttribute('aria-label','Move '+(this.o.target()==='flower'?'flower only':'glass and flower')+'; tap to switch');
+  $('view-target').textContent=this.o.targetLabel?.()||(this.o.target()==='flower'?'Flower':'Both');$('view-target').setAttribute('aria-label','Move '+(this.o.targetDescription?.()||(this.o.target()==='flower'?'flower only':'glass and flower'))+'; tap to switch');
   $('view-fullscreen').textContent=this.clean?'Hide buttons':'Full screen';$('view-exit').textContent=active?'Exit AR':'Exit view';
  }
  showPanel(visible){

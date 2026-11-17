@@ -1,9 +1,9 @@
 import * as T from 'three';
 import {GLTFLoader} from './vendor/GLTFLoader.js';
-import {DrinkGlass,edgeGlass} from './drink-glass.js?v=clear-view-6';
-import {GrowingPlant,loadBotanicalTextures} from './flowers.js?v=clear-view-6';
-import {readSettings,writeSettings} from './settings.js?v=clear-view-6';
-import {ViewControls} from './view-controls.js?v=clear-view-6';
+import {DrinkGlass,edgeGlass} from './drink-glass.js?v=ground-growth-7';
+import {GrowingPlant,loadBotanicalTextures} from './flowers.js?v=ground-growth-7';
+import {readSettings,writeSettings} from './settings.js?v=ground-growth-7';
+import {ViewControls} from './view-controls.js?v=ground-growth-7';
 import {GrowthClock,clamp,intersectHeight,sampleGrowth} from './growth.js';
 const $=id=>document.getElementById(id),clock=new GrowthClock(32);
 const state={ready:false,supported:false,starting:false,session:null,reference:null,hitSource:null,table:null,candidate:null,placed:false,tracking:false,anchor:null,anchorPending:false,anchorBusy:false,epoch:0,editing:false};
@@ -14,6 +14,11 @@ let stickMove=[0,0],stickTurn=[0,0],stickTarget='flower',flowerYaw=0,groupMoved=
 const flowerOffset=new T.Vector3(),stickPads=[],UP=new T.Vector3(0,1,0);
 const coveragePlane=new T.Plane(new T.Vector3(0,1,0),0);
 let drinkMode=new URL(location.href).searchParams.get('mode')==='drink',surfaceDistance=.45,lastView=null,lastProjection=null,surfaceRay=null,surfaceTap=null;
+let groundMode=false,groundMethod='detected',groundDistance=1.2,groundCutoffEnabled=true;
+const currentMode=()=>groundMode?'ground':drinkMode?'drink':'bottle';
+const surfaceMode=()=>drinkMode||groundMode;
+const manualSurface=()=>drinkMode||(groundMode&&groundMethod==='manual');
+const activeCutoff=()=>groundMode?groundCutoffEnabled:cutoffEnabled;
 let drinkGlass,glassHeight=.14,glassWidth=.08,liquidHeight=.095;
 let showGlass=true,glassOpacity=.35;
 let plantSize=1,plantTransparency=0,exposureEV=0,travelExponent=0;
@@ -27,7 +32,7 @@ function sync(){
  viewControls?.sync();
  document.documentElement.classList.toggle('tracking-lost',active&&!state.tracking);
  document.documentElement.classList.toggle('ar-placed',active&&state.placed);
- const key=[drinkMode,active,canGrow,state.ready,state.supported,state.starting,state.placed,state.tracking,!!state.candidate,state.table===null,state.editing,clock.playing,clock.progress>=1,$('panel').hidden,stickTarget,viewControls?.clean].join('|');
+ const key=[currentMode(),groundMethod,active,canGrow,state.ready,state.supported,state.starting,state.placed,state.tracking,!!state.candidate,state.table===null,state.editing,clock.playing,clock.progress>=1,$('panel').hidden,stickTarget,viewControls?.clean].join('|');
  if(key===lastSyncKey)return;lastSyncKey=key;
  $('start').disabled=!state.ready||!state.supported||active||state.starting;
  for(const id of ['grow','pause','restart','progress'])$(id).disabled=!canGrow;
@@ -36,11 +41,14 @@ function sync(){
  $('placement').hidden=!active;$('placed-controls').hidden=!active||!state.placed;
  $('toggle-panel').hidden=!active;$('exit').hidden=!active;$('aim').hidden=!active||state.placed;
  $('place').disabled=!state.tracking||(!state.placed&&!state.candidate);
- $('place').textContent=drinkMode?(state.placed?'Choose liquid surface again':'Place at centre of view'):state.placed?'Re-align bottle mouth':state.table===null?'Set tabletop':'Place at bottle opening';
+ $('place').textContent=groundMode?(state.placed?'Choose ground spot again':groundMethod==='detected'?'Plant at ground marker':'Plant at centre of view'):drinkMode?(state.placed?'Choose liquid surface again':'Place at centre of view'):state.placed?'Re-align bottle mouth':state.table===null?'Set tabletop':'Place at bottle opening';
  $('drink-placement').hidden=!active||!drinkMode;
- $('quick-place').hidden=!active||!drinkMode||state.placed||!$('panel').hidden;
+ $('ground-placement').hidden=!active||!groundMode;$('ground-distance-wrap').hidden=groundMethod!=='manual';$('ground-method').value=groundMethod;$('ground-method').disabled=state.placed;
+ $('ground-method').querySelector('[value="detected"]').disabled=active&&!state.hitSource;
+ $('liquid-cutoff').hidden=!surfaceMode();
+ $('quick-place').hidden=!active||!surfaceMode()||state.placed||!$('panel').hidden;$('quick-place').textContent=groundMode&&groundMethod==='detected'?'Plant at ground marker':'Place at centre of view';
  $('quick-place').disabled=!state.tracking||!state.candidate;
- for(const mode of ['bottle','drink']){$('source-'+mode).disabled=active||state.starting;$('source-'+mode).setAttribute('aria-pressed',String((mode==='drink')===drinkMode));}
+ for(const mode of ['bottle','drink','ground']){$('source-'+mode).disabled=active||state.starting;$('source-'+mode).setAttribute('aria-pressed',String(mode===currentMode()));}
  $('height').disabled=state.placed;$('nudges').hidden=!state.editing;
  $('adjust').textContent=state.editing?'Finish alignment':'Fine alignment';
  const sticksVisible=active&&state.placed&&state.tracking&&!viewControls?.clean;
@@ -50,17 +58,17 @@ function sync(){
  toolbar.classList.add('in-panel');toolbar.hidden=!sticksVisible;
  for(const pad of stickPads)pad.element.setAttribute('aria-disabled',String(!sticksVisible));
  $('target-flower').setAttribute('aria-pressed',String(stickTarget==='flower'));$('target-all').setAttribute('aria-pressed',String(stickTarget==='all'));
- $('move-label').textContent=stickTarget==='flower'?'Move flower':'Move both';$('turn-label').textContent='Height / turn';
- $('retable').textContent=drinkMode?'Place on another drink':'Reset table alignment';
- if(plant)plant.guide.visible=!viewControls?.clean&&active&&state.tracking&&((state.placed&&state.editing)||(!state.placed&&(drinkMode||state.table!==null)&&!!state.candidate));
+ $('move-label').textContent=groundMode?(stickTarget==='flower'?'Move plant':'Move plant + level'):stickTarget==='flower'?'Move flower':'Move both';$('turn-label').textContent='Height / turn';
+ $('retable').textContent=groundMode?'Choose new ground spot':drinkMode?'Place on another drink':'Reset table alignment';
+ if(plant)plant.guide.visible=!viewControls?.clean&&active&&state.tracking&&((state.placed&&state.editing)||(!state.placed&&(surfaceMode()||state.table!==null)&&!!state.candidate));
 }
-function growPlant(){if(clock.progress>=1)clock.seek(0);clock.playing=true;note(drinkMode?'Growing from the liquid · leaves, then buds, then flowers.':'Growing from inside the glass · leaves, then buds, then flowers.');sync();}
+function growPlant(){if(clock.progress>=1)clock.seek(0);clock.playing=true;note(groundMode?'Growing from the ground · leaves, then buds, then flowers.':drinkMode?'Growing from the liquid · leaves, then buds, then flowers.':'Growing from inside the glass · leaves, then buds, then flowers.');sync();}
 function toggleGrowth(){clock.playing=!clock.playing;if(clock.playing&&clock.progress>=1)clock.seek(0);sync();}
 function selectTarget(target){zeroSticks();stickTarget=target;sync();}
-function previewPosition(){return new T.Vector3(0,drinkMode?0:height,0);}
+function previewPosition(){return new T.Vector3(0,surfaceMode()?0:height,0);}
 function savePreferences(){
- const saved=writeSettings({version:1,mode:drinkMode?'drink':'bottle',height,bottleWidth,startHeight,coveredHeight,glassHeight,glassWidth,liquidHeight,surfaceDistance,showGlass,glassOpacity,plantSize,plantTransparency,exposureEV,travelExponent,growthSpeed:clock.speed,cutoffEnabled});
- $('settings-status').textContent=saved?'Settings saved on this device. Select your real glass again each time you start AR.':'Settings apply now, but this browser could not save them.';
+ const saved=writeSettings({version:1,mode:currentMode(),height,bottleWidth,startHeight,coveredHeight,glassHeight,glassWidth,liquidHeight,surfaceDistance,showGlass,glassOpacity,plantSize,plantTransparency,exposureEV,travelExponent,growthSpeed:clock.speed,cutoffEnabled,groundMethod,groundDistance,groundCutoffEnabled});
+ $('settings-status').textContent=saved?'Settings saved on this device. Select a new real-world spot each time you start AR.':'Settings apply now, but this browser could not save them.';
 }
 function appearanceUI(){
  $('model-exposure').value=exposureEV;$('model-exposure-value').textContent=(exposureEV>0?'+':'')+exposureEV.toFixed(1)+' EV';
@@ -75,8 +83,8 @@ function movementUI(){
  const factor=travelFactor(),label=Number(factor.toPrecision(3))+'×';$('travel-speed').value=travelExponent;$('travel-speed-value').textContent=label;$('travel-speed-metric').textContent=Number((.025*factor).toPrecision(3))+' m/s';$('travel-speed').setAttribute('aria-valuetext',label+'; '+Number((.025*factor).toPrecision(3))+' metres per second');
 }
 function restorePreferences(){
- const s=readSettings();({height,bottleWidth,startHeight,coveredHeight,glassHeight,glassWidth,liquidHeight,surfaceDistance,showGlass,glassOpacity,plantSize,plantTransparency,exposureEV,travelExponent,cutoffEnabled}=s);
- const mode=new URL(location.href).searchParams.get('mode');drinkMode=(mode==='drink'||mode==='bottle'?mode:s.mode)==='drink';
+ const s=readSettings();({height,bottleWidth,startHeight,coveredHeight,glassHeight,glassWidth,liquidHeight,surfaceDistance,showGlass,glassOpacity,plantSize,plantTransparency,exposureEV,travelExponent,cutoffEnabled,groundMethod,groundDistance,groundCutoffEnabled}=s);
+ const query=new URL(location.href).searchParams.get('mode'),mode=['drink','bottle','ground'].includes(query)?query:s.mode;drinkMode=mode==='drink';groundMode=mode==='ground';
  clock.setSpeed(s.growthSpeed);$('speed').value=clock.speed;$('speed-value').textContent=pretty(clock.speed);
  $('height').value=(height*100).toFixed(1);$('bottle-width').value=bottleWidth*100;$('bottle-width-value').textContent=Math.round(bottleWidth*100)+'%';
  $('show-glass').checked=showGlass;$('glass-opacity').value=glassOpacity*100;
@@ -90,15 +98,19 @@ function glassUI(){
 }
 function modeUI(){
  document.documentElement.classList.toggle('drink-mode',drinkMode);
- $('start').innerHTML='<span>◉</span> Start AR on my '+(drinkMode?'drink':'bottle');
- $('instruction').textContent=drinkMode?'Tap the liquid in your real drink. A shoot grows from its surface, unfolds leaves, forms a bud and flowers.':'The shoot begins inside the glass. Leaves unfold, buds form, then the flower opens.';
+ document.documentElement.classList.toggle('ground-mode',groundMode);
+ $('start').innerHTML=groundMode?'<span>◉</span> Start AR on the ground':'<span>◉</span> Start AR on my '+(drinkMode?'drink':'bottle');
+ $('instruction').textContent=groundMode?'Aim at the ground marker and plant a shoot. It grows from that spot, unfolds leaves, forms buds and flowers.':drinkMode?'Tap the liquid in your real drink. A shoot grows from its surface, unfolds leaves, forms a bud and flowers.':'The shoot begins inside the glass. Leaves unfold, buds form, then the flower opens.';
  glassVisibility();
- $('target-all').textContent=drinkMode?'Glass + flower':'Bottle + flower';
- document.querySelector('.eyebrow').textContent=drinkMode?'ONE GLASS · ONE PLANT':'ONE BOTTLE · ONE PLANT';
+ $('target-all').textContent=groundMode?'Plant + ground level':drinkMode?'Glass + flower':'Bottle + flower';$('target-flower').textContent=groundMode?'Plant only':'Flower';$('centre-flower').textContent=groundMode?'Centre plant':'Centre flower';
+ $('cutoff-title').textContent=groundMode?'Ground cut-off':'Liquid cut-off';$('cutoff-reset').textContent=groundMode?'Selected ground level':'Tapped liquid level';
+ $('cutoff-help').textContent=groundMode?'Independent of plant movement. Move the cut-off to the real ground level, or set it at the plant base. Its height resets when you select a new ground spot.':'Independent of plant and glass movement. Move the cut-off to the real drink level, or set it at the plant base. Its height resets when you select a new liquid surface.';
+ document.querySelector('.eyebrow').textContent=groundMode?'ONE PLANT · FROM THE GROUND':drinkMode?'ONE GLASS · ONE PLANT':'ONE BOTTLE · ONE PLANT';
+ if(reticle)reticle.scale.setScalar(groundMode?3:1);$('placement-footer').textContent=groundMode?'Ground placement stays fixed for this AR session.':'Keep your glass still after alignment.';
  if(floor)floor.position.y=drinkMode?-liquidHeight:0;
 }
 function glassVisibility(){
- if(bottle)bottle.visible=!drinkMode&&(!state.session||showGlass);
+ if(bottle)bottle.visible=!surfaceMode()&&(!state.session||showGlass);
  if(drinkGlass)drinkGlass.root.visible=drinkMode&&(!state.session||showGlass);
  for(const {ar}of glassMaterials)ar.opacity=glassOpacity;
  if(drinkGlass)drinkGlass.ar.opacity=glassOpacity;
@@ -106,9 +118,9 @@ function glassVisibility(){
 }
 function chooseMode(value){
  if(state.session||state.starting)return;
- zeroSticks();centreFlower();drinkMode=value;stickTarget=drinkMode?'all':'flower';surfaceRay=null;clock.playing=false;clock.seek(0);modeUI();buildPlant();sync();
- const url=new URL(location.href);url.searchParams.set('mode',drinkMode?'drink':'bottle');history.replaceState(null,'',url);savePreferences();
- note(drinkMode?'Drink mode ready. Start AR, then tap the liquid surface.':'Bottle mode ready. Start AR to align the real bottle.');
+ zeroSticks();centreFlower();drinkMode=value==='drink';groundMode=value==='ground';cutoffOffset=0;stickTarget=surfaceMode()?'all':'flower';surfaceRay=null;clock.playing=false;clock.seek(0);modeUI();buildPlant();sync();
+ const url=new URL(location.href);url.searchParams.set('mode',currentMode());history.replaceState(null,'',url);savePreferences();
+ note(groundMode?'Ground mode ready. Start AR, then choose a spot on the ground.':drinkMode?'Drink mode ready. Start AR, then tap the liquid surface.':'Bottle mode ready. Start AR to align the real bottle.');
 }
 function viewRay(x=0,y=0){
  if(!lastView||!lastProjection)return null;
@@ -116,15 +128,16 @@ function viewRay(x=0,y=0){
  const direction=new T.Vector3(x,y,.5).applyMatrix4(inverse).normalize().transformDirection(world);
  return{origin:new T.Vector3().setFromMatrixPosition(world),direction};
 }
-function rayPoint(ray){return ray.origin.clone().addScaledVector(ray.direction,surfaceDistance);}
-function distanceUI(){const cm=Math.round(surfaceDistance*100);$('surface-distance').value=cm;$('surface-distance-value').textContent=cm+' cm';}
+function rayPoint(ray){return ray.origin.clone().addScaledVector(ray.direction,groundMode?groundDistance:surfaceDistance);}
+function distanceUI(){for(const [id,value]of [['surface-distance',surfaceDistance],['ground-distance',groundDistance]]){const cm=Math.round(value*100);$(id).value=cm;$(id+'-value').textContent=cm+' cm';}}
 function movedDrink(){
- if(!drinkMode||!surfaceRay)return;
- const direction=position.clone().sub(surfaceRay.origin);surfaceDistance=clamp(direction.length(),.1,2);surfaceRay.direction.copy(direction.normalize());distanceUI();
+ if(!surfaceMode()||!surfaceRay)return;
+ const direction=position.clone().sub(surfaceRay.origin);if(groundMode)groundDistance=clamp(direction.length(),.2,5);else surfaceDistance=clamp(direction.length(),.1,2);surfaceRay.direction.copy(direction.normalize());distanceUI();
  if(state.ready)savePreferences();
 }
 function tapDrink(e){
- if(!drinkMode||!state.session||state.placed||!state.tracking)return;
+ if(!surfaceMode()||!state.session||state.placed||!state.tracking)return;
+ if(groundMode&&groundMethod==='detected'){place();return;}
  const rect=renderer.domElement.getBoundingClientRect(),ray=viewRay((e.clientX-rect.left)/rect.width*2-1,1-(e.clientY-rect.top)/rect.height*2);
  if(!ray)return;
  surfaceRay=ray;state.candidate=rayPoint(ray).toArray();place();
@@ -150,12 +163,12 @@ function levelsUI(){
 }
 function applyCoverage(){
  if(!overlay)return;
- coveragePlane.constant=-(overlay.position.y+(drinkMode?cutoffOffset:-height+coveredHeight));
- if(coverageRing){coverageRing.position.y=drinkMode?cutoffOffset:-height+coveredHeight;coverageRing.scale.setScalar(drinkMode?glassWidth/.088:height/.309*bottleWidth);coverageRing.visible=!viewControls?.clean&&(drinkMode?showCutoffGuide&&cutoffEnabled:coveredHeight>0&&(!state.session||state.editing));}
+ coveragePlane.constant=-(overlay.position.y+(surfaceMode()?cutoffOffset:-height+coveredHeight));
+ if(coverageRing){coverageRing.position.y=surfaceMode()?cutoffOffset:-height+coveredHeight;coverageRing.scale.setScalar(groundMode?1.5:drinkMode?glassWidth/.088:height/.309*bottleWidth);coverageRing.visible=!viewControls?.clean&&(surfaceMode()?showCutoffGuide&&activeCutoff():coveredHeight>0&&(!state.session||state.editing));}
 }
 function cutoffUI(){
- $('cutoff-height').value=(cutoffOffset*100).toFixed(1);$('cutoff-height-value').textContent=Number((cutoffOffset*100).toFixed(1))+' cm';$('cutoff-enabled').checked=cutoffEnabled;$('cutoff-guide').checked=showCutoffGuide;
- plant?.visual.traverse(o=>{for(const material of o.material?(Array.isArray(o.material)?o.material:[o.material]):[]){material.clippingPlanes=drinkMode&&!cutoffEnabled?[]:[coveragePlane];material.needsUpdate=true;}});
+ $('cutoff-height').value=(cutoffOffset*100).toFixed(1);$('cutoff-height-value').textContent=Number((cutoffOffset*100).toFixed(1))+' cm';$('cutoff-enabled').checked=activeCutoff();$('cutoff-guide').checked=showCutoffGuide;
+ plant?.visual.traverse(o=>{for(const material of o.material?(Array.isArray(o.material)?o.material:[o.material]):[]){material.clippingPlanes=surfaceMode()&&!activeCutoff()?[]:[coveragePlane];material.needsUpdate=true;}});
  applyCoverage();
 }
 function zeroSticks(){
@@ -194,13 +207,13 @@ function bindStick(id,assign){
 }
 function buildPlant(){
  if(plant){overlay.remove(plant.root);plant.dispose();}
- plant=new GrowingPlant({height,index:3,above:.34,startHeight,surface:drinkMode,size:plantSize});overlay.add(plant.root);
+ plant=new GrowingPlant({height,index:3,above:.34,startHeight,surface:surfaceMode(),size:plantSize});overlay.add(plant.root);plant.guide.scale.setScalar(groundMode?3:1);
  plant.root.traverse(o=>{for(const material of o.material?(Array.isArray(o.material)?o.material:[o.material]):[]){material.clippingPlanes=[coveragePlane];material.needsUpdate=true;}});
  applyFlowerAlignment();overlay.position.copy(state.placed?position:previewPosition());
  overlay.visible=!state.session||state.placed;plant.root.visible=true;plant.update(clock.progress,0);fitBottle();cutoffUI();appearanceUI();lastSyncKey='';
 }
 function playback(){
- const v=sampleGrowth(clock.progress);$('stage').textContent=drinkMode&&clock.progress>=.1&&clock.progress<.4?'Growing from your drink':v.stage;
+ const v=sampleGrowth(clock.progress);$('stage').textContent=surfaceMode()&&clock.progress>=.1&&clock.progress<.4?(groundMode?'Growing from the ground':'Growing from your drink'):v.stage;
  $('progress').value=clock.progress*100;$('progress-value').textContent=Math.round(clock.progress*100)+'%';
  $('pause').textContent=clock.playing?'Pause':'Resume';
 }
@@ -208,13 +221,19 @@ function resetTable(){
  zeroSticks();centreFlower();
  discardAnchor();state.epoch++;state.table=null;state.candidate=null;state.placed=false;state.editing=false;clock.playing=false;clock.seek(0);
  surfaceRay=null;surfaceTap=null;reticle.visible=false;cutoffOffset=0;cutoffUI();
- overlay.visible=false;plant.root.visible=false;track(drinkMode?'Tap the liquid surface in the camera view.':'Move the phone slowly and aim at the tabletop beside the bottle.');note(drinkMode?'Set the distance to your drink, then tap the liquid. No tabletop scan needed.':'1 · Scan the table, then tap Set tabletop.');sync();playback();
+ overlay.visible=false;plant.root.visible=false;placementPrompt();sync();playback();
+}
+function placementPrompt(){
+ if(groundMode){
+  const manual=groundMethod==='manual';$('ground-hint').textContent=manual?'Set the distance, aim or tap the ground spot, then refine the plant with the joysticks.':'Move the phone slowly and aim at the ground. Plant at the marker. Use Manual point if no marker appears.';
+  track(manual?'Manual ground placement · aim or tap the ground spot.':'Aim at the ground and move slowly to find a surface.');note(manual?'Set Distance to ground spot, then tap the ground or Plant at centre of view.':'Aim the marker at the ground, then tap Plant at ground marker.');
+ }else{track(drinkMode?'Tap the liquid surface. Adjust Distance if needed.':'Scan the tabletop beside your bottle.');note(drinkMode?'Tap the liquid, or aim the centre marker and tap Place. Distance is adjustable.':'1 · Aim at the table and tap Set tabletop.');}
 }
 async function startAR(){
  if(state.starting||state.session||!state.ready)return;
  state.starting=true;sync();let s;const token=++state.epoch;
  try{
-  s=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:drinkMode?['local','dom-overlay']:['local','hit-test','dom-overlay'],optionalFeatures:['anchors'],domOverlay:{root:$('overlay')}});
+  s=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:surfaceMode()?['local','dom-overlay']:['local','hit-test','dom-overlay'],optionalFeatures:groundMode?['anchors','hit-test']:['anchors'],domOverlay:{root:$('overlay')}});
   if(token!==state.epoch){await s.end();return;}
   state.session=s;
   s.addEventListener('end',()=>finishAR(s),{once:true});
@@ -225,13 +244,13 @@ async function startAR(){
   state.reference=renderer.xr.getReferenceSpace();
   state.reference.addEventListener?.('reset',()=>{if(state.session===s)resetTable();});
   state.hitSource=null;
-  if(!drinkMode){const viewer=await s.requestReferenceSpace('viewer');state.hitSource=await s.requestHitTestSource({space:viewer});}
+  if(!drinkMode){try{const viewer=await s.requestReferenceSpace('viewer');state.hitSource=await s.requestHitTestSource({space:viewer});}catch(e){if(!groundMode)throw e;groundMethod='manual';}}
   if(state.session!==s){state.hitSource?.cancel();return;}
   state.table=null;state.placed=false;state.candidate=null;state.tracking=false;state.editing=false;
   zeroSticks();centreFlower();surfaceRay=null;surfaceTap=null;lastView=lastProjection=null;clock.playing=false;clock.seek(0);lastTime=null;cutoffOffset=0;cutoffUI();
   useARGlass(true);floor.visible=false;overlay.visible=false;plant.root.visible=false;scene.background=null;renderer.setClearColor(0,0);
-  document.documentElement.classList.add('xr');$('panel').hidden=false;$('toggle-panel').textContent='Hide controls';$('toggle-panel').setAttribute('aria-expanded','true');$('mode').textContent=drinkMode?'LIVE DRINK AR':'LIVE BOTTLE AR';
-  track(drinkMode?'Tap the liquid surface. Adjust Distance if needed.':'Scan the tabletop beside your bottle.');note(drinkMode?'Tap the liquid, or aim the centre marker and tap Place. Distance is adjustable.':'1 · Aim at the table and tap Set tabletop.');
+  document.documentElement.classList.add('xr');$('panel').hidden=false;$('toggle-panel').textContent='Hide controls';$('toggle-panel').setAttribute('aria-expanded','true');$('mode').textContent=groundMode?'LIVE GROUND AR':drinkMode?'LIVE DRINK AR':'LIVE BOTTLE AR';
+  placementPrompt();
  }catch(e){
   if(s&&state.session===s)await s.end().catch(()=>{});
   note(e.name==='NotAllowedError'?'Camera / AR permission was not granted. You can retry Start AR.':'AR could not start ('+e.name+'). Open this page in supported Android Chrome.');
@@ -244,7 +263,7 @@ function finishAR(s){
  viewControls?.reset();
  clock.playing=false;lastTime=null;reticle.visible=false;
  document.documentElement.classList.remove('xr');$('panel').hidden=false;$('mode').textContent='3D PREVIEW';
- useARGlass(false);bottle.visible=!drinkMode;floor.visible=true;overlay.visible=true;plant.root.visible=true;overlay.position.copy(previewPosition());plant.root.position.set(0,0,0);plant.guide.visible=false;surfaceRay=null;surfaceTap=null;lastView=lastProjection=null;
+ useARGlass(false);bottle.visible=!surfaceMode();floor.visible=true;overlay.visible=true;plant.root.visible=true;overlay.position.copy(previewPosition());plant.root.position.set(0,0,0);plant.guide.visible=false;surfaceRay=null;surfaceTap=null;lastView=lastProjection=null;
  scene.background=new T.Color(0x132820);renderer.setClearColor(0x132820,1);camera.fov=39;queueMicrotask(resize);track('Drag to look around · stages and speed are adjustable.');note('AR ended. Alignment resets each time you start.');sync();
 }
 function loseTracking(){
@@ -253,13 +272,13 @@ function loseTracking(){
  track('Tracking paused. Move slowly to recover.');note('Growth is paused. Check alignment when tracking returns, then Resume.');sync();
 }
 function place(){
- if(state.placed){zeroSticks();discardAnchor();state.epoch++;state.placed=false;state.candidate=null;state.editing=false;surfaceRay=null;clock.playing=false;overlay.visible=false;plant.root.visible=false;note(drinkMode?'Tap the liquid surface again.':'Aim at the bottle opening again, then place.');sync();return;}
+ if(state.placed){zeroSticks();discardAnchor();state.epoch++;state.placed=false;state.candidate=null;state.editing=false;surfaceRay=null;clock.playing=false;overlay.visible=false;plant.root.visible=false;if(groundMode)placementPrompt();else note(drinkMode?'Tap the liquid surface again.':'Aim at the bottle opening again, then place.');sync();return;}
  if(!state.candidate||!state.tracking)return;
- if(!drinkMode&&state.table===null){state.table=state.candidate[1];state.candidate=null;note('2 · Align the transparent bottle over the real one, then Place.');track('Aim at the opening. The glass bottle and plant will align together.');}
+ if(!surfaceMode()&&state.table===null){state.table=state.candidate[1];state.candidate=null;note('2 · Align the transparent bottle over the real one, then Place.');track('Aim at the opening. The glass bottle and plant will align together.');}
  else{
-  if(drinkMode){if(!surfaceRay)surfaceRay=viewRay();cutoffOffset=0;centreFlower();cutoffUI();}
+  if(surfaceMode()){if(manualSurface()&&!surfaceRay)surfaceRay=viewRay();cutoffOffset=0;centreFlower();cutoffUI();}
   position.fromArray(state.candidate);overlay.position.copy(position);overlay.visible=true;plant.root.visible=true;state.placed=true;state.anchorPending=true;state.candidate=null;
-  reticle.visible=false;clock.seek(0);clock.playing=false;playback();note(drinkMode?'Liquid selected. Tap Grow plant, or refine its position with joysticks.':'Aligned · tap Grow plant. The first shoot starts inside the bottle.');track(drinkMode?'Growth point fixed. Keep your drink still.':'Bottle aligned for this session. Keep it still.');
+  reticle.visible=false;clock.seek(0);clock.playing=false;playback();note(groundMode?'Ground selected. Tap Grow plant, or refine its position with joysticks.':drinkMode?'Liquid selected. Tap Grow plant, or refine its position with joysticks.':'Aligned · tap Grow plant. The first shoot starts inside the bottle.');track(groundMode?'Plant rooted at this ground spot.':drinkMode?'Growth point fixed. Keep your drink still.':'Bottle aligned for this session. Keep it still.');
  }
  sync();
 }
@@ -271,8 +290,8 @@ function processXR(frame){
  const m=pose.transform.matrix;lastCamera=Array.from(m);
  lastView=Array.from(pose.views[0]?.transform.matrix||m);lastProjection=pose.views[0]?.projectionMatrix?Array.from(pose.views[0].projectionMatrix):null;
  if(!state.placed){
-  if(drinkMode){const ray=viewRay();state.candidate=ray?rayPoint(ray).toArray():null;}
-  else if(state.table===null){
+  if(manualSurface()){const ray=viewRay();state.candidate=ray?rayPoint(ray).toArray():null;}
+  else if(groundMode||state.table===null){
    state.candidate=null;
    try{for(const hit of frame.getHitTestResults(state.hitSource)){
     const h=hit.getPose(state.reference)?.transform.matrix;
@@ -280,7 +299,7 @@ function processXR(frame){
    }}catch{}
   }else state.candidate=intersectHeight([m[12],m[13],m[14]],[-m[8],-m[9],-m[10]],state.table+height);
   reticle.visible=!!state.candidate;if(state.candidate)reticle.position.fromArray(state.candidate);
-  overlay.visible=(drinkMode||state.table!==null)&&!!state.candidate;plant.root.visible=overlay.visible;
+  overlay.visible=(surfaceMode()||state.table!==null)&&!!state.candidate;plant.root.visible=overlay.visible;
   if(overlay.visible)overlay.position.fromArray(state.candidate);
   if(state.table!==null&&!state.candidate)track('Aim slightly downward at the opening, from within arm’s reach.');
  }else{
@@ -318,7 +337,7 @@ function render(time,frame){
  let advance=true;
  if(state.session){if(frame)advance=processXR(frame);else advance=false;}
  else{
-  const distance=drinkMode?.82:1.15;camera.position.set(Math.sin(previewYaw)*distance,drinkMode?.20:.43,Math.cos(previewYaw)*distance);camera.lookAt(0,drinkMode?.13:.325,0);
+  const distance=surfaceMode()?.82:1.15;camera.position.set(Math.sin(previewYaw)*distance,surfaceMode()?.20:.43,Math.cos(previewYaw)*distance);camera.lookAt(0,surfaceMode()?.13:.325,0);
  }
  if(advance)moveWithSticks(dt);
  const wasPlaying=clock.playing;if(advance&&(!state.session||state.tracking))clock.tick(dt);if(wasPlaying!==clock.playing)sync();
@@ -353,7 +372,7 @@ async function init(){
   const ar=new T.MeshPhysicalMaterial({color:0x65b977,transparent:true,opacity:.18,roughness:.065,metalness:0,clearcoat:1,clearcoatRoughness:.08,envMapIntensity:.75,depthWrite:false,side:T.FrontSide,clippingPlanes:[coveragePlane]});
   edgeGlass(ar);glassMaterials.push({mesh:o,preview:o.material,ar});
  }});overlay.add(bottle);buildPlant();
- const canvas=renderer.domElement;canvas.addEventListener('pointerdown',e=>{if(viewControls?.clean){viewControls.reveal();return;}if(state.session){if(drinkMode&&!state.placed)surfaceTap={id:e.pointerId,x:e.clientX,y:e.clientY};return;}drag={id:e.pointerId,x:e.clientX};canvas.setPointerCapture(e.pointerId);});canvas.addEventListener('pointermove',e=>{if(drag?.id!==e.pointerId||state.session)return;previewYaw-=(e.clientX-drag.x)*.008;drag.x=e.clientX;});canvas.addEventListener('pointerup',e=>{if(surfaceTap?.id===e.pointerId&&Math.hypot(e.clientX-surfaceTap.x,e.clientY-surfaceTap.y)<12)tapDrink(e);surfaceTap=null;});for(const name of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(name,()=>{drag=null;surfaceTap=null;});
+ const canvas=renderer.domElement;canvas.addEventListener('pointerdown',e=>{if(viewControls?.clean){viewControls.reveal();return;}if(state.session){if(surfaceMode()&&!state.placed)surfaceTap={id:e.pointerId,x:e.clientX,y:e.clientY};return;}drag={id:e.pointerId,x:e.clientX};canvas.setPointerCapture(e.pointerId);});canvas.addEventListener('pointermove',e=>{if(drag?.id!==e.pointerId||state.session)return;previewYaw-=(e.clientX-drag.x)*.008;drag.x=e.clientX;});canvas.addEventListener('pointerup',e=>{if(surfaceTap?.id===e.pointerId&&Math.hypot(e.clientX-surfaceTap.x,e.clientY-surfaceTap.y)<12)tapDrink(e);surfaceTap=null;});for(const name of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(name,()=>{drag=null;surfaceTap=null;});
  $('grow').onclick=growPlant;
  $('pause').onclick=toggleGrowth;
  $('restart').onclick=()=>{clock.restart();sync();};
@@ -365,15 +384,18 @@ async function init(){
  $('start-height').onchange=e=>{zeroSticks();startHeight=Number(e.target.value)/100;clock.seek(0);clock.playing=false;levelsUI();buildPlant();sync();note('Plant starts '+Number((startHeight*100).toFixed(1))+' cm above the bottle base. Tap Grow plant.');};
  $('covered-height').oninput=e=>{coveredHeight=Number(e.target.value)/100;$('covered-height-value').textContent=Number(e.target.value).toFixed(1)+' cm';applyCoverage();};
  $('start').onclick=startAR;$('place').onclick=place;$('quick-place').onclick=place;$('exit').onclick=()=>state.session?.end();$('retable').onclick=resetTable;
- for(const mode of ['bottle','drink'])$('source-'+mode).onclick=()=>chooseMode(mode==='drink');
+ for(const mode of ['bottle','drink','ground'])$('source-'+mode).onclick=()=>chooseMode(mode);
  $('surface-distance').oninput=e=>{surfaceDistance=Number(e.target.value)/100;distanceUI();if(drinkMode&&state.placed&&surfaceRay){zeroSticks();discardAnchor();state.epoch++;clock.playing=false;position.copy(rayPoint(surfaceRay));overlay.position.copy(position);applyCoverage();sync();}};
  $('surface-distance').onchange=()=>{if(drinkMode&&state.placed){state.anchorPending=true;note('Distance set. Refine with joysticks, then Grow plant.');}};
+ $('ground-method').onchange=e=>{groundMethod=e.target.value;surfaceRay=null;state.candidate=null;overlay.visible=false;plant.root.visible=false;placementPrompt();sync();};
+ $('ground-distance').oninput=e=>{groundDistance=Number(e.target.value)/100;distanceUI();if(groundMode&&groundMethod==='manual'&&state.placed&&surfaceRay){zeroSticks();discardAnchor();state.epoch++;clock.playing=false;position.copy(rayPoint(surfaceRay));overlay.position.copy(position);applyCoverage();sync();}};
+ $('ground-distance').onchange=()=>{if(groundMode&&state.placed){state.anchorPending=true;note('Ground distance set. Refine with joysticks, then Grow plant.');}};
  for(const id of ['glass-height','glass-width','liquid-height'])$(id).oninput=e=>{const value=Number(e.target.value)/100;if(id==='glass-height')glassHeight=value;if(id==='glass-width')glassWidth=value;if(id==='liquid-height')liquidHeight=value;glassUI();};
  $('cutoff-height').oninput=e=>{cutoffOffset=Number(e.target.value)/100;$('cutoff-height-value').textContent=Number(e.target.value)+' cm';applyCoverage();};
- $('cutoff-enabled').onchange=e=>{cutoffEnabled=e.target.checked;cutoffUI();};
+ $('cutoff-enabled').onchange=e=>{if(groundMode)groundCutoffEnabled=e.target.checked;else cutoffEnabled=e.target.checked;cutoffUI();};
  $('cutoff-guide').onchange=e=>{showCutoffGuide=e.target.checked;applyCoverage();};
- $('cutoff-at-base').onclick=()=>{cutoffOffset=clamp(plant.root.getWorldPosition(new T.Vector3()).y-overlay.position.y,-.25,.25);cutoffEnabled=true;cutoffUI();savePreferences();note('Cut-off set at the plant base. Plant and glass stay in place.');};
- $('cutoff-reset').onclick=()=>{cutoffOffset=0;cutoffUI();note('Cut-off restored to the tapped liquid level.');};
+ $('cutoff-at-base').onclick=()=>{cutoffOffset=clamp(plant.root.getWorldPosition(new T.Vector3()).y-overlay.position.y,-.25,.25);if(groundMode)groundCutoffEnabled=true;else cutoffEnabled=true;cutoffUI();savePreferences();note(groundMode?'Cut-off set at the plant base. Placement stays fixed.':'Cut-off set at the plant base. Plant and glass stay in place.');};
+ $('cutoff-reset').onclick=()=>{cutoffOffset=0;cutoffUI();note(groundMode?'Cut-off restored to the selected ground level.':'Cut-off restored to the tapped liquid level.');};
  $('show-glass').onchange=e=>{showGlass=e.target.checked;glassVisibility();};
  $('glass-opacity').oninput=e=>{glassOpacity=Number(e.target.value)/100;glassVisibility();};
  $('model-exposure').oninput=e=>{exposureEV=Number(e.target.value);appearanceUI();};
@@ -395,18 +417,18 @@ async function init(){
  $('centre-flower').onclick=()=>{zeroSticks();centreFlower();};
  for(const target of ['flower','all'])$('target-'+target).onclick=()=>selectTarget(target);
  bindStick('move',v=>stickMove=v);bindStick('turn',v=>stickTurn=v);
- viewControls=new ViewControls({isImmersive:()=>!!state.session,canGrow:()=>state.ready&&!state.starting&&(!state.session||(state.placed&&state.tracking)),isPlaying:()=>clock.playing,progress:()=>clock.progress,target:()=>stickTarget,onPlayback:toggleGrowth,onGrow:growPlant,onRestart:()=>{clock.restart();sync();},onStop:zeroSticks,onToggleTarget:()=>selectTarget(stickTarget==='flower'?'all':'flower'),onExitAR:()=>state.session?.end(),onNotice:note,onEnter:()=>{zeroSticks();if(state.editing){state.editing=false;state.anchorPending=true;}},onViewChange:()=>{lastSyncKey='';sync();applyCoverage();resize();}});
+ viewControls=new ViewControls({isImmersive:()=>!!state.session,canGrow:()=>state.ready&&!state.starting&&(!state.session||(state.placed&&state.tracking)),isPlaying:()=>clock.playing,progress:()=>clock.progress,target:()=>stickTarget,targetDescription:()=>groundMode?(stickTarget==='flower'?'plant only':'plant and ground level'):(stickTarget==='flower'?'flower only':'glass and flower'),targetLabel:()=>groundMode?(stickTarget==='flower'?'Plant only':'Plant + level'):(stickTarget==='flower'?'Flower':'Both'),onPlayback:toggleGrowth,onGrow:growPlant,onRestart:()=>{clock.restart();sync();},onStop:zeroSticks,onToggleTarget:()=>selectTarget(stickTarget==='flower'?'all':'flower'),onExitAR:()=>state.session?.end(),onNotice:note,onEnter:()=>{zeroSticks();if(state.editing){state.editing=false;state.anchorPending=true;}},onViewChange:()=>{lastSyncKey='';sync();applyCoverage();resize();}});
  for(const event of ['input','change'])$('panel').addEventListener(event,savePreferences);
  for(const link of document.querySelectorAll('#collection-nav a'))link.onclick=async e=>{e.preventDefault();zeroSticks();clock.playing=false;savePreferences();try{await state.session?.end();}catch{}location.href=link.href;};
  const measureMotion=()=>{const size=Math.max(...[...document.querySelectorAll('.stick-wrap,#move-speed-control')].map(e=>e.getBoundingClientRect().height));document.documentElement.style.setProperty('--bloom-motion-height',size+'px');};
  const motionObserver=new ResizeObserver(measureMotion);for(const e of document.querySelectorAll('.stick-wrap,#move-speed-control'))motionObserver.observe(e);
- $('overlay').addEventListener('beforexrselect',e=>{if(e.target.closest?.('#panel,#toggle-panel,#joystick-controls,#quick-place,#exit,#view-actions')||drinkMode||viewControls?.clean)e.preventDefault();});
+ $('overlay').addEventListener('beforexrselect',e=>{if(e.target.closest?.('#panel,#toggle-panel,#joystick-controls,#quick-place,#exit,#view-actions')||surfaceMode()||viewControls?.clean)e.preventDefault();});
  document.addEventListener('visibilitychange',()=>{if(document.hidden){zeroSticks();clock.playing=false;lastTime=null;sync();}});window.addEventListener('blur',zeroSticks);window.addEventListener('pagehide',()=>{zeroSticks();state.session?.end().catch(()=>{});});window.addEventListener('resize',resize);
  renderer.domElement.addEventListener('webglcontextlost',e=>{e.preventDefault();state.ready=false;clock.playing=false;state.session?.end();note('Graphics paused. Reload this page to restore the plant.');sync();});
  try{state.supported=!!navigator.xr&&await navigator.xr.isSessionSupported('immersive-ar');}catch{}
- state.ready=true;levelsUI();distanceUI();glassUI();modeUI();appearanceUI();movementUI();stickTarget=drinkMode?'all':'flower';$('support').textContent=state.supported?'AR ready · choose a bottle or drink above.':'Preview works here. Live AR needs a compatible phone with WebXR, such as supported Android Chrome.';
- track('Drag to look around · stages and speed are adjustable.');note(drinkMode?'Ready · Start AR, then tap the liquid surface.':'Ready · grow your plant, or start AR over the real bottle.');sync();resize();renderer.setAnimationLoop(render);
- if(new URL(location.href).searchParams.has('test'))window.__BLOOM={state,clock,renderer,scene,camera,get plant(){return plant;},get bottle(){return bottle;},get glass(){return drinkGlass;},get overlay(){return overlay;},get levels(){return{startHeight,coveredHeight,clipY:-coveragePlane.constant,cutoffOffset,cutoffEnabled};},get view(){return{clean:viewControls.clean,revealed:viewControls.revealed,ownsFullscreen:viewControls.ownsFullscreen};},get drink(){return{active:drinkMode,distance:surfaceDistance,ray:surfaceRay?{origin:surfaceRay.origin.toArray(),direction:surfaceRay.direction.toArray()}:null};},get sticks(){return{move:[...stickMove],turn:[...stickTurn],target:stickTarget,offset:flowerOffset.toArray(),yaw:flowerYaw};},processXR,resetTable,finishAR,place,intersectHeight,sampleGrowth};
+ state.ready=true;levelsUI();distanceUI();glassUI();modeUI();appearanceUI();movementUI();stickTarget=surfaceMode()?'all':'flower';$('support').textContent=state.supported?'AR ready · choose bottle, drink or ground above.':'Preview works here. Live AR needs a compatible phone with WebXR, such as supported Android Chrome.';
+ track('Drag to look around · stages and speed are adjustable.');note(groundMode?'Ready · Start AR, then choose a ground spot.':drinkMode?'Ready · Start AR, then tap the liquid surface.':'Ready · grow your plant, or start AR over the real bottle.');sync();resize();renderer.setAnimationLoop(render);
+ if(new URL(location.href).searchParams.has('test'))window.__BLOOM={state,clock,renderer,scene,camera,get plant(){return plant;},get bottle(){return bottle;},get glass(){return drinkGlass;},get overlay(){return overlay;},get levels(){return{startHeight,coveredHeight,clipY:-coveragePlane.constant,cutoffOffset,cutoffEnabled:activeCutoff()};},get view(){return{clean:viewControls.clean,revealed:viewControls.revealed,ownsFullscreen:viewControls.ownsFullscreen};},get ground(){return{active:groundMode,method:groundMethod,distance:groundDistance,cutoffEnabled:groundCutoffEnabled,ray:surfaceRay?{origin:surfaceRay.origin.toArray(),direction:surfaceRay.direction.toArray()}:null};},get drink(){return{active:drinkMode,distance:surfaceDistance,ray:surfaceRay?{origin:surfaceRay.origin.toArray(),direction:surfaceRay.direction.toArray()}:null};},get sticks(){return{move:[...stickMove],turn:[...stickTurn],target:stickTarget,offset:flowerOffset.toArray(),yaw:flowerYaw};},processXR,resetTable,finishAR,place,intersectHeight,sampleGrowth};
 }
 restorePreferences();
 init().catch(e=>{note('Could not load Bottle Bloom: '+e.message);$('support').textContent='Reload to try again.';console.error(e);});
