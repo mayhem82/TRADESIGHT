@@ -2,6 +2,8 @@
   const models = {
     companion: { name: 'Bellbrook Yowie', scene: 'media/gltf/yowie-v1/yowie.gltf', motion: 'media/gltf/yowie-motion-v1/', exposureKey:'tradesight-yowie-exposure', defaultEV:1.5 },
     indy: { name: 'Indiana Jones', scene: 'media/gltf/indy/indy.gltf', motion: 'media/gltf/indy/', exposureKey:'tradesight-indy-exposure', defaultEV:0 },
+    albanese: { name: 'Anthony Albanese', scene: 'media/gltf/albanese/figure.gltf', motion: 'media/gltf/albanese/', exposureKey:'tradesight-albanese-exposure', defaultEV:0 },
+    hanson: { name: 'Pauline Hanson', scene: 'media/gltf/hanson/figure.gltf', motion: 'media/gltf/hanson/', exposureKey:'tradesight-hanson-exposure', defaultEV:0 },
     sunflower: { name: 'Sunflower', scene: 'media/gltf/sunflower/sunflower.gltf' }
   };
   const requested = new URL(location.href).searchParams.get('model');
