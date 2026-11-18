@@ -183,11 +183,12 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
       button.textContent = `${String(cue.id).padStart(2, '0')} · ${cue.label}`;
       button.onclick = () => choose(cue.id); return button;
     }));
+    const summaryLabels = [...new Set(result.cues.map(cue => cue.label))];
     $('scanExplanation').textContent = selected ? CUE_TYPES[selected.kind].explanation :
-      displayed.result.model ? 'Coloured masks show broad scene-model suggestions. Tap coloured pixels or a numbered button to review them. Small or excess regions may be omitted. Uncoloured areas do not rule out rock; rock type and gold content remain unknown.' :
-        'Tinted pixels show local contrast; boxes group those pixels. Select a cue to freeze and inspect. Appearance only; mineral and gold content remain unknown.';
+      displayed.result.model ? (summaryLabels.length ? 'Scene suggestions: ' + summaryLabels.join('; ') + '. ' : 'No supported scene regions were suggested. ') + 'These are broad visual suggestions, not mineral identification. Tap a region for detail.' :
+        (summaryLabels.length ? 'Visible contrasts: ' + summaryLabels.join('; ') + '. ' : 'No supported contrast cues were found. ') + 'These are appearance cues, not mineral identification. Tap a region for detail.';
     $('scanObservation').disabled = !selected;
-    $('scanObservation').textContent = selected ? 'Use selected cue in field notes' : 'Select a cue to write a note';
+    $('scanObservation').textContent = selected ? 'Save selected cue as a field note' : 'Select a cue to save a field note';
     $('sceneModelDetails').hidden = !displayed.result.model;
     $('sceneModelSummary').textContent = displayed.result.model
       ? 'Experimental broad scene recognition. Rock type, mineral identity, placement and gold remain unconfirmed. Other labels can be errors. Raw class areas below describe model output, not confidence.' : '';

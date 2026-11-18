@@ -5,7 +5,7 @@ export const MINERAL_GUIDE = 'https://geology.utah.gov/map-pub/survey-notes/glad
 
 export function canQueryContext(context) {
   const point = context?.location;
-  const locatedPhoto = context?.source === 'photo' && ['embedded-exif', 'embedded-manual', 'map-pin', 'assigned-current-gps'].includes(point?.source);
+  const locatedPhoto = context?.source === 'photo' && ['embedded-exif', 'embedded-manual', 'map-pin', 'assigned-current-gps', 'camera-gps'].includes(point?.source);
   return !!((context?.source === 'camera' || locatedPhoto) && point && Number.isFinite(point.lat) &&
     Number.isFinite(point.lng) && (point.accuracy === null || (Number.isFinite(point.accuracy) && point.accuracy >= 0)) &&
     point.lat >= -37.6 && point.lat <= -28 && point.lng >= 140.9 && point.lng <= 154);
@@ -22,7 +22,7 @@ export async function loadMappedContext(context, fetcher = fetch, signal) {
   return {
     type: 'mapped context only', geologicalIdentification: 'unconfirmed',
     queryPosition: { lat: Number(lat.toFixed(4)), lng: Number(lng.toFixed(4)), gpsAccuracyM: accuracy },
-    locationBasis: context.source === 'camera' ? 'phone position at frame capture; visible feature position unknown'
+    locationBasis: context.source === 'camera' || context.location.source === 'camera-gps' ? 'phone position at frame capture; visible feature position unknown'
       : context.location.source === 'embedded-exif' ? 'embedded photo GPS; visible feature position unknown'
         : 'user-assigned photo location; position within the scene unverified',
     positionSource: context.location.source || 'camera-gps',

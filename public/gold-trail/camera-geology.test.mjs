@@ -6,7 +6,7 @@ const collection = properties => ({ type: 'FeatureCollection', features: propert
 
 test('camera GPS and photo locations with recorded provenance can request mapped context', async () => {
   assert.ok(canQueryContext(camera));
-  for (const source of ['embedded-exif', 'embedded-manual', 'map-pin', 'assigned-current-gps'])
+  for (const source of ['embedded-exif', 'embedded-manual', 'map-pin', 'assigned-current-gps', 'camera-gps'])
     assert.ok(canQueryContext({ source: 'photo', location: { ...camera.location, accuracy: null, source } }));
   for (const context of [null, { source: 'photo', location: camera.location }, { ...camera, location: null },
     { ...camera, location: { ...camera.location, accuracy: NaN } },
@@ -43,4 +43,12 @@ test('missing or failed map data cannot imply a geological conclusion', async ()
   assert.equal(empty.unit, null); assert.equal(empty.geologicalIdentification, 'unconfirmed');
   await assert.rejects(loadMappedContext(camera, async () => ({ ok: false, status: 503 })), /HTTP 503/);
   await assert.rejects(loadMappedContext(camera, async () => ({ ok: true, json: async () => ({}) })), /Unexpected/);
+});
+
+test('captured photo GPS retains its camera capture provenance', async () => {
+  const result = await loadMappedContext({ source: 'photo', location: { ...camera.location, source: 'camera-gps' } },
+    async () => ({ ok: true, json: async () => collection({ unit_name: 'Test mapped unit' }) }));
+  assert.match(result.locationBasis, /phone position at frame capture/);
+  assert.equal(result.positionSource, 'camera-gps');
+  assert.equal(result.geologicalIdentification, 'unconfirmed');
 });
