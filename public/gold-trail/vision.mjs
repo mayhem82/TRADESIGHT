@@ -1,6 +1,6 @@
 import { CUE_TYPES, DETECTOR_VERSION, fitInside } from './vision-core.mjs';
 import { sceneCueAt } from './scene-core.mjs';
-import { isolateColour } from './colour-isolation.mjs';
+import { isolateColour } from './colour-isolation.mjs?v=51';
 import { photoFocusAt } from './photo-focus.mjs';
 import { assessGoldChecks } from './gold-field-check.mjs';
 import { canQueryContext, loadMappedContext, GEOLOGY_GUIDE, MINERAL_GUIDE } from './camera-geology.mjs';
@@ -16,6 +16,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
   let geology = null, geologyController = null;
   let photo = null, photoBusy = false, focusMode = false, focusGeneration = 0;
   let scanMode = 'contrast', goldCheckFrame = null;
+  let sampledColour = null, samplingColour = false;
   const cueReviews = new Map();
   const status = text => { $('scanStatus').textContent = text; $('scanPanelStatus').textContent = text; };
   const enabled = () => ['pale', 'dark'].filter(kind => $('scan-' + kind).checked);
@@ -165,7 +166,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     ctx.drawImage(frame, 0, 0);
     if ($('isolateColour').value !== 'off') {
       const pixels = ctx.getImageData(0, 0, frame.width, frame.height);
-      ctx.putImageData(isolateColour(pixels, $('isolateColour').value), 0, 0);
+      ctx.putImageData(isolateColour(pixels, $('isolateColour').value, sampledColour, Number($('colourSpread').value)), 0, 0);
     } else {
     const mask = document.createElement('canvas'); mask.width = frame.width; mask.height = frame.height;
     mask.getContext('2d').putImageData(new ImageData(result.mask, frame.width, frame.height), 0, 0);
@@ -209,14 +210,31 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     render(); controls(); status('Frame frozen for inspection. ' + (cameraActive ? 'Camera remains on; Close switches it off.' : 'Photo stays on this device.'));
     $('scanExplanation').focus({ preventScroll: true });
   }
-  $('isolateColour').onchange = () => { if (displayed) render(); };
+  $('isolateColour').onchange = () => { samplingColour = false; if (displayed) render(); };
+  $('colourSpread').oninput = () => { $('colourSpreadValue').textContent = $('colourSpread').value; if (displayed && $('isolateColour').value === 'sample') render(); };
+  $('sampleColour').onclick = () => {
+    if (!displayed) { status('Start a scan or open a photo first.'); return; }
+    running = false; focusMode = false; cancelWork(); samplingColour = true;
+    $('isolateColour').value = 'off'; render(); controls(); status('Tap the colour in the image to isolate it.');
+  };
   canvas.onclick = event => {
-    if (!displayed || $('isolateColour').value !== 'off') return;
+    if (!displayed || (!samplingColour && $('isolateColour').value !== 'off')) return;
     const rect = canvas.getBoundingClientRect();
     const fit = fitInside(canvas.width, canvas.height, rect.width, rect.height);
     if (!fit) return;
     const x = (event.clientX - rect.left - fit.x) / fit.width;
     const y = (event.clientY - rect.top - fit.y) / fit.height;
+    if (samplingColour) {
+      if (x < 0 || x >= 1 || y < 0 || y >= 1) { status('Tap inside the image.'); return; }
+      const frame = displayed.frame, px = Math.floor(x * frame.width), py = Math.floor(y * frame.height);
+      const left = Math.max(0, px - 6), top = Math.max(0, py - 6), w = Math.min(12, frame.width - left), h = Math.min(12, frame.height - top);
+      const pixels = frame.getContext('2d').getImageData(left, top, w, h).data;
+      let r = 0, g = 0, b = 0, n = 0; for (let i = 0; i < pixels.length; i += 4) if (pixels[i+3] >= 240) { r += pixels[i]; g += pixels[i+1]; b += pixels[i+2]; n++; }
+      if (!n) { status('No usable colour at that point. Try another area.'); return; }
+      const sample = [r/n, g/n, b/n], max = Math.max(...sample), min = Math.min(...sample);
+      if (max < 20 || (max - min) / max < .25) { status('That area is grey, dark or low in colour. Tap a coloured area.'); return; }
+      sampledColour = sample; samplingColour = false; $('isolateColour').value = 'sample'; render(); controls(); status('Sampled colour isolated. Adjust match distance to include more or fewer shades.'); return;
+    }
     if (focusMode && photo && displayed.context.source === 'photo') {
       const crop = photoFocusAt(displayed.context.photoCrop, x, y);
       if (!crop) { status('Tap inside the photo, or return to the full photo to choose another area.'); return; }
