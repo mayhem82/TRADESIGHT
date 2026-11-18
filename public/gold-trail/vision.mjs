@@ -111,9 +111,11 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
       if (goldCheckFrame && pending.frame !== goldCheckFrame) clearGoldChecks();
       clearGeology(); displayed = { ...pending, result: data.result }; pending = null; selected = null; cueReviews.clear();
       render(); controls();
-      status(data.result.model ? `${data.result.cues.length} AI region suggestions · ${(data.result.elapsedMs / 1000).toFixed(1)} s model time. Tap coloured pixels to inspect them; uncoloured areas remain unresolved.` : data.result.cues.length
-        ? `${data.result.cues.length} unconfirmed contrast cues. Select a numbered cue to inspect it.`
-        : 'No matching linear contrasts in this frame. This says nothing about minerals or gold.');
+      status(data.result.model ? `${data.result.cues.length} AI region suggestions · ${(data.result.elapsedMs / 1000).toFixed(1)} s model time. Tap coloured pixels to inspect them; uncoloured areas remain unresolved.` : data.result.glareWarning
+        ? 'Strong glare detected. Shade the pan or rock, or change the angle. Indicators may be obscured.'
+        : data.result.cues.length
+          ? `${data.result.cues.length} visual indicator regions. Tap one for details.`
+          : 'No indicator regions detected in this frame.');
       if (running) timer = setTimeout(capture, scanMode === 'scene' ? 1500 : 500);
     };
     return worker;

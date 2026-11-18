@@ -1,6 +1,7 @@
 // Pixel appearance proposals only. Thresholds are engineering defaults, not
 // calibrated geological classifications, confidence, or evidence of gold.
 import { SCENE_CUES } from './scene-core.mjs';
+import { INDICATOR_TYPES } from './indicator-scanner.mjs';
 export const DETECTOR_VERSION = 'local-contrast-1';
 export const CUE_TYPES = {
   pale: {
@@ -11,7 +12,7 @@ export const CUE_TYPES = {
     label: 'Dark linear contrast', color: [202, 173, 255],
     explanation: 'A dark strip contrasts with its surroundings. Change the viewing angle and check for shadow, wet surfaces, organic matter or sediment. This does not identify a crack, black sand or a mineral.'
   },
-  ...SCENE_CUES
+  ...SCENE_CUES, ...INDICATOR_TYPES
 };
 
 export function fitInside(sourceWidth, sourceHeight, width, height) {
