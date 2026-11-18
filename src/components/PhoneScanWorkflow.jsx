@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const captureSteps = [
   'Open Polycam or another phone photogrammetry app and choose Photo Mode / 3D Capture.',
@@ -60,10 +61,15 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
     camera.position.set(3, 2.2, 4);
     camera.lookAt(0, 0, 0);
 
+
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     mount.appendChild(renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.target.set(0, 0, 0);
+    controls.update();
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.75));
     const light = new THREE.DirectionalLight(0xffffff, 0.9);
@@ -126,6 +132,9 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
 
           scene.add(model);
           modelRef.current = model;
+          camera.position.set(3, 2.2, 4);
+          controls.target.set(0, 0, 0);
+          controls.update();
           setModelName(name);
           setModelStatus('Loaded and recorded as scan evidence. Tap the model to mark an observation point.');
         },
@@ -160,6 +169,7 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
 
     const animate = () => {
       animationFrame = requestAnimationFrame(animate);
+      controls.update();
       renderer.render(scene, camera);
     };
 
@@ -178,6 +188,7 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
       markerGeometry.dispose();
       markerMaterial.dispose();
       disposeObject3D(scene);
+      controls.dispose();
       renderer.dispose();
       if (mount.contains(renderer.domElement)) mount.removeChild(renderer.domElement);
       delete mount.loadTradesightModel;
@@ -272,7 +283,7 @@ export function PhoneScanWorkflow({ onScanEvidence, onScanObservation }) {
           </ol>
         </div>
 
-        <div className="scan-viewer" ref={mountRef} aria-label="3D scan viewer" />
+        <div><p className="muted">Drag to rotate · pinch or scroll to zoom · two-finger drag to pan. Model coordinates are display-scaled, not verified measurements.</p><div className="scan-viewer" ref={mountRef} aria-label="Interactive 3D scan viewer" /></div>
       </div>
     </article>
   );
