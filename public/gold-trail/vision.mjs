@@ -1,6 +1,7 @@
 import { CUE_TYPES, DETECTOR_VERSION, fitInside } from './vision-core.mjs';
 import { sceneCueAt } from './scene-core.mjs';
 import { isolateColour } from './colour-isolation.mjs?v=51';
+import { outlineImage } from './scan-outline.mjs';
 import { photoFocusAt } from './photo-focus.mjs';
 import { assessGoldChecks } from './gold-field-check.mjs';
 import { canQueryContext, loadMappedContext, GEOLOGY_GUIDE, MINERAL_GUIDE } from './camera-geology.mjs';
@@ -167,6 +168,9 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     if ($('isolateColour').value !== 'off') {
       const pixels = ctx.getImageData(0, 0, frame.width, frame.height);
       ctx.putImageData(isolateColour(pixels, $('isolateColour').value, sampledColour, Number($('colourSpread').value)), 0, 0);
+    } else if ($('outlineEnabled').checked) {
+      const pixels = ctx.getImageData(0, 0, frame.width, frame.height);
+      ctx.putImageData(outlineImage(pixels, Number($('outlineThickness').value), Number($('outlineBlend').value) / 100), 0, 0);
     } else {
     const mask = document.createElement('canvas'); mask.width = frame.width; mask.height = frame.height;
     mask.getContext('2d').putImageData(new ImageData(result.mask, frame.width, frame.height), 0, 0);
@@ -211,6 +215,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     $('scanExplanation').focus({ preventScroll: true });
   }
   $('isolateColour').onchange = () => { samplingColour = false; if (displayed) render(); };
+  for (const id of ['outlineEnabled', 'outlineThickness', 'outlineBlend']) $(id).oninput = () => { if (displayed) render(); };
   $('colourSpread').oninput = () => { $('colourSpreadValue').textContent = $('colourSpread').value; if (displayed && $('isolateColour').value === 'sample') render(); };
   $('sampleColour').onclick = () => {
     if (!displayed) { status('Start a scan or open a photo first.'); return; }
