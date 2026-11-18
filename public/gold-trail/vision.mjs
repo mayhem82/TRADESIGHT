@@ -1,5 +1,6 @@
 import { CUE_TYPES, DETECTOR_VERSION, fitInside } from './vision-core.mjs';
 import { sceneCueAt } from './scene-core.mjs';
+import { isolateColour } from './colour-isolation.mjs';
 import { photoFocusAt } from './photo-focus.mjs';
 import { assessGoldChecks } from './gold-field-check.mjs';
 import { canQueryContext, loadMappedContext, GEOLOGY_GUIDE, MINERAL_GUIDE } from './camera-geology.mjs';
@@ -162,6 +163,10 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     const { frame, result } = displayed;
     canvas.width = frame.width; canvas.height = frame.height;
     ctx.drawImage(frame, 0, 0);
+    if ($('isolateColour').value !== 'off') {
+      const pixels = ctx.getImageData(0, 0, frame.width, frame.height);
+      ctx.putImageData(isolateColour(pixels, $('isolateColour').value), 0, 0);
+    } else {
     const mask = document.createElement('canvas'); mask.width = frame.width; mask.height = frame.height;
     mask.getContext('2d').putImageData(new ImageData(result.mask, frame.width, frame.height), 0, 0);
     ctx.drawImage(mask, 0, 0);
@@ -175,6 +180,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
       ctx.setLineDash([]); ctx.fillStyle = '#0d1c18'; ctx.fillRect(px, py, 23, 22);
       ctx.font = 'bold 14px system-ui'; ctx.fillStyle = `rgb(${color})`;
       ctx.fillText(String(cue.id).padStart(2, '0'), px + 3, py + 16);
+    }
     }
     canvas.hidden = false; view.classList.add('scan-active');
     $('scanResults').replaceChildren(...result.cues.map(cue => {
@@ -203,8 +209,9 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     render(); controls(); status('Frame frozen for inspection. ' + (cameraActive ? 'Camera remains on; Close switches it off.' : 'Photo stays on this device.'));
     $('scanExplanation').focus({ preventScroll: true });
   }
+  $('isolateColour').onchange = () => { if (displayed) render(); };
   canvas.onclick = event => {
-    if (!displayed) return;
+    if (!displayed || $('isolateColour').value !== 'off') return;
     const rect = canvas.getBoundingClientRect();
     const fit = fitInside(canvas.width, canvas.height, rect.width, rect.height);
     if (!fit) return;

@@ -1,6 +1,6 @@
 import { setupPhotoMap } from './photo-map.mjs';
 import { locationLabel } from './photo-metadata.mjs';
-import { setupVision } from './vision.mjs?v=49';
+import { setupVision } from './vision.mjs?v=50';
 import { captureCameraPhoto, isCurrentCapture, cameraPhotoLocation } from './camera-capture.mjs';
 import { createCameraHardware } from './camera-hardware.mjs';
 import { fitInside } from './vision-core.mjs';
