@@ -7,6 +7,7 @@ import { assessGoldChecks } from './gold-field-check.mjs';
 import { canQueryContext, loadMappedContext, GEOLOGY_GUIDE, MINERAL_GUIDE } from './camera-geology.mjs';
 import { readPhotoLocation, embedPhotoLocation, validPhotoLocation, locationLabel } from './photo-metadata.mjs';
 import { photoStore } from './photo-store.mjs';
+import { sourceDigest } from './source-integrity.mjs';
 
 export function setupVision({ video, view, releaseCamera, openCamera, captureContext, selectCue, toast,
   pickPhotoLocation, cancelPhotoPin, assignPhotoGps, onPhotosChanged, showPhotoOnMap }) {
@@ -57,6 +58,9 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     $('photoLocationPanel').hidden = !photo;
     $('photoLocationSummary').textContent = photo ? 'Photo · ' + (validPhotoLocation(photo.location) ? 'location set' : 'no location') + ' · ' + (photo.saved && !photo.dirty ? 'saved' : 'not saved') : 'Photo location and saving';
     $('photoLocationName').textContent = photo?.name || '';
+    $('photoSourceOriginal').hidden = !photo?.sourceBlob;
+    $('photoSourceOriginal').disabled = !photo?.sourceBlob || photoBusy;
+    $('photoSourceStatus').textContent = !photo ? '' : photo.sourceBlob ? (photo.sourceHash ? (photo.saved ? 'Original saved locally' : 'Original available') + ' · SHA-256: ' + photo.sourceHash : (photo.saved ? 'Original saved locally' : 'Original available') + ' · hash unavailable.') : 'Original source file not retained in this older record.';
     $('photoLocationStatus').textContent = photo ? locationLabel(photo.location) : '';
     $('photoRestoreGps').hidden = !photo?.originalLocation;
     $('photoShowMap').disabled = !validPhotoLocation(photo?.location);
@@ -428,6 +432,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     const capturedLocation = validPhotoLocation(captured?.location) ? captured.location : null;
     const current = saved ? { ...saved, dirty: false, saved: true } : {
       id: crypto.randomUUID(), name: file.name || 'field-photo', blob: file,
+      sourceBlob: file, sourceName: file.name || 'field-photo', sourceHash: null,
       location: capturedLocation, originalLocation: null,
       metadataMessage: 'Photo metadata has not been read.',
       capturedAt: captured?.capturedAt || null, captureMethod: captured?.method || null,
@@ -440,6 +445,8 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
       const buffer = await file.arrayBuffer(), metadata = readPhotoLocation(buffer);
       if (local !== epoch || photo !== current || document.hidden) return;
       if (!saved) {
+        try { current.sourceHash = await sourceDigest(buffer); } catch { current.sourceHash = null; }
+        if (local !== epoch || photo !== current || document.hidden) return;
         current.location = capturedLocation || metadata.location;
         current.originalLocation = metadata.location;
         current.metadataMessage = capturedLocation ? 'Camera GPS attached at capture. Save or download the photo to embed its location.' : metadata.message;
@@ -568,6 +575,7 @@ export function setupVision({ video, view, releaseCamera, openCamera, captureCon
     finally { if (photo === current) { photoBusy = false; controls(); } }
   };
   $('photoOriginal').onclick = () => { if (photo && !photoBusy) download(photo.blob, photo.name); };
+  $('photoSourceOriginal').onclick = () => { if (photo?.sourceBlob && !photoBusy) download(photo.sourceBlob, photo.sourceName || 'original-photo'); };
   $('photoDownload').onclick = async () => {
     const current = photo; if (!current) return;
     photoBusy = true; controls();

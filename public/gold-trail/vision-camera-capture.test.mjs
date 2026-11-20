@@ -44,6 +44,7 @@ test('captured photo is saved locally with the shutter GPS and keeps capture pro
       result: { width, height, cues: [], mask: new Uint8ClampedArray(width * height * 4) } } })); }
     terminate() {}
   };
+  get('isolateColour').value = 'off'; get('outlineEnabled').checked = false;
   const view = new Element();
   const vision = setupVision({ video: { videoWidth: 32, videoHeight: 32 }, view,
     releaseCamera() {}, openCamera() {}, captureContext: () => ({}), selectCue() {}, toast() {},
@@ -62,6 +63,9 @@ test('captured photo is saved locally with the shutter GPS and keeps capture pro
     assert.equal(photos.size, 1);
     const record = [...photos.values()][0];
     assert.equal(record.saved, true); assert.equal(record.captureMethod, 'video-frame');
+    assert.deepEqual(new Uint8Array(await record.sourceBlob.arrayBuffer()), jpg);
+    assert.equal(record.sourceName, 'generated.jpg');
+    assert.match(record.sourceHash, /^[0-9a-f]{64}$/);
     assert.equal(record.capturedAt, '2026-11-16T00:00:01.000Z'); assert.deepEqual(record.location, location);
     const embedded = readPhotoLocation(new Uint8Array(await record.blob.arrayBuffer()));
     assert.ok(Math.abs(embedded.location.lat - location.lat) < 1e-8);
