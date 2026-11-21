@@ -85,6 +85,17 @@ async function startAR(){if(session||starting)return;starting=true;$('start').di
  }catch(e){if(s&&session===s)await s.end().catch(()=>{});session=null;$('support').textContent='AR could not start while '+stage+' ('+(e.name||'Error')+'): '+(e.message||'unknown error')+'.';}finally{starting=false;$('start').disabled=!arSupported||!!session;}}
 function endAR(){try{hitSource?.cancel();}catch{}hitSource=null;ref=null;session=null;binding=null;envReader?.dispose();envReader=null;envOn=false;envEngine?.suspend();writingEffect?.engine.suspend();envEngine=null;envReady=false;$('effect-frame').removeAttribute('src');$('effect-panel').hidden=true;clearEnvironment();envMessage('No XR session. Surroundings are unaltered.');dragSource=null;playing=false;placed=false;move.stop();turn.stop();root.visible=false;ring.visible=false;document.documentElement.classList.remove('xr');$('menu').hidden=true;$('controls').hidden=true;$('ar-sticks').hidden=true;renderer.domElement.hidden=true;lastTime=null;}
 $('overlay').addEventListener('beforexrselect',e=>e.preventDefault());$('start').onclick=startAR;$('preview').onclick=startPreview;$('post').addEventListener('input',layout);
+$('paste-post').addEventListener('click',async()=>{
+ const post=$('post'),message=$('paste-status');
+ try{
+  if(!navigator.clipboard?.readText)throw new Error('Clipboard unavailable');
+  const value=await navigator.clipboard.readText();
+  if(!value){message.textContent='The clipboard is empty. Copy your post first, then tap Paste.';return;}
+  post.value=value;post.dispatchEvent(new Event('input',{bubbles:true}));message.textContent='Pasted. You can edit the writing before starting AR.';
+ }catch{
+  post.focus();post.select();message.textContent='Press and hold in the writing box, then choose Paste. The sample text is selected for replacement.';
+ }
+});
 $('menu').onclick=()=>$('controls').hidden=!$('controls').hidden;$('play').onclick=()=>{if(scroll>=maxScroll)setScroll(0);playing=true;};$('pause').onclick=()=>playing=false;$('restart').onclick=()=>{playing=false;setScroll(0);};
 const speedValues=[10,22,40,65,95],speedLabels=['Very slow','Slow','Medium','Fast','Very fast'];
 function scrollSpeed(){return speedValues[Number($('speed').value)-1]??22;}
