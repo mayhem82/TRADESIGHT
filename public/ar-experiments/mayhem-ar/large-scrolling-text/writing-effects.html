@@ -629,9 +629,9 @@
 </div>
 
 <script>for(const id of ["beatScreenFlashCheckbox","beatTorchInvertedCheckbox"]){const el=document.getElementById(id);el.disabled=true;el.title="Not available in this AR reader";}
-const hud=document.getElementById("hud"),blend=document.getElementById("blendWrap");if(blend.firstChild)blend.firstChild.textContent="Effect intensity: ";
+const hud=document.getElementById("hud");
 const group=document.createElement("details"),heading=document.createElement("summary");heading.textContent="Colour calibration";group.className="reader-calibration";group.append(heading);
-for(const id of ["cvdTypeWrap","cvdStrengthWrap","spreadWrap","calibrateBtn","pointsBtn"]){const el=document.getElementById(id);if(el)group.append(el);}hud.append(group);
+for(const id of ["blendWrap","cvdTypeWrap","cvdStrengthWrap","spreadWrap","calibrateBtn","pointsBtn"]){const el=document.getElementById(id);if(el)group.append(el);}hud.append(group);
 const note=document.createElement("small");note.textContent="Beat screen flash and XR torch control are unavailable in this reader.";hud.append(note);</script><script src="colour-math.js"></script>
 <script src="hud-common.js"></script>
 <script src="camera-hardware.js"></script>
