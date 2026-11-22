@@ -2399,10 +2399,8 @@
       }
       if (uOutlineEnabled > 0.5) {
         float edge = cvEdgeStrength(vUv, uOutlineThickness) * uOutlineOpacity;
-        // Blend only covered edge pixels over the effects already applied.
-        // Multiplying a full-frame edge image into the blend erases those effects.
-        float coverage = clamp(edge * uOutlineBlend, 0.0, 1.0);
-        finalColor = mix(finalColor, uOutlineColor, coverage);
+        vec3 outlineColor = uOutlineColor * edge;
+        finalColor = mix(finalColor, outlineColor, uOutlineBlend);
       }
 
       // Audio colour tint: a final nudge toward the live mic's dominant band
@@ -6225,6 +6223,7 @@
 
   window.ARColourEngine={
     get settings(){return currentSettingsSnapshot();},
+    showControls(){hud.classList.remove("hide");},
     begin(source){resourcesActive=true;++cameraGeneration;cancelAnimationFrame(rafId);stopCurrentStream();externalFrame=source;externalDriven=true;resizeStage();if(!gl)initGL();uploadPointUniforms();overlay.classList.add("hide");hud.classList.remove("hide");paused=false;updateSceneSamplingTimer();if(audioAnalysisNeeded()&&!audioTintCtx)startAudioTint();},
     render(){if(externalFrame&&(stage.width!==externalFrame.width||stage.height!==externalFrame.height))resizeStage();renderLoop();return stage;},
     composite(target){const c=target.getContext("2d");c.clearRect(0,0,target.width,target.height);c.drawImage(stage,0,0,target.width,target.height);if(particlesEnabled)c.drawImage(particleCanvas,0,0,target.width,target.height);},
