@@ -2786,7 +2786,10 @@
     glCtx.uniform3f(uni.uCartoonThemeHi, cartoonThemeHiRgb[0], cartoonThemeHiRgb[1], cartoonThemeHiRgb[2]);
     glCtx.uniform2f(uni.uTexelSize, 1 / srcW, 1 / srcH);
     glCtx.uniform1f(uni.uSpread, spread);
-    glCtx.uniform1f(uni.uRotate180, rotate180 ? 1 : 0);
+    // The 180° camera correction applies to live video, never to the
+    // already-upright text canvas: rotating it would detach the processed
+    // image from the 3D letters that generated it.
+    glCtx.uniform1f(uni.uRotate180, externalFrame ? 0 : (rotate180 ? 1 : 0));
     glCtx.uniform2f(uni.uUvScale, cover.sx, cover.sy);
     glCtx.uniform2f(uni.uUvOffset, cover.ox, cover.oy);
     glCtx.uniform1i(uni.uCvdType, CVD_TYPE_CODES[cvdType]);
