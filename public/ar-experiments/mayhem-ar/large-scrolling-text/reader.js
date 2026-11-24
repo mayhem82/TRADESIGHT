@@ -105,7 +105,7 @@ function rebuildNarrationMap(){
 function voiceStatus(state){
  if(state.phase==='ended'||state.phase==='error'||state.phase==='idle'){voiceMode=false;voiceIntent++;}
  const button=$('narration-prepare');button.disabled=voicePreparing||state.phase==='loading';
- const messages={idle:'Preparing voice sends this writing to ElevenLabs for narration.',loading:'Preparing Old Trucker Girl voice…',ready:'Voice is ready.',playing:'Voice is playing.',paused:'Voice is paused.',ended:'Voice has finished.',error:state.error||'Voice could not be prepared.'};
+ const messages={idle:'Preparing voice sends this writing to ElevenLabs for narration.',loading:'Preparing Old Trucker Girl voice…',ready:'Voice ready: Old Trucker Girl has prepared your writing and checked its timing.',playing:'Voice is playing.',paused:'Voice is paused.',ended:'Voice has finished.',error:state.error||'Voice could not be prepared.'};
  $('narration-status').textContent=messages[state.phase]||'';
  if(state.phase==='error'&&(session||preview)){status(messages.error);captureMessage(messages.error);}
 }
@@ -131,7 +131,7 @@ if(voiceConfig?.endpoint&&(voiceConfig.authMode==='sites-popup'||typeof voiceCon
    if(preparation!==voicePreparationGeneration)return;
    if(text!==$('post').value)throw new Error('The writing changed. Prepare the voice again.');
    narrationText=text;
-   if(await narration.prepare(text)){narration.setSpeed(voiceSpeed());seekVoice();$('narration-status').textContent='Voice is ready.';}
+   if(await narration.prepare(text)){narration.setSpeed(voiceSpeed());seekVoice();$('narration-status').textContent='Voice ready: Old Trucker Girl has prepared your writing and checked its timing.';}
   }catch(e){if(preparation===voicePreparationGeneration){voicePreparationError=e?.message||'The voice could not be prepared.';$('narration-status').textContent=voicePreparationError;}}
   finally{openedTransport?.close();if(voiceTransport===openedTransport)voiceTransport=null;voicePreparing=false;$('narration-prepare').disabled=false;}
  };
