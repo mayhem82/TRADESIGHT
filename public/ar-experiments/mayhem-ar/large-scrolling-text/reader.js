@@ -28,7 +28,8 @@ const envSource=document.createElement('canvas'),envOutput=document.createElemen
 const envTexture=new T.CanvasTexture(envOutput);envTexture.colorSpace=T.SRGBColorSpace;
 let binding=null,envReader=null,envEngine=null,envReady=false,envOn=false,envCurrent=false,lastEnv=0,cameraRequested=false;
 let capture=null,captureRenderer=null,captureReader=null,captureCamera=null,captureAction=null,captureRecording=false,captureFinishing=false,captureAborting=false,captureTime=0,captureURL=null;
-function captureMessage(message){$('capture-status').textContent=message;}
+let captureMessageTimer=null;
+function captureMessage(message){const notice=$('capture-status');notice.textContent=message;notice.hidden=false;clearTimeout(captureMessageTimer);captureMessageTimer=setTimeout(()=>{notice.hidden=true;},7000);}
 function offerCapture(blob,prefix){
  if(captureURL)URL.revokeObjectURL(captureURL);captureURL=URL.createObjectURL(blob);
  const filename=prefix+'-'+new Date().toISOString().replace(/[:.]/g,'-')+(blob.type.includes('png')?'.png':blob.type.includes('mp4')?'.mp4':'.webm');
