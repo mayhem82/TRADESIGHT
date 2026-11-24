@@ -1,8 +1,8 @@
 // Adapted from AR Colour Vision's granted XR camera readback path.
-export function makeCameraReader(gl,target){
+export function makeCameraReader(gl,target,{maxWidth=384}={}){
  const raw={texture:gl.createTexture(),fbo:gl.createFramebuffer(),width:0,height:0,pixels:null,reader:null,image:null};
  function read(camera){
-  const g=gl,w=384,h=Math.max(1,Math.round(w*camera.height/camera.width));
+  const g=gl,w=Math.max(1,Math.min(maxWidth,camera.width)),h=Math.max(1,Math.round(w*camera.height/camera.width));
   if(!raw.reader){
    const compile=(type,source)=>{const shader=g.createShader(type);g.shaderSource(shader,source);g.compileShader(shader);if(!g.getShaderParameter(shader,g.COMPILE_STATUS))throw Error(g.getShaderInfoLog(shader));return shader;};
    raw.reader=g.createProgram();g.attachShader(raw.reader,compile(g.VERTEX_SHADER,'attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;gl_Position=vec4(p,0.,1.);}'));g.attachShader(raw.reader,compile(g.FRAGMENT_SHADER,'precision mediump float;uniform sampler2D image;varying vec2 uv;void main(){gl_FragColor=vec4(texture2D(image,uv).rgb,1.);}'));g.linkProgram(raw.reader);if(!g.getProgramParameter(raw.reader,g.LINK_STATUS))throw Error(g.getProgramInfoLog(raw.reader));

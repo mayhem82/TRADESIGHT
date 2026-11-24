@@ -4,8 +4,11 @@ import {Joystick,horizontalStep,elevationYawStep} from '../ar-colour-vision-001/
 import {FontLoader} from './FontLoader.js';
 import {TextGeometry} from './TextGeometry.js';
 import {cameraImage} from '../ar-colour-vision-001/capabilities.js';
-import {makeCameraReader,readCameraFrame} from './xr-camera.js';
-import {WritingEffects} from './writing-effects.js';
+import {makeCameraReader,readCameraFrame} from './xr-camera.js?v=capture-1';
+import {WritingEffects} from './writing-effects.js?v=text-colour-1';
+import {InvisibleWalls} from './invisible-walls.js';
+import {XRCaptureRenderer} from './capture-xr.js';
+import {CompositeCapture} from './composite-capture.js';
 const $=id=>document.getElementById(id), status=s=>$('status').textContent=s;
 const renderer=new T.WebGLRenderer({alpha:true,antialias:true});renderer.xr.enabled=true;renderer.xr.setReferenceSpaceType('local');renderer.localClippingEnabled=true;renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.domElement.className='reader';renderer.domElement.hidden=true;document.body.prepend(renderer.domElement);
 const scene=new T.Scene(),camera=new T.PerspectiveCamera(45,1,.01,100);
@@ -20,15 +23,74 @@ const ring=new T.Mesh(new T.RingGeometry(.045,.065,48),new T.MeshBasicMaterial({
 const raycaster=new T.Raycaster(), ray=new T.Ray(),plane=new T.Plane(),point=new T.Vector3(),v=new T.Vector3(),q=new T.Quaternion();
 const placement=new Placement(),move=new Joystick($('ar-move')),turn=new Joystick($('ar-pose'));
 let session=null,starting=false,ref=null,hitSource=null,hitPose=null,dragSource=null,placed=false,playing=false,scroll=0,maxScroll=0,lines=[],lastTime=null,preview=false,dirty=true,font=null,bold=null,arSupported=false;
+const walls=new InvisibleWalls(scene,{onChange:({message,building,count})=>{status(message);$('wall-message').textContent=message;$('wall-message').hidden=!building;$('wall-cancel').hidden=!building;$('wall-count').textContent=String(count);}});
 const envSource=document.createElement('canvas'),envOutput=document.createElement('canvas');envSource.width=envSource.height=envOutput.width=envOutput.height=512;
 const envTexture=new T.CanvasTexture(envOutput);envTexture.colorSpace=T.SRGBColorSpace;
 let binding=null,envReader=null,envEngine=null,envReady=false,envOn=false,envCurrent=false,lastEnv=0,cameraRequested=false;
+let capture=null,captureRenderer=null,captureReader=null,captureCamera=null,captureAction=null,captureRecording=false,captureFinishing=false,captureAborting=false,captureTime=0,captureURL=null;
+function captureMessage(message){$('capture-status').textContent=message;}
+function offerCapture(blob,prefix){
+ if(captureURL)URL.revokeObjectURL(captureURL);captureURL=URL.createObjectURL(blob);
+ const filename=prefix+'-'+new Date().toISOString().replace(/[:.]/g,'-')+(blob.type.includes('png')?'.png':blob.type.includes('mp4')?'.mp4':'.webm');
+ for(const id of ['capture-download','capture-download-setup']){const link=$(id);link.href=captureURL;link.download=filename;link.textContent='Save capture';link.hidden=false;}
+ captureMessage('Capture ready. Tap Save capture.');
+}
+function captureFailure(message){
+ if(captureAborting)return;captureAborting=true;
+ captureAction=null;captureRecording=false;$('capture-record').textContent='Record video';
+ try{const pending=capture?.pending;if(pending){captureFinishing=true;pending.finally(()=>{captureFinishing=false;}).catch(()=>{});}if(capture?.recorder&&capture.recorder.state!=='inactive')try{capture.frame(null,null);}catch{}captureMessage(message);}
+ finally{captureAborting=false;}
+}
+async function finishRecording(){
+ if(!capture||!captureRecording)return;
+ captureRecording=false;captureFinishing=true;$('capture-record').textContent='Record video';captureMessage('Finishing video…');
+ try{offerCapture(await capture.stopRecording(),'mayhem-video');}catch(e){captureMessage(e.message||'Video could not be saved.');}
+ finally{captureFinishing=false;}
+}
+function requestCapture(kind){
+ if(!session||!placed){captureMessage('Start AR and place the writing first.');return;}
+ if(!cameraRequested){captureMessage($('capture-opt').checked?'This AR session did not grant camera frames for capture.':'Exit AR, enable photo and video capture, then start AR again.');return;}
+ if(captureFinishing){captureMessage('Please wait while the video finishes.');return;}
+ if(captureRecording){if(kind==='record')finishRecording();else captureMessage('Stop the video before taking a photo.');return;}
+ if(captureAction){captureMessage('Waiting for the current camera frame.');return;}
+ if(captureURL)for(const id of ['capture-download','capture-download-setup'])$(id).textContent='Save previous capture';
+ captureAction=kind;captureMessage('Waiting for the live camera frame…');
+}
+function captureFrame(view,time){
+ if(!captureAction&&!captureRecording)return;
+ if(captureRecording&&time-captureTime<66)return;
+ if(!view){captureFailure('Camera tracking is unavailable. Capture stopped.');return;}
+ try{
+  const image=cameraImage(session,view,binding,renderer.getContext());
+  if(!image.texture)throw new Error('This AR session did not provide camera frames for capture.');
+  captureCamera??=document.createElement('canvas');captureReader??=makeCameraReader(renderer.getContext(),captureCamera,{maxWidth:720});
+  readCameraFrame(renderer,captureReader,image);
+  captureRenderer??=new XRCaptureRenderer({scene,renderer});
+  capture??=new CompositeCapture({canvas:document.createElement('canvas'),cameraCanvas:document.createElement('canvas'),onEnded:()=>captureFailure('Video capture stopped because the camera frame was lost.')});
+  capture.frame(captureCamera,captureRenderer.render(view,captureCamera.width,captureCamera.height));captureTime=time;
+  const action=captureAction;captureAction=null;
+  if(action==='photo')capture.snapshot().then(blob=>offerCapture(blob,'mayhem-photo')).catch(e=>captureMessage(e.message||'Photo capture failed.'));
+  if(action==='record'){capture.startRecording({frameRate:15});captureRecording=true;$('capture-record').textContent='Stop recording';captureMessage('Recording video. Tap Stop recording when finished.');}
+ }catch(e){captureFailure(e.message||'Camera capture is unavailable.');}
+}
+function endCapture(){
+ captureAction=null;const oldCapture=capture,oldRenderer=captureRenderer,oldReader=captureReader;
+ if(captureRecording)finishRecording().finally(()=>oldCapture?.dispose());else oldCapture?.dispose();
+ oldRenderer?.dispose();oldReader?.dispose();capture=null;captureRenderer=null;captureReader=null;captureCamera=null;captureTime=0;captureRecording=false;$('capture-record').textContent='Record video';
+}
 let writingEffect=null,writingOn=false,lastWriting=0;
+const sideShade=new T.Color(0x8bb8ad);
+function applyTextColour(){
+ const chosen=new T.Color($('text-colour').value);
+ if(writingEffect?.enabled){front.color.set(0xffffff);side.color.set(0xffffff);}
+ else{front.color.copy(chosen);side.color.copy(chosen).multiply(sideShade);}
+ dirty=true;
+}
 function updateWriting(time,changed){
  if(!writingOn||!writingEffect||(!session&&!preview))return;
  if(!changed&&time-lastWriting<100)return;
- try{const items=[];for(const [i,mesh] of visibleLines){const line=lines[i];items.push({text:line.text,font:line.heading?bold:font,size:(line.heading?76:64)*PX*textScale,x:mesh.position.x,y:mesh.position.y});}writingEffect.update(items,visibleLines.values(),W,H);lastWriting=time;}
- catch(e){writingOn=false;writingEffect.setEnabled(false);status('Writing effects failed; plain 3D writing restored.');}
+ try{const items=[];for(const [i,mesh] of visibleLines){const line=lines[i];items.push({text:line.text,font:line.heading?bold:font,size:(line.heading?76:64)*PX*textScale,x:mesh.position.x,y:mesh.position.y});}writingEffect.update(items,visibleLines.values(),W,H,$('text-colour').value);lastWriting=time;}
+ catch(e){writingOn=false;writingEffect.setEnabled(false);applyTextColour();status('Writing effects failed; plain 3D writing restored.');}
 }
 function envMessage(s){if($('environment').textContent!==s)$('environment').textContent=s;}
 function clearEnvironment(){scene.background=null;envCurrent=false;$('env-settings').disabled=true;$('env-off').disabled=!envOn;}
@@ -67,23 +129,23 @@ function setScroll(n){scroll=Math.max(0,Math.min(maxScroll,n));dirty=true;}
 function resize(){if(session)return;const w=Math.min(innerWidth,900),h=Math.max(300,innerHeight*.6);renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}
 function rayFor(source,frame){let p;try{p=frame.getPose(source.targetRaySpace,ref);}catch{}if(!p)return false;const m=new T.Matrix4().fromArray(p.transform.matrix);ray.origin.setFromMatrixPosition(m);ray.direction.set(0,0,-1).transformDirection(m);return true;}
 function dragAtRay(){root.updateMatrixWorld(true);v.set(0,0,1).transformDirection(root.matrixWorld);root.getWorldPosition(point);plane.setFromNormalAndCoplanarPoint(v,point);if(!ray.intersectPlane(plane,point))return;root.worldToLocal(point);setScroll(((H/2-.14-point.y)/(H-.28))*maxScroll);}
-function rayHitsKnob(){raycaster.ray.copy(ray);return raycaster.intersectObject(knob,false).length>0;}
+function rayHitsKnob(){if(!knob.visible)return false;raycaster.ray.copy(ray);return raycaster.intersectObject(knob,false).length>0;}
 function place(){const m=placement.matrix,world=placement.worldMatrix;root.position.set(world[12],world[13]+1,world[14]);root.rotation.set(0,Math.atan2(m[8],m[10]),0);root.visible=true;placed=true;dirty=true;ring.visible=false;status('Placed. Grab the yellow handle to scroll.');}
-function loop(time,frame){let dt=lastTime===null?0:Math.min((time-lastTime)/1000,.1);lastTime=time;
- if(session&&frame){if(!ref)return;let pose=null;try{pose=frame.getViewerPose(ref);}catch{}hitPose=null;if(pose)updateEnvironment(time,pose.views[0]);else{clearEnvironment();envMessage('XR tracking unavailable. Surroundings are unaltered.');}if(pose&&!placed&&hitSource){try{const h=frame.getHitTestResults(hitSource)[0];hitPose=h?.getPose(ref)||null;}catch{}ring.visible=!!hitPose;if(hitPose)ring.position.set(hitPose.transform.matrix[12],hitPose.transform.matrix[13],hitPose.transform.matrix[14]);}
+function loop(time,frame){let dt=lastTime===null?0:Math.min((time-lastTime)/1000,.1);lastTime=time;let captureView=null;
+ if(session&&frame){if(!ref)return;let pose=null;try{pose=frame.getViewerPose(ref);}catch{}captureView=pose?.views[0]||null;hitPose=null;if(pose&&(!placed||walls.building)&&hitSource){try{const h=frame.getHitTestResults(hitSource)[0];hitPose=h?.getPose(ref)||null;}catch{}ring.visible=!!hitPose;if(hitPose)ring.position.set(hitPose.transform.matrix[12],hitPose.transform.matrix[13],hitPose.transform.matrix[14]);}else if(walls.building)ring.visible=false;
  if(!placed&&pose&&placement.resolve(hitPose?.transform.matrix,pose.transform.position,true))place();
  if(dragSource&&rayFor(dragSource,frame))dragAtRay();
  if(placed&&pose&&(move.x||move.y||turn.x||turn.y)){const [x,z]=horizontalStep(pose.transform.matrix,move.x,move.y,dt),step=elevationYawStep(turn.x,turn.y,dt);root.position.x+=x;root.position.z+=z;root.position.y+=step.dy;root.rotation.y+=step.yaw;dirty=true;}
  }
  if(playing&&placed){setScroll(scroll+dt*scrollSpeed());if(scroll>=maxScroll)playing=false;}
- const changed=dirty;if(dirty)draw();updateWriting(time,changed);renderer.render(scene,camera);
+ const changed=dirty;if(dirty)draw();updateWriting(time,changed);if(session)captureFrame(captureView,time);renderer.render(scene,camera);
 }
 function startPreview(){if(session)return;preview=true;if(writingOn&&writingEffect)writingEffect.engine.begin(writingEffect.source);layout();renderer.domElement.hidden=false;resize();scene.background=new T.Color('#203333');root.position.set(0,.2,0);root.rotation.set(0,0,0);root.visible=true;placed=true;camera.position.set(0,.2,3.4);camera.lookAt(0,.2,0);$('controls').hidden=false;$('menu').hidden=false;$('ar-sticks').hidden=false;$('playback-bar').hidden=false;status('Virtual preview. Drag the yellow handle.');}
 async function startAR(){if(session||starting)return;starting=true;$('start').disabled=true;let stage='requesting an AR session',s;layout();$('start').disabled=true;try{
- cameraRequested=$('camera-opt').checked;try{s=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['local','hit-test','dom-overlay'],optionalFeatures:cameraRequested?['anchors','camera-access']:['anchors'],domOverlay:{root:$('overlay')}});}catch(e){if(!cameraRequested||!['NotSupportedError','NotAllowedError'].includes(e.name))throw e;cameraRequested=false;s=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['local','hit-test','dom-overlay'],optionalFeatures:['anchors'],domOverlay:{root:$('overlay')}});}session=s;placement.reset();s.addEventListener('end',()=>{if(session!==s)return;const endedDuringStartup=starting;endAR();if(endedDuringStartup)$('support').textContent='AR session ended while '+stage+'. Try again and check camera/AR permissions.';},{once:true});s.addEventListener('selectstart',e=>{if(placed&&rayFor(e.inputSource,e.frame)&&rayHitsKnob()){playing=false;dragSource=e.inputSource;dragAtRay();}else if(!placed)placement.request();else closeEffects();});s.addEventListener('selectend',e=>{if(dragSource===e.inputSource)dragSource=null;});
- stage='initializing the AR renderer';await renderer.xr.setSession(s);if(session!==s)return;if(writingOn&&writingEffect)writingEffect.engine.begin(writingEffect.source);try{binding=new XRWebGLBinding(s,renderer.getContext());}catch{binding=null;}ref=renderer.xr.getReferenceSpace();stage='initializing surface tracking';const viewer=await s.requestReferenceSpace('viewer');if(session!==s)return;hitSource=await s.requestHitTestSource({space:viewer});if(session!==s){hitSource?.cancel();hitSource=null;return;}ref.addEventListener?.('reset',()=>{placement.reset();placed=false;root.visible=false;status('Tracking origin reset. Place again.');});renderer.domElement.hidden=false;scene.background=null;renderer.setClearColor(0,0);root.visible=false;placed=false;preview=false;document.documentElement.classList.add('xr');$('menu').hidden=false;$('controls').hidden=false;$('ar-sticks').hidden=false;$('playback-bar').hidden=false;status('Move slowly, aim at the floor ring, then tap to place.');
+ cameraRequested=$('capture-opt').checked;try{s=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['local','hit-test','dom-overlay'],optionalFeatures:cameraRequested?['anchors','camera-access']:['anchors'],domOverlay:{root:$('overlay')}});}catch(e){if(!cameraRequested||!['NotSupportedError','NotAllowedError'].includes(e.name))throw e;cameraRequested=false;s=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['local','hit-test','dom-overlay'],optionalFeatures:['anchors'],domOverlay:{root:$('overlay')}});}session=s;placement.reset();s.addEventListener('end',()=>{if(session!==s)return;const endedDuringStartup=starting;endAR();if(endedDuringStartup)$('support').textContent='AR session ended while '+stage+'. Try again and check camera/AR permissions.';},{once:true});s.addEventListener('selectstart',e=>{if(walls.building){let floor=hitPose;try{floor=e.frame.getHitTestResults(hitSource)[0]?.getPose(ref)||floor;}catch{}const m=floor?.transform.matrix;walls.select(m?{x:m[12],y:m[13],z:m[14]}:null,{height:Number($('wall-height').value),door:$('wall-door').checked?{width:Number($('door-width').value),height:Number($('door-height').value)}:null});if(!walls.building)ring.visible=false;return;}if(placed&&rayFor(e.inputSource,e.frame)&&rayHitsKnob()){playing=false;dragSource=e.inputSource;dragAtRay();}else if(!placed)placement.request();else closeEffects();});s.addEventListener('selectend',e=>{if(dragSource===e.inputSource)dragSource=null;});
+ stage='initializing the AR renderer';await renderer.xr.setSession(s);if(session!==s)return;if(writingOn&&writingEffect)writingEffect.engine.begin(writingEffect.source);try{binding=new XRWebGLBinding(s,renderer.getContext());}catch{binding=null;}ref=renderer.xr.getReferenceSpace();stage='initializing surface tracking';const viewer=await s.requestReferenceSpace('viewer');if(session!==s)return;hitSource=await s.requestHitTestSource({space:viewer});if(session!==s){hitSource?.cancel();hitSource=null;return;}ref.addEventListener?.('reset',()=>{walls.end();placement.reset();placed=false;root.visible=false;status('Tracking origin reset. Place again.');});renderer.domElement.hidden=false;scene.background=null;renderer.setClearColor(0,0);root.visible=false;placed=false;preview=false;document.documentElement.classList.add('xr');$('menu').hidden=false;$('controls').hidden=false;$('ar-sticks').hidden=false;$('playback-bar').hidden=false;status('Move slowly, aim at the floor ring, then tap to place.');
  }catch(e){if(s&&session===s)await s.end().catch(()=>{});session=null;$('support').textContent='AR could not start while '+stage+' ('+(e.name||'Error')+'): '+(e.message||'unknown error')+'.';}finally{starting=false;$('start').disabled=!arSupported||!!session;}}
-function endAR(){try{hitSource?.cancel();}catch{}hitSource=null;ref=null;session=null;binding=null;envReader?.dispose();envReader=null;envOn=false;envEngine?.suspend();writingEffect?.engine.suspend();envEngine=null;envReady=false;$('effect-frame').removeAttribute('src');$('effect-panel').hidden=true;clearEnvironment();envMessage('No XR session. Surroundings are unaltered.');dragSource=null;playing=false;placed=false;move.stop();turn.stop();root.visible=false;ring.visible=false;document.documentElement.classList.remove('xr');$('menu').hidden=true;$('controls').hidden=true;$('ar-sticks').hidden=true;$('playback-bar').hidden=true;renderer.domElement.hidden=true;lastTime=null;}
+function endAR(){endCapture();walls.end();try{hitSource?.cancel();}catch{}hitSource=null;ref=null;session=null;binding=null;envReader?.dispose();envReader=null;envOn=false;envEngine?.suspend();writingEffect?.engine.suspend();envEngine=null;envReady=false;$('effect-frame').removeAttribute('src');$('effect-panel').hidden=true;clearEnvironment();envMessage('No XR session. Surroundings are unaltered.');dragSource=null;playing=false;placed=false;move.stop();turn.stop();root.visible=false;ring.visible=false;document.documentElement.classList.remove('xr');$('menu').hidden=true;$('controls').hidden=true;$('ar-sticks').hidden=true;$('playback-bar').hidden=true;renderer.domElement.hidden=true;lastTime=null;}
 $('overlay').addEventListener('beforexrselect',e=>e.preventDefault());$('start').onclick=startAR;$('preview').onclick=startPreview;$('post').addEventListener('input',layout);
 $('paste-post').addEventListener('click',async()=>{
  const post=$('post'),message=$('paste-status');
@@ -97,21 +159,33 @@ $('paste-post').addEventListener('click',async()=>{
  }
 });
 function closeEffects(){if($('effect-panel').hidden)return;$('effect-panel').hidden=true;$('controls').hidden=false;}
-$('menu').onclick=()=>{if(!$('effect-panel').hidden)closeEffects();else $('controls').hidden=!$('controls').hidden;};$('play').onclick=()=>{if(scroll>=maxScroll)setScroll(0);playing=true;};$('pause').onclick=()=>playing=false;$('restart').onclick=()=>{playing=false;setScroll(0);};
-const speedValues=[10,22,40,65,95],speedLabels=['Very slow','Slow','Medium','Fast','Very fast'];
+$('capture-photo').onclick=()=>requestCapture('photo');
+$('capture-record').onclick=()=>requestCapture('record');
+$('wall-add').onclick=()=>{if(!session||!placed){status('Place the writing in AR before adding a wall.');return;}dragSource=null;walls.start();};
+$('wall-cancel').onclick=()=>{walls.cancel();ring.visible=false;};
+$('wall-undo').onclick=()=>walls.undo();
+$('wall-clear').onclick=()=>{walls.clear();ring.visible=false;};
+$('wall-guides').onchange=()=>walls.setGuides($('wall-guides').checked);
+$('menu').onclick=()=>{if(!$('effect-panel').hidden)closeEffects();else $('controls').hidden=!$('controls').hidden;};
+$('play').onclick=()=>{if(scroll>=maxScroll)setScroll(0);playing=true;};
+$('pause').onclick=()=>playing=false;
+$('restart').onclick=()=>{playing=false;setScroll(0);};
+const speedValues=[10,22,40,65,95,150,225,350],speedLabels=['Very slow','Slow','Medium','Fast','Very fast','Faster','Much faster','Fastest'];
 function scrollSpeed(){return speedValues[Number($('speed').value)-1]??22;}
 $('speed').addEventListener('input',()=>{$('speed-value').textContent=speedLabels[Number($('speed').value)-1]??'Slow';});
+$('show-scrollbar').addEventListener('change',()=>{const visible=$('show-scrollbar').checked;track.visible=visible;knob.visible=visible;if(!visible){dragSource=null;if(pointer!==null){const id=pointer;pointer=null;if(renderer.domElement.hasPointerCapture(id))renderer.domElement.releasePointerCapture(id);}}});
 $('letter-size').addEventListener('input',()=>{textScale=Number($('letter-size').value);$('letter-size-value').textContent=Math.round(textScale*100)+'%';layout();});
-function plainWriting(){writingOn=false;writingEffect?.setEnabled(false);writingEffect?.engine.suspend();if(!$('writing-frame').hidden)closeEffects();status('Plain 3D writing is active.');}
+$('text-colour').addEventListener('input',applyTextColour);
+function plainWriting(){writingOn=false;writingEffect?.setEnabled(false);applyTextColour();writingEffect?.engine.suspend();if(!$('writing-frame').hidden)closeEffects();status('Plain 3D writing is active.');}
 $('plain').onclick=plainWriting;$('writing-plain').onclick=plainWriting;
-$('writing').onclick=()=>{const resume=!writingOn;writingOn=true;$('controls').hidden=true;$('effect-target').textContent='Writing';$('effect-panel').hidden=false;$('effect-frame').hidden=true;$('writing-frame').hidden=false;if(!writingEffect)$('writing-frame').src='writing-effects.html?v=writing-align-1';else{if(resume)writingEffect.engine.begin(writingEffect.source);writingEffect.engine.showControls();writingEffect.setEnabled(true);}};
-$('writing-frame').onload=()=>{if(!writingOn||writingEffect)return;try{const engine=$('writing-frame').contentWindow.ARColourEngine;writingEffect=new WritingEffects(engine,root,front,side);writingEffect.setEnabled(true);lastWriting=0;dirty=true;}catch(e){writingOn=false;writingEffect?.setEnabled(false);status('Writing effects could not load; plain 3D writing is active.');}};
+$('writing').onclick=()=>{const resume=!writingOn;writingOn=true;$('controls').hidden=true;$('effect-target').textContent='Writing';$('effect-panel').hidden=false;$('effect-frame').hidden=true;$('writing-frame').hidden=false;if(!writingEffect)$('writing-frame').src='writing-effects.html?v=writing-align-1';else{if(resume)writingEffect.engine.begin(writingEffect.source);writingEffect.engine.showControls();writingEffect.setEnabled(true);applyTextColour();}};
+$('writing-frame').onload=()=>{if(!writingOn||writingEffect)return;try{const engine=$('writing-frame').contentWindow.ARColourEngine;writingEffect=new WritingEffects(engine,root,front,side);writingEffect.setEnabled(true);applyTextColour();lastWriting=0;dirty=true;}catch(e){writingOn=false;writingEffect?.setEnabled(false);applyTextColour();status('Writing effects could not load; plain 3D writing is active.');}};
 $('env-settings').onclick=()=>{const resume=!envOn;envOn=true;$('env-off').disabled=false;$('controls').hidden=true;$('effect-target').textContent='Environment';$('effect-panel').hidden=false;$('writing-frame').hidden=true;$('effect-frame').hidden=false;if(!envReady)$('effect-frame').src='effects.html?v=extreme-2';else{if(resume)envEngine.begin(envSource);envEngine.showControls();}};
 $('env-off').onclick=()=>{envOn=false;envCurrent=false;envEngine?.suspend();scene.background=null;$('env-off').disabled=true;envMessage('Environment effects are off.');};
 $('close-effects').onclick=closeEffects;
 $('effect-frame').onload=()=>{if(!envOn)return;try{envEngine=$('effect-frame').contentWindow.ARColourEngine;envEngine.begin(envSource);envReady=true;}catch(e){envOn=false;clearEnvironment();envMessage('Environment effects could not load. Surroundings are unaltered.');}};
 for(const id of ['width','height'])$(id).addEventListener('input',()=>{W=Number($('width').value);H=Number($('height').value);$('width-value').textContent=W.toFixed(2)+' m';$('height-value').textContent=H.toFixed(2)+' m';track.position.x=W/2+.13;track.scale.y=H/1.8;knob.position.x=track.position.x;layout();});
-$('reset').onclick=()=>{playing=false;setScroll(0);if(session){placement.reset();root.visible=false;placed=false;status('Aim at a floor surface and tap to place again.');}};
+$('reset').onclick=()=>{if(walls.building)walls.cancel();ring.visible=false;playing=false;setScroll(0);if(session){placement.reset();root.visible=false;placed=false;status('Aim at a floor surface and tap to place again.');}};
 $('exit').onclick=()=>{if(session)session.end();else{preview=false;placed=false;playing=false;writingEffect?.engine.suspend();move.stop();turn.stop();root.visible=false;renderer.domElement.hidden=true;$('controls').hidden=true;$('menu').hidden=true;$('ar-sticks').hidden=true;$('playback-bar').hidden=true;}};
 let pointer=null;renderer.domElement.addEventListener('pointerdown',e=>{if(!preview)return;const b=renderer.domElement.getBoundingClientRect();raycaster.setFromCamera(new T.Vector2((e.clientX-b.left)/b.width*2-1,-(e.clientY-b.top)/b.height*2+1),camera);ray.copy(raycaster.ray);if(rayHitsKnob()){playing=false;pointer=e.pointerId;renderer.domElement.setPointerCapture(pointer);dragAtRay();}});renderer.domElement.addEventListener('pointermove',e=>{if(e.pointerId!==pointer)return;const b=renderer.domElement.getBoundingClientRect();raycaster.setFromCamera(new T.Vector2((e.clientX-b.left)/b.width*2-1,-(e.clientY-b.top)/b.height*2+1),camera);ray.copy(raycaster.ray);dragAtRay();});for(const event of ['pointerup','pointercancel','lostpointercapture'])renderer.domElement.addEventListener(event,()=>pointer=null);
 if(new URLSearchParams(location.search).has('qa'))window.__readerQA={tick:time=>loop(time),state(){root.updateMatrixWorld(true);camera.updateMatrixWorld(true);const p=knob.getWorldPosition(new T.Vector3()).project(camera),b=renderer.domElement.getBoundingClientRect();return {scroll,maxScroll,playing,speed:scrollSpeed(),writingOn,writingReady:!!writingEffect,envOn,letterMeshes:visibleLines.size,matrix:root.matrixWorld.toArray(),knob:{x:b.left+(p.x+1)*b.width/2,y:b.top+(1-p.y)*b.height/2},height:b.height,width:W,readingHeight:H};}};

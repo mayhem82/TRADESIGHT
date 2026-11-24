@@ -1,7 +1,7 @@
 import * as T from '../bottle-bloom-001/vendor/three.module.js';
 // Draw the same font outlines used by TextGeometry into the original effects engine.
-export function drawWritingSource(canvas,items,width,height){
- const ctx=canvas.getContext('2d');ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);ctx.setTransform(canvas.width/width,0,0,-canvas.height/height,canvas.width/2,canvas.height/2);ctx.fillStyle='#fff';
+export function drawWritingSource(canvas,items,width,height,colour='#ffffff'){
+ const ctx=canvas.getContext('2d');ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);ctx.setTransform(canvas.width/width,0,0,-canvas.height/height,canvas.width/2,canvas.height/2);ctx.fillStyle=colour;
  for(const {text,font,size,x,y} of items){let cursor=x;const scale=size/font.data.resolution;for(const ch of text){const glyph=font.data.glyphs[ch]||font.data.glyphs['?'];if(!glyph)continue;const outline=glyph.o?.split(' ')||[];ctx.beginPath();for(let i=0;i<outline.length;){const op=outline[i++];if(op==='m'){const x=Number(outline[i++])*scale+cursor,y2=Number(outline[i++])*scale+y;ctx.moveTo(x,y2);}else if(op==='l'){const x=Number(outline[i++])*scale+cursor,y2=Number(outline[i++])*scale+y;ctx.lineTo(x,y2);}else if(op==='q'){const x=Number(outline[i++])*scale+cursor,y2=Number(outline[i++])*scale+y,cx=Number(outline[i++])*scale+cursor,cy=Number(outline[i++])*scale+y;ctx.quadraticCurveTo(cx,cy,x,y2);}else if(op==='b'){const x=Number(outline[i++])*scale+cursor,y2=Number(outline[i++])*scale+y,cx1=Number(outline[i++])*scale+cursor,cy1=Number(outline[i++])*scale+y,cx2=Number(outline[i++])*scale+cursor,cy2=Number(outline[i++])*scale+y;ctx.bezierCurveTo(cx1,cy1,cx2,cy2,x,y2);}else break;}ctx.fill('evenodd');cursor+=glyph.ha*scale;}}
 }
 // The engine output colours the real extruded glyph geometry. Its transparent
@@ -22,11 +22,11 @@ export class WritingEffects {
   this.enabled=enabled;this.haloMesh.visible=enabled;
   for(const material of [this.front,this.side]){material.map=enabled?this.texture:null;material.transparent=enabled;material.alphaTest=enabled?.01:0;material.needsUpdate=true;}
  }
- update(items,meshes,width,height){
+ update(items,meshes,width,height,colour='#ffffff'){
   if(!this.enabled)return;
   const w=512,h=Math.max(1,Math.round(w*height/width));
   if(this.source.width!==w||this.source.height!==h){for(const c of [this.source,this.output,this.halo]){c.width=w;c.height=h;}}
-  drawWritingSource(this.source,items,width,height);this.engine.render();this.engine.composite(this.output);
+  drawWritingSource(this.source,items,width,height,colour);this.engine.render();this.engine.composite(this.output);
   const ctx=this.halo.getContext('2d');ctx.clearRect(0,0,w,h);ctx.globalCompositeOperation='source-over';ctx.drawImage(this.output,0,0);ctx.globalCompositeOperation='destination-out';ctx.drawImage(this.source,0,0);ctx.globalCompositeOperation='source-over';
   this.texture.needsUpdate=true;this.haloTexture.needsUpdate=true;this.haloMesh.scale.set(width,height,1);
   for(const mesh of meshes)mapWritingGeometry(mesh,width,height);
