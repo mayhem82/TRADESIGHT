@@ -9,6 +9,9 @@ import {WritingEffects} from './writing-effects.js?v=text-colour-1';
 import {InvisibleWalls} from './invisible-walls.js';
 import {XRCaptureRenderer} from './capture-xr.js';
 import {CompositeCapture} from './composite-capture.js';
+import {createNarrationController} from './narration-controller.mjs';
+import {mapRenderedLines,makeScrollMapping} from './narration-map.mjs';
+import {createSitesVoiceTransport,VOICE_SITE_ORIGIN} from './sites-voice-transport.mjs';
 const $=id=>document.getElementById(id), status=s=>$('status').textContent=s;
 const renderer=new T.WebGLRenderer({alpha:true,antialias:true});renderer.xr.enabled=true;renderer.xr.setReferenceSpaceType('local');renderer.localClippingEnabled=true;renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.domElement.className='reader';renderer.domElement.hidden=true;document.body.prepend(renderer.domElement);
 const scene=new T.Scene(),camera=new T.PerspectiveCamera(45,1,.01,100);
@@ -87,6 +90,53 @@ function applyTextColour(){
  else{front.color.copy(chosen);side.color.copy(chosen).multiply(sideShade);}
  dirty=true;
 }
+// Voice credentials stay on the owner's authenticated backend, never here.
+const voiceConfig=globalThis.MAYHEM_NARRATION_CONFIG||{endpoint:VOICE_SITE_ORIGIN+'/tts',authMode:'sites-popup'};
+let voiceTransport=null,voicePreparing=false;
+let narration=null,narrationMap=null,narrationText='',voiceMode=false,voiceIntent=0;
+const voiceEnabled=()=>!!(narration&&voiceMode);
+function rebuildNarrationMap(){
+ narrationMap=null;
+ if(!narration||!lines.length)return;
+ try{narrationMap=makeScrollMapping(mapRenderedLines($('post').value,lines),maxScroll,90*textScale);}
+ catch{narration.stop();$('narration-status').textContent='Voice cannot be synchronized with this writing.';}
+}
+function voiceStatus(state){
+ if(state.phase==='ended'||state.phase==='error'||state.phase==='idle'){voiceMode=false;voiceIntent++;}
+ const button=$('narration-prepare');button.disabled=voicePreparing||state.phase==='loading';
+ const messages={idle:'Preparing voice sends this writing to ElevenLabs for narration.',loading:'Preparing Old Trucker Girl voice…',ready:'Voice is ready.',playing:'Voice is playing.',paused:'Voice is paused.',ended:'Voice has finished.',error:state.error||'Voice could not be prepared.'};
+ $('narration-status').textContent=messages[state.phase]||'';
+ if(state.phase==='error'&&(session||preview)){status(messages.error);captureMessage(messages.error);}
+}
+if(voiceConfig?.endpoint&&(voiceConfig.authMode==='sites-popup'||typeof voiceConfig.getAccessToken==='function')){
+ narration=createNarrationController({endpoint:voiceConfig.endpoint,getAccessToken:voiceConfig.getAccessToken,authMode:voiceConfig.authMode||'bearer',
+  fetchImpl:voiceConfig.authMode==='sites-popup'?(url,options)=>{if(!voiceTransport)throw new Error('Connect the voice service first.');return voiceTransport.request(url,options);}:globalThis.fetch,audio:new Audio(),
+  scrollForCharacter:offset=>offset>=narrationText.length?maxScroll:(narrationMap?.scrollForCharacter(offset)??0),
+  characterForScroll:position=>position>=maxScroll?narrationText.length:(narrationMap?.characterForScroll(position)??0),
+  onScroll:setScroll,onState:voiceStatus});
+ $('narration-setup').hidden=false;
+ $('writing-privacy').textContent='Paste or replace your writing before starting AR. If you prepare narration, your writing is sent to ElevenLabs to generate the voice.';
+ $('narration-prepare').onclick=async()=>{
+  if(voicePreparing)return;
+  if(!narrationMap){$('narration-status').textContent='Writing is still loading or cannot be synchronized.';return;}
+  const text=$('post').value;playing=false;voicePreparing=true;$('narration-prepare').disabled=true;let openedTransport=null;
+  try{
+   if(voiceConfig.authMode==='sites-popup'){
+    openedTransport=createSitesVoiceTransport();voiceTransport=openedTransport;
+    const connecting=openedTransport.connect(); // Open synchronously from this click.
+    $('narration-status').textContent='Connect to your private voice service, then return here.';
+    await connecting;
+   }
+   if(text!==$('post').value)throw new Error('The writing changed. Prepare the voice again.');
+   narrationText=text;
+   if(await narration.prepare(text)){narration.setSpeed(voiceSpeed());seekVoice();$('narration-status').textContent='Voice is ready.';}
+  }catch(e){$('narration-status').textContent=e?.message||'The voice could not be prepared.';}
+  finally{openedTransport?.close();if(voiceTransport===openedTransport)voiceTransport=null;voicePreparing=false;$('narration-prepare').disabled=false;}
+ };
+}
+function stopVoice(){voiceMode=false;voiceIntent++;narration?.stop();narrationText='';}
+function seekVoice(){voiceMode=false;voiceIntent++;if(narration?.getState().ready)narration.seekScroll(scroll);}
+function voiceSpeed(){return [.6,.8,1,1.3,1.6,1.8,2,2][Number($('speed').value)-1]??.8;}
 function updateWriting(time,changed){
  if(!writingOn||!writingEffect||(!session&&!preview))return;
  if(!changed&&time-lastWriting<100)return;
@@ -117,7 +167,7 @@ function layout(){
  for(const block of blocks){const raw=block.trim();if(!raw){y+=42*textScale;continue;}let heading=/^\*\*[^\n]+\*\*$/.test(raw)||/^#{1,3}\s/.test(raw)||(!raw.includes('\n')&&raw.length<65&&!/[.!?]$/.test(raw));let text=raw.replace(/^\*\*|\*\*$/g,'').replace(/^#{1,3}\s/,'');const f=heading?bold:font,size=(heading?76:64)*PX*textScale;
  const width=s=>[...s].reduce((n,c)=>n+(f.data.glyphs[c]?.ha||0)*size/f.data.resolution,0);
  for(const paragraph of text.split('\n')){let current='';const emit=()=>{if(current){lines.push({text:current,y,heading});y+=(heading?100:90)*textScale;current='';}};for(const word of paragraph.split(/\s+/)){if(!word)continue;let candidate=current?current+' '+word:word;if(width(candidate)>W-.18){emit();for(const char of word){if(width(current+char)>W-.18)emit();current+=char;}}else current=candidate;}if(current)emit();else if(!paragraph.trim())y+=55*textScale;}y+=(heading?38:62)*textScale;
- }maxScroll=Math.max(0,y-H/PX+90*textScale);scroll=Math.max(0,Math.min(scroll,maxScroll));dirty=true;
+ }maxScroll=Math.max(0,y-H/PX+90*textScale);scroll=Math.max(0,Math.min(scroll,maxScroll));dirty=true;rebuildNarrationMap();
 }
 function draw(){
  root.updateMatrixWorld(true);clipTop.set(new T.Vector3(0,-1,0),H/2).applyMatrix4(root.matrixWorld);clipBottom.set(new T.Vector3(0,1,0),H/2).applyMatrix4(root.matrixWorld);
@@ -129,7 +179,7 @@ function draw(){
 function setScroll(n){scroll=Math.max(0,Math.min(maxScroll,n));dirty=true;}
 function resize(){if(session)return;const w=Math.min(innerWidth,900),h=Math.max(300,innerHeight*.6);renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}
 function rayFor(source,frame){let p;try{p=frame.getPose(source.targetRaySpace,ref);}catch{}if(!p)return false;const m=new T.Matrix4().fromArray(p.transform.matrix);ray.origin.setFromMatrixPosition(m);ray.direction.set(0,0,-1).transformDirection(m);return true;}
-function dragAtRay(){root.updateMatrixWorld(true);v.set(0,0,1).transformDirection(root.matrixWorld);root.getWorldPosition(point);plane.setFromNormalAndCoplanarPoint(v,point);if(!ray.intersectPlane(plane,point))return;root.worldToLocal(point);setScroll(((H/2-.14-point.y)/(H-.28))*maxScroll);}
+function dragAtRay(){root.updateMatrixWorld(true);v.set(0,0,1).transformDirection(root.matrixWorld);root.getWorldPosition(point);plane.setFromNormalAndCoplanarPoint(v,point);if(!ray.intersectPlane(plane,point))return;root.worldToLocal(point);setScroll(((H/2-.14-point.y)/(H-.28))*maxScroll);seekVoice();}
 function rayHitsKnob(){if(!knob.visible)return false;raycaster.ray.copy(ray);return raycaster.intersectObject(knob,false).length>0;}
 function place(){const m=placement.matrix,world=placement.worldMatrix;root.position.set(world[12],world[13]+1,world[14]);root.rotation.set(0,Math.atan2(m[8],m[10]),0);root.visible=true;placed=true;dirty=true;ring.visible=false;status('Placed. Grab the yellow handle to scroll.');}
 function loop(time,frame){let dt=lastTime===null?0:Math.min((time-lastTime)/1000,.1);lastTime=time;let captureView=null;
@@ -139,15 +189,16 @@ function loop(time,frame){let dt=lastTime===null?0:Math.min((time-lastTime)/1000
  if(placed&&pose&&(move.x||move.y||turn.x||turn.y)){const [x,z]=horizontalStep(pose.transform.matrix,move.x,move.y,dt),step=elevationYawStep(turn.x,turn.y,dt);root.position.x+=x;root.position.z+=z;root.position.y+=step.dy;root.rotation.y+=step.yaw;dirty=true;}
  }
  if(playing&&placed){setScroll(scroll+dt*scrollSpeed());if(scroll>=maxScroll)playing=false;}
+ if(voiceEnabled()&&placed)narration.tick();
  const changed=dirty;if(dirty)draw();updateWriting(time,changed);if(session)captureFrame(captureView,time);renderer.render(scene,camera);
 }
 function startPreview(){if(session)return;preview=true;if(writingOn&&writingEffect)writingEffect.engine.begin(writingEffect.source);layout();renderer.domElement.hidden=false;resize();scene.background=new T.Color('#203333');root.position.set(0,.2,0);root.rotation.set(0,0,0);root.visible=true;placed=true;camera.position.set(0,.2,3.4);camera.lookAt(0,.2,0);$('controls').hidden=false;$('menu').hidden=false;$('ar-sticks').hidden=false;$('playback-bar').hidden=false;status('Virtual preview. Drag the yellow handle.');}
 async function startAR(){if(session||starting)return;starting=true;$('start').disabled=true;let stage='requesting an AR session',s;layout();$('start').disabled=true;try{
  cameraRequested=$('capture-opt').checked;try{s=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['local','hit-test','dom-overlay'],optionalFeatures:cameraRequested?['anchors','camera-access']:['anchors'],domOverlay:{root:$('overlay')}});}catch(e){if(!cameraRequested||!['NotSupportedError','NotAllowedError'].includes(e.name))throw e;cameraRequested=false;s=await navigator.xr.requestSession('immersive-ar',{requiredFeatures:['local','hit-test','dom-overlay'],optionalFeatures:['anchors'],domOverlay:{root:$('overlay')}});}session=s;placement.reset();s.addEventListener('end',()=>{if(session!==s)return;const endedDuringStartup=starting;endAR();if(endedDuringStartup)$('support').textContent='AR session ended while '+stage+'. Try again and check camera/AR permissions.';},{once:true});s.addEventListener('selectstart',e=>{if(walls.building){let floor=hitPose;try{floor=e.frame.getHitTestResults(hitSource)[0]?.getPose(ref)||floor;}catch{}const m=floor?.transform.matrix;walls.select(m?{x:m[12],y:m[13],z:m[14]}:null,{height:Number($('wall-height').value),door:$('wall-door').checked?{width:Number($('door-width').value),height:Number($('door-height').value)}:null});if(!walls.building)ring.visible=false;return;}if(placed&&rayFor(e.inputSource,e.frame)&&rayHitsKnob()){playing=false;dragSource=e.inputSource;dragAtRay();}else if(!placed)placement.request();else closeEffects();});s.addEventListener('selectend',e=>{if(dragSource===e.inputSource)dragSource=null;});
- stage='initializing the AR renderer';await renderer.xr.setSession(s);if(session!==s)return;if(writingOn&&writingEffect)writingEffect.engine.begin(writingEffect.source);try{binding=new XRWebGLBinding(s,renderer.getContext());}catch{binding=null;}ref=renderer.xr.getReferenceSpace();stage='initializing surface tracking';const viewer=await s.requestReferenceSpace('viewer');if(session!==s)return;hitSource=await s.requestHitTestSource({space:viewer});if(session!==s){hitSource?.cancel();hitSource=null;return;}ref.addEventListener?.('reset',()=>{walls.end();placement.reset();placed=false;root.visible=false;status('Tracking origin reset. Place again.');});renderer.domElement.hidden=false;scene.background=null;renderer.setClearColor(0,0);root.visible=false;placed=false;preview=false;document.documentElement.classList.add('xr');$('menu').hidden=false;$('controls').hidden=false;$('ar-sticks').hidden=false;$('playback-bar').hidden=false;status('Move slowly, aim at the floor ring, then tap to place.');
+ stage='initializing the AR renderer';await renderer.xr.setSession(s);if(session!==s)return;if(writingOn&&writingEffect)writingEffect.engine.begin(writingEffect.source);try{binding=new XRWebGLBinding(s,renderer.getContext());}catch{binding=null;}ref=renderer.xr.getReferenceSpace();stage='initializing surface tracking';const viewer=await s.requestReferenceSpace('viewer');if(session!==s)return;hitSource=await s.requestHitTestSource({space:viewer});if(session!==s){hitSource?.cancel();hitSource=null;return;}ref.addEventListener?.('reset',()=>{walls.end();if(voiceEnabled())narration.pause();voiceMode=false;voiceIntent++;placement.reset();placed=false;root.visible=false;status('Tracking origin reset. Place again.');});renderer.domElement.hidden=false;scene.background=null;renderer.setClearColor(0,0);root.visible=false;placed=false;preview=false;document.documentElement.classList.add('xr');$('menu').hidden=false;$('controls').hidden=false;$('ar-sticks').hidden=false;$('playback-bar').hidden=false;status('Move slowly, aim at the floor ring, then tap to place.');
  }catch(e){if(s&&session===s)await s.end().catch(()=>{});session=null;$('support').textContent='AR could not start while '+stage+' ('+(e.name||'Error')+'): '+(e.message||'unknown error')+'.';}finally{starting=false;$('start').disabled=!arSupported||!!session;}}
-function endAR(){endCapture();walls.end();try{hitSource?.cancel();}catch{}hitSource=null;ref=null;session=null;binding=null;envReader?.dispose();envReader=null;envOn=false;envEngine?.suspend();writingEffect?.engine.suspend();envEngine=null;envReady=false;$('effect-frame').removeAttribute('src');$('effect-panel').hidden=true;clearEnvironment();envMessage('No XR session. Surroundings are unaltered.');dragSource=null;playing=false;placed=false;move.stop();turn.stop();root.visible=false;ring.visible=false;document.documentElement.classList.remove('xr');$('menu').hidden=true;$('controls').hidden=true;$('ar-sticks').hidden=true;$('playback-bar').hidden=true;renderer.domElement.hidden=true;lastTime=null;}
-$('overlay').addEventListener('beforexrselect',e=>e.preventDefault());$('start').onclick=startAR;$('preview').onclick=startPreview;$('post').addEventListener('input',layout);
+function endAR(){endCapture();walls.end();stopVoice();try{hitSource?.cancel();}catch{}hitSource=null;ref=null;session=null;binding=null;envReader?.dispose();envReader=null;envOn=false;envEngine?.suspend();writingEffect?.engine.suspend();envEngine=null;envReady=false;$('effect-frame').removeAttribute('src');$('effect-panel').hidden=true;clearEnvironment();envMessage('No XR session. Surroundings are unaltered.');dragSource=null;playing=false;placed=false;move.stop();turn.stop();root.visible=false;ring.visible=false;document.documentElement.classList.remove('xr');$('menu').hidden=true;$('controls').hidden=true;$('ar-sticks').hidden=true;$('playback-bar').hidden=true;renderer.domElement.hidden=true;lastTime=null;}
+$('overlay').addEventListener('beforexrselect',e=>e.preventDefault());$('start').onclick=startAR;$('preview').onclick=startPreview;$('post').addEventListener('input',()=>{stopVoice();layout();});
 $('paste-post').addEventListener('click',async()=>{
  const post=$('post'),message=$('paste-status');
  try{
@@ -168,12 +219,18 @@ $('wall-undo').onclick=()=>walls.undo();
 $('wall-clear').onclick=()=>{walls.clear();ring.visible=false;};
 $('wall-guides').onchange=()=>walls.setGuides($('wall-guides').checked);
 $('menu').onclick=()=>{if(!$('effect-panel').hidden)closeEffects();else $('controls').hidden=!$('controls').hidden;};
-$('play').onclick=()=>{if(scroll>=maxScroll)setScroll(0);playing=true;};
-$('pause').onclick=()=>playing=false;
-$('restart').onclick=()=>{playing=false;setScroll(0);};
+$('play').onclick=()=>{voiceMode=false;voiceIntent++;narration?.pause();if(scroll>=maxScroll)setScroll(0);playing=true;};
+$('play-voice').onclick=async()=>{
+ if(!placed){captureMessage('Place the writing before playing voice.');return;}
+ if(!narration?.getState().ready){captureMessage('Prepare Old Trucker Girl voice before starting AR.');return;}
+ playing=false;if(scroll>=maxScroll){setScroll(0);narration.restart();}else narration.seekScroll(scroll);
+ const intent=++voiceIntent;voiceMode=true;try{if(!await narration.play()&&intent===voiceIntent)voiceMode=false;}catch{if(intent===voiceIntent){voiceMode=false;captureMessage('Voice playback could not start.');}}
+};
+$('pause').onclick=()=>{playing=false;voiceMode=false;voiceIntent++;narration?.pause();};
+$('restart').onclick=()=>{playing=false;voiceMode=false;voiceIntent++;setScroll(0);narration?.restart();};
 const speedValues=[10,22,40,65,95,150,225,350],speedLabels=['Very slow','Slow','Medium','Fast','Very fast','Faster','Much faster','Fastest'];
 function scrollSpeed(){return speedValues[Number($('speed').value)-1]??22;}
-$('speed').addEventListener('input',()=>{$('speed-value').textContent=speedLabels[Number($('speed').value)-1]??'Slow';});
+$('speed').addEventListener('input',()=>{$('speed-value').textContent=speedLabels[Number($('speed').value)-1]??'Slow';if(narration)narration.setSpeed(voiceSpeed());});
 $('show-scrollbar').addEventListener('change',()=>{const visible=$('show-scrollbar').checked;track.visible=visible;knob.visible=visible;if(!visible){dragSource=null;if(pointer!==null){const id=pointer;pointer=null;if(renderer.domElement.hasPointerCapture(id))renderer.domElement.releasePointerCapture(id);}}});
 $('letter-size').addEventListener('input',()=>{textScale=Number($('letter-size').value);$('letter-size-value').textContent=Math.round(textScale*100)+'%';layout();});
 $('text-colour').addEventListener('input',applyTextColour);
@@ -186,8 +243,8 @@ $('env-off').onclick=()=>{envOn=false;envCurrent=false;envEngine?.suspend();scen
 $('close-effects').onclick=closeEffects;
 $('effect-frame').onload=()=>{if(!envOn)return;try{envEngine=$('effect-frame').contentWindow.ARColourEngine;envEngine.begin(envSource);envReady=true;}catch(e){envOn=false;clearEnvironment();envMessage('Environment effects could not load. Surroundings are unaltered.');}};
 for(const id of ['width','height'])$(id).addEventListener('input',()=>{W=Number($('width').value);H=Number($('height').value);$('width-value').textContent=W.toFixed(2)+' m';$('height-value').textContent=H.toFixed(2)+' m';track.position.x=W/2+.13;track.scale.y=H/1.8;knob.position.x=track.position.x;layout();});
-$('reset').onclick=()=>{if(walls.building)walls.cancel();ring.visible=false;playing=false;setScroll(0);if(session){placement.reset();root.visible=false;placed=false;status('Aim at a floor surface and tap to place again.');}};
-$('exit').onclick=()=>{if(session)session.end();else{preview=false;placed=false;playing=false;writingEffect?.engine.suspend();move.stop();turn.stop();root.visible=false;renderer.domElement.hidden=true;$('controls').hidden=true;$('menu').hidden=true;$('ar-sticks').hidden=true;$('playback-bar').hidden=true;}};
+$('reset').onclick=()=>{if(walls.building)walls.cancel();ring.visible=false;playing=false;voiceMode=false;voiceIntent++;setScroll(0);narration?.restart();if(session){placement.reset();root.visible=false;placed=false;status('Aim at a floor surface and tap to place again.');}};
+$('exit').onclick=()=>{if(session)session.end();else{stopVoice();preview=false;placed=false;playing=false;writingEffect?.engine.suspend();move.stop();turn.stop();root.visible=false;renderer.domElement.hidden=true;$('controls').hidden=true;$('menu').hidden=true;$('ar-sticks').hidden=true;$('playback-bar').hidden=true;}};
 let pointer=null;renderer.domElement.addEventListener('pointerdown',e=>{if(!preview)return;const b=renderer.domElement.getBoundingClientRect();raycaster.setFromCamera(new T.Vector2((e.clientX-b.left)/b.width*2-1,-(e.clientY-b.top)/b.height*2+1),camera);ray.copy(raycaster.ray);if(rayHitsKnob()){playing=false;pointer=e.pointerId;renderer.domElement.setPointerCapture(pointer);dragAtRay();}});renderer.domElement.addEventListener('pointermove',e=>{if(e.pointerId!==pointer)return;const b=renderer.domElement.getBoundingClientRect();raycaster.setFromCamera(new T.Vector2((e.clientX-b.left)/b.width*2-1,-(e.clientY-b.top)/b.height*2+1),camera);ray.copy(raycaster.ray);dragAtRay();});for(const event of ['pointerup','pointercancel','lostpointercapture'])renderer.domElement.addEventListener(event,()=>pointer=null);
 if(new URLSearchParams(location.search).has('qa'))window.__readerQA={tick:time=>loop(time),state(){root.updateMatrixWorld(true);camera.updateMatrixWorld(true);const p=knob.getWorldPosition(new T.Vector3()).project(camera),b=renderer.domElement.getBoundingClientRect();return {scroll,maxScroll,playing,speed:scrollSpeed(),writingOn,writingReady:!!writingEffect,envOn,letterMeshes:visibleLines.size,matrix:root.matrixWorld.toArray(),knob:{x:b.left+(p.x+1)*b.width/2,y:b.top+(1-p.y)*b.height/2},height:b.height,width:W,readingHeight:H};}};
 window.addEventListener('resize',resize);Promise.all([new FontLoader().loadAsync('./font.json'),new FontLoader().loadAsync('./font-bold.json'),navigator.xr?.isSessionSupported('immersive-ar').catch(()=>false)??false]).then(([a,b,supported])=>{font=a;bold=b;arSupported=supported;layout();renderer.setAnimationLoop(loop);}).catch(e=>{$('support').textContent='3D lettering could not load: '+e.message;});
