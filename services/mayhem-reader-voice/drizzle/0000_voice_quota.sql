@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS voice_quota (
+  day TEXT PRIMARY KEY NOT NULL,
+  requests INTEGER NOT NULL,
+  characters INTEGER NOT NULL
+);

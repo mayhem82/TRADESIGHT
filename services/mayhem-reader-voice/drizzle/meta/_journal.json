@@ -1,0 +1,5 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [{"idx": 0, "version": "6", "when": 1795572800000, "tag": "0000_voice_quota", "breakpoints": true}]
+}

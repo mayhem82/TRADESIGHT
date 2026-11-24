@@ -1,0 +1,11 @@
+# MAYHEM private voice backend
+
+This owner-private Site supplies ElevenLabs speech for the existing GitHub Pages reader. It never stores pasted writing, generated audio, or credentials in source. The Site owner must configure `ELEVENLABS_API_KEY` as a hosted runtime secret; until then speech requests fail closed. Requests use the account's Old Trucker Girl voice.
+
+The reader opens this Site in a top-level popup, where Sites performs its own owner sign-in. The popup accepts messages only from the reader's exact `https://mayhem82.github.io` origin and its own opener; it sends same-origin, owner-authenticated POSTs. No API key or Sites service-bypass token reaches the reader. Speech is sent to ElevenLabs for generation; provider retention and account billing apply. API key scope and provider-side credit limits should be configured by the owner.
+
+The D1 `voice_quota` table stores only date and aggregate request/character counts. Quota consumption uses one atomic SQL statement, so concurrent requests are counted. Preflight checks the entire post without consuming quota; it is advisory because another request may consume quota before later chunks. Daily caps are 20 requests and 30,000 characters; a request can contain up to 5,000 characters. `drizzle/0000_voice_quota.sql` is the schema migration.
+
+Run `npm test` and `npm run build`. The local tests use mock ElevenLabs responses and an in-memory SQLite database. They do not verify the hosted Sites identity boundary, popup behavior after sign-in, runtime secret configuration, real ElevenLabs response, cost, or AR playback on a phone. Do not claim the backend works until those are tested against the deployed Site and the user's device. This Site must remain owner-private.
+
+The backend uses the official `@elevenlabs/elevenlabs-js` text-to-speech SDK and bundles it into the Worker. A POST to `/diagnostic` with an empty JSON body and no browser `Origin` uses the Sites owner-private service-access boundary to make one fixed, neutral speech request. It returns only whether audio and alignment were received, consumes quota and may consume ElevenLabs credits. It does not take or return the user's writing, audio, or key. Never deploy this endpoint on a public Site.

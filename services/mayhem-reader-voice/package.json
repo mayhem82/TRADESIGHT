@@ -1,0 +1,1 @@
+{"name":"mayhem-private-voice-backend","version":"1.0.0","private":true,"type":"module","scripts":{"test":"node --test test/*.test.js","build":"node scripts/build.mjs"},"dependencies":{"@elevenlabs/elevenlabs-js":"^2.80.0","esbuild":"^0.28.2"}}
