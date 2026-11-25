@@ -233,7 +233,8 @@ $('restart').onclick=()=>{playing=false;voiceMode=false;voiceIntent++;setScroll(
 const speedValues=[10,22,40,65,95,150,225,350],speedLabels=['Very slow','Slow','Medium','Fast','Very fast','Faster','Much faster','Fastest'];
 function scrollSpeed(){return speedValues[Number($('speed').value)-1]??22;}
 $('speed').addEventListener('input',()=>{$('speed-value').textContent=speedLabels[Number($('speed').value)-1]??'Slow';if(narration)narration.setSpeed(voiceSpeed());});
-$('show-scrollbar').addEventListener('change',()=>{const visible=$('show-scrollbar').checked;track.visible=visible;knob.visible=visible;if(!visible){dragSource=null;if(pointer!==null){const id=pointer;pointer=null;if(renderer.domElement.hasPointerCapture(id))renderer.domElement.releasePointerCapture(id);}}});
+function updateScrollbarVisibility(){const visible=$('show-scrollbar').checked;track.visible=visible;knob.visible=visible;$('scrollbar-toggle').textContent=visible?'Hide scroll bar':'Show scroll bar';if(!visible){dragSource=null;if(pointer!==null){const id=pointer;pointer=null;if(renderer.domElement.hasPointerCapture(id))renderer.domElement.releasePointerCapture(id);}}}
+$('show-scrollbar').addEventListener('change',updateScrollbarVisibility);$('scrollbar-toggle').addEventListener('click',()=>{$('show-scrollbar').checked=!$('show-scrollbar').checked;updateScrollbarVisibility();});
 $('letter-size').addEventListener('input',()=>{textScale=Number($('letter-size').value);$('letter-size-value').textContent=Math.round(textScale*100)+'%';layout();});
 $('text-colour').addEventListener('input',applyTextColour);
 function plainWriting(){writingOn=false;writingEffect?.setEnabled(false);applyTextColour();writingEffect?.engine.suspend();if(!$('writing-frame').hidden)closeEffects();status('Plain 3D writing is active.');}
